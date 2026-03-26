@@ -579,7 +579,72 @@ let gpxPoints = [];
 let STRAVA_CLIENT_ID = localStorage.getItem('strava_client_id') || '';
 
 // ── Auth ───────────────────────────────────────────────────────────────────
-function saveClientId() {
+function updateProfielBerekeningen() {
+  const weight = +document.getElementById('profiel-weight').value;
+  const height = +document.getElementById('profiel-height').value;
+  const ftp    = +document.getElementById('profiel-ftp').value;
+  const bikeW  = +document.getElementById('profiel-bikeweight').value;
+
+  const wkg      = (ftp / weight).toFixed(2);
+  const bmi      = (weight / Math.pow(height/100, 2)).toFixed(1);
+  const totalW   = (weight + bikeW).toFixed(1);
+  const wkgTotal = (ftp / (weight + bikeW)).toFixed(2);
+
+  document.getElementById('profiel-wkg').textContent      = wkg + ' W/kg';
+  document.getElementById('profiel-bmi').textContent      = bmi;
+  document.getElementById('profiel-totalweight').textContent = totalW + ' kg';
+  document.getElementById('profiel-wkgtotal').textContent = wkgTotal + ' W/kg';
+
+  const advice = wkg < 2.5 ? 'Beginnersniveau — focus op basisconditie opbouwen.' :
+                 wkg < 3.5 ? 'Recreatief niveau — goede basis, ruimte voor verbetering.' :
+                 wkg < 4.5 ? 'Gevorderd niveau — sterk! Vergelijkbaar met clubrenners.' :
+                 wkg < 5.5 ? 'Semi-pro niveau — uitstekend vermogen.' :
+                             'Pro niveau — wereldklasse prestatie.';
+  document.getElementById('profiel-advice').textContent = advice;
+
+  // Sync naar scenario-sliders
+  document.getElementById('weight').value = weight;
+  document.getElementById('weight-out').textContent = weight;
+  document.getElementById('bikeweight').value = bikeW;
+  document.getElementById('bikeweight-out').textContent = bikeW.toFixed(1);
+  document.getElementById('power').value = ftp;
+  document.getElementById('power-out').textContent = ftp;
+
+  // Opslaan in localStorage
+  localStorage.setItem('profiel_data', JSON.stringify({ weight, height, ftp, bikeW }));
+
+  calcResult();
+}
+
+function laadProfielVanStrava() {
+  if (!athlete) return;
+  if (athlete.weight && athlete.weight > 0) {
+    document.getElementById('profiel-weight').value = athlete.weight;
+    document.getElementById('profiel-weight-out').textContent = athlete.weight;
+  }
+  if (athlete.ftp && athlete.ftp > 0) {
+    document.getElementById('profiel-ftp').value = athlete.ftp;
+    document.getElementById('profiel-ftp-out').textContent = athlete.ftp;
+  }
+  document.getElementById('profiel-avatar').src = athlete.profile || '';
+  document.getElementById('profiel-naam').textContent = athlete.firstname + ' ' + athlete.lastname;
+  document.getElementById('profiel-strava-info').style.display = 'block';
+  updateProfielBerekeningen();
+}
+
+function laadOpgeslagenProfiel() {
+  if (!profielData) return;
+  document.getElementById('profiel-weight').value = profielData.weight;
+  document.getElementById('profiel-weight-out').textContent = profielData.weight;
+  document.getElementById('profiel-height').value = profielData.height;
+  document.getElementById('profiel-height-out').textContent = profielData.height;
+  document.getElementById('profiel-ftp').value = profielData.ftp;
+  document.getElementById('profiel-ftp-out').textContent = profielData.ftp;
+  document.getElementById('profiel-bikeweight').value = profielData.bikeW;
+  document.getElementById('profiel-bikeweight-out').textContent = profielData.bikeW.toFixed(1);
+  updateProfielBerekeningen();
+}
+  function saveClientId() {
   const val = document.getElementById('client-id-input').value.trim();
   if (!val || isNaN(val)) { alert('Vul een geldig Client ID in (alleen cijfers).'); return; }
   STRAVA_CLIENT_ID = val;

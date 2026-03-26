@@ -986,7 +986,7 @@ function calcResult() {
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const tabs = ['segment','scenario','weer','materiaal','resultaat'];
+  const tabs = ['profiel','segment','scenario','weer','materiaal','resultaat'];
   document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'resultaat') calcResult();

@@ -41,15 +41,17 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        access_token: data.access_token,
-        athlete: {
-          id: data.athlete.id,
-          firstname: data.athlete.firstname,
-          lastname: data.athlete.lastname,
-          profile: data.athlete.profile_medium
-        }
-      })
+body: JSON.stringify({
+  access_token: data.access_token,
+  athlete: {
+    id: data.athlete.id,
+    firstname: data.athlete.firstname,
+    lastname: data.athlete.lastname,
+    profile: data.athlete.profile_medium,
+    weight: data.athlete.weight || null,
+    ftp: data.athlete.ftp || null
+  }
+})
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: 'Serverfout: ' + err.message }) };

@@ -553,7 +553,7 @@ function loginWithStrava() {
     return;
   }
   const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-  const scope = 'read,activity:read,segments:read_all';
+  const scope = 'read%2Cactivity%3Aread_all';
   window.location.href = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&approval_prompt=auto`;
 }
 

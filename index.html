@@ -654,8 +654,8 @@ async function selectSegment(id) {
     document.getElementById('seg-detail-title').textContent = seg.name;
     document.getElementById('seg-dist').textContent = (seg.distance/1000).toFixed(2) + ' km';
     document.getElementById('seg-elev').textContent = Math.round(seg.total_elevation_gain) + ' m';
-    document.getElementById('seg-grade').textContent = (seg.average_grade ?? 0).toFixed(1) + '%';
-    document.getElementById('seg-maxgrade').textContent = (seg.maximum_grade ?? 0).toFixed(1) + '%';
+    document.getElementById('seg-elev').textContent = Math.round(seg.total_elevation_gain) + ' m';
+    document.getElementById('seg-dist').textContent = (seg.distance/1000).toFixed(2) + ' km';
 
     if (seg.pr && seg.pr.pr_elapsed_time) {
       const prSec = seg.pr.pr_elapsed_time;

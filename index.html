@@ -252,7 +252,47 @@
 <button class="tab" onclick="switchTab('resultaat')"><span class="tab-num">6</span> Resultaat</button>
   </div>
 
-  <!-- SEGMENT -->
+  <!-- PROFIEL -->
+  <div id="panel-profiel" class="panel active">
+    <div class="card">
+      <div class="card-title">Jouw basisgegevens</div>
+      <div id="profiel-strava-info" style="display:none;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);">
+          <img id="profiel-avatar" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+          <div>
+            <div id="profiel-naam" style="font-size:14px;font-weight:500;color:var(--text);"></div>
+            <div style="font-size:12px;color:var(--text-muted);">Opgehaald uit Strava</div>
+          </div>
+        </div>
+      </div>
+      <div class="row"><div class="row-label">Gewicht rijder (kg)</div><input type="range" id="profiel-weight" min="40" max="150" step="0.5" value="75"><div class="row-val"><span id="profiel-weight-out">75</span> kg</div></div>
+      <div class="row"><div class="row-label">Lengte (cm)</div><input type="range" id="profiel-height" min="140" max="220" step="1" value="175"><div class="row-val"><span id="profiel-height-out">175</span> cm</div></div>
+      <div class="row"><div class="row-label">Leeftijd</div><input type="range" id="profiel-age" min="15" max="80" step="1" value="35"><div class="row-val"><span id="profiel-age-out">35</span> jr</div></div>
+      <div class="row"><div class="row-label">FTP (W)</div><input type="range" id="profiel-ftp" min="80" max="500" step="5" value="220"><div class="row-val"><span id="profiel-ftp-out">220</span> W</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Fiets</div>
+      <div class="row"><div class="row-label">Gewicht fiets (kg)</div><input type="range" id="profiel-bikeweight" min="5" max="15" step="0.5" value="9"><div class="row-val"><span id="profiel-bikeweight-out">9.0</span> kg</div></div>
+      <div class="select-row"><label>Fietstype</label>
+        <select id="profiel-biketype">
+          <option value="road">Racefiets</option>
+          <option value="tt">Tijdritfiets</option>
+          <option value="gravel">Gravel</option>
+          <option value="mtb">MTB</option>
+        </select>
+      </div>
+    </div>
+      <div class="card">
+      <div class="card-title">Berekende waarden</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+        <div class="metric"><div class="metric-label">W/kg (FTP)</div><div class="metric-val" id="profiel-wkg">—</div></div>
+        <div class="metric"><div class="metric-label">BMI</div><div class="metric-val" id="profiel-bmi">—</div></div>
+        <div class="metric"><div class="metric-label">Totaal gewicht</div><div class="metric-val" id="profiel-totalweight">—</div></div>
+        <div class="metric"><div class="metric-label">Vermogen/totaal</div><div class="metric-val" id="profiel-wkgtotal">—</div></div>
+      </div>
+      <div class="info-box" id="profiel-advice">Vul je gegevens in voor gepersonaliseerd advies.</div>
+    </div>
+  </div><!-- SEGMENT -->
   <div id="panel-segment" class="panel active">
 
     <div id="setup-card" style="display:none;max-width:440px;margin:2rem auto;">

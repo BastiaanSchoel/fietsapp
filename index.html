@@ -3,312 +3,525 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fiets Wat-Als Calculator</title>
+<title>Watts-up</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --green: #1D9E75; --green-light: #E1F5EE; --green-mid: #5DCAA5;
-    --green-dark: #0F6E56; --green-deep: #085041;
-    --coral: #D85A30; --amber: #EF9F27; --blue: #378ADD; --purple: #7F77DD;
-    --bg: #F7F6F2; --surface: #FFFFFF;
-    --border: rgba(0,0,0,0.08); --border-mid: rgba(0,0,0,0.14);
-    --text: #1A1A18; --text-mid: #5A5A54; --text-muted: #9A9A90;
-    --radius: 12px; --radius-sm: 8px;
-    --strava: #FC4C02;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-  header { background: var(--green-deep); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
-  .logo { display: flex; align-items: center; gap: 10px; color: white; font-size: 15px; font-weight: 600; }
-  .logo-sub { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 400; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; }
-  .strava-btn { display: flex; align-items: center; gap: 8px; background: var(--strava); color: white; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .athlete-bar { display: flex; align-items: center; gap: 8px; color: white; }
-  .athlete-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); object-fit: cover; }
-  .athlete-name { font-size: 13px; font-weight: 500; }
-  .logout-btn { background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-family: inherit; margin-left: 4px; }
-  .main { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 5px; flex-wrap: wrap; }
-  .tab { flex: 1; min-width: 55px; padding: 9px 4px; font-size: 11px; font-weight: 500; text-align: center; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-mid); border: none; background: none; font-family: inherit; }
-  .tab:hover { background: var(--bg); }
-  .tab.active { background: var(--green); color: white; }
-  .tab-num { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.25); font-size: 10px; margin-right: 3px; }
-  .tab:not(.active) .tab-num { background: var(--border); color: var(--text-muted); }
-  .panel { display: none; }
-  .panel.active { display: block; }
-  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
-  .card-title { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1.1rem; font-family: 'DM Mono', monospace; }
-  .login-prompt { text-align: center; padding: 3rem 1.5rem; border: 1.5px dashed var(--border-mid); border-radius: var(--radius); margin-bottom: 1rem; }
-  .login-icon { width: 56px; height: 56px; background: #FEE8DF; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
-  .login-title { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
-  .login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.6; }
-  .login-strava-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--strava); color: white; border: none; border-radius: 8px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .search-wrap { display: flex; gap: 8px; margin-bottom: 1rem; }
-  .search-input { flex: 1; padding: 9px 12px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text); outline: none; }
-  .search-input:focus { border-color: var(--green); }
-  .search-btn { background: var(--green); color: white; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
-  .segment-list { display: flex; flex-direction: column; gap: 6px; }
-  .segment-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; border: 0.5px solid transparent; }
-  .segment-item:hover, .segment-item.active { border-color: var(--green); background: var(--green-light); }
-  .seg-name { font-size: 13px; font-weight: 500; color: var(--text); }
-  .seg-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
-  .seg-right { text-align: right; flex-shrink: 0; }
-  .seg-grade { font-size: 13px; font-weight: 600; font-family: 'DM Mono', monospace; }
-  .seg-grade.climb { color: var(--coral); }
-  .seg-grade.flat { color: var(--green); }
-  .seg-pr { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-  .loading-text { font-size: 13px; color: var(--text-muted); text-align: center; padding: 1.5rem; font-family: 'DM Mono', monospace; }
-  .seg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
-  .stat { background: var(--bg); border-radius: var(--radius-sm); padding: 10px 12px; }
-  .stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; font-family: 'DM Mono', monospace; }
-  .stat-val { font-size: 16px; font-weight: 600; color: var(--text); }
-  .profile-wrap { width: 100%; height: 90px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 1rem; }
-  canvas { width: 100%; height: 100%; display: block; }
-  .row { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
-  .row:last-child { margin-bottom: 0; }
-  .row-label { font-size: 13px; color: var(--text); width: 160px; flex-shrink: 0; }
-  .row input[type=range] { flex: 1; -webkit-appearance: none; height: 4px; background: var(--border-mid); border-radius: 2px; outline: none; cursor: pointer; }
-  .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--green); cursor: pointer; border: 2.5px solid white; box-shadow: 0 0 0 1px var(--green); }
-  .row-val { font-size: 13px; font-weight: 500; color: var(--text); width: 76px; text-align: right; flex-shrink: 0; font-family: 'DM Mono', monospace; }
-  .select-row { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
-  .select-row:last-child { margin-bottom: 0; }
-  .select-row label { font-size: 13px; color: var(--text); width: 160px; flex-shrink: 0; }
-  .select-row select { flex: 1; font-size: 13px; padding: 7px 10px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; cursor: pointer; outline: none; }
-  .select-row select:focus { border-color: var(--green); }
-  .info-box { background: var(--green-light); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: var(--green-deep); margin-top: 1rem; line-height: 1.6; }
-  .sep { height: 0.5px; background: var(--border); margin: 1.25rem 0; }
-  .section-header { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
-  .section-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
-  .result-big { text-align: center; padding: 1.5rem 0 1.25rem; border-bottom: 0.5px solid var(--border); margin-bottom: 1.25rem; }
-  .result-label-top { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
-  .result-time { font-size: 64px; font-weight: 600; color: var(--text); letter-spacing: -0.04em; line-height: 1; font-family: 'DM Mono', monospace; }
-  .result-diff { font-size: 20px; font-weight: 500; margin-top: 8px; }
-  .result-diff.win { color: var(--green); }
-  .result-diff.loss { color: var(--coral); }
-  .result-diff.neu { color: var(--text-muted); }
-  .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1rem; }
-  .metric { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; }
-  .metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-family: 'DM Mono', monospace; }
-  .metric-val { font-size: 18px; font-weight: 600; color: var(--text); }
-  .pr-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
-  .pr-row:last-child { border-bottom: none; }
-  .pr-left { display: flex; align-items: center; gap: 10px; }
-  .pr-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; font-family: 'DM Mono', monospace; }
-  .pr-silver { background: #E8E8E0; color: #444441; }
-  .pr-bronze { background: #F5C4B3; color: #712B13; }
-  .pr-name { color: var(--text-mid); }
-  .pr-time { font-weight: 600; font-family: 'DM Mono', monospace; }
-  .bd-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
-  .bd-row:last-child { border-bottom: none; }
-  .bd-name { color: var(--text-mid); display: flex; align-items: center; gap: 8px; }
-  .bd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .bd-val { font-weight: 600; font-family: 'DM Mono', monospace; }
-  .bd-val.pos { color: var(--green); }
-  .bd-val.neg { color: var(--coral); }
-  .bd-val.neu { color: var(--text-muted); }
-  .bar-wrap { height: 8px; background: var(--bg); border-radius: 4px; margin: 14px 0 8px; overflow: hidden; display: flex; gap: 2px; }
-  .bar-seg { height: 8px; border-radius: 2px; }
-  .hint { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
-  .warn-box { background: #FFF3CD; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: #7A5000; margin-bottom: 1rem; line-height: 1.6; display: none; }
-  footer { text-align: center; padding: 2rem; font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
-  @media (max-width: 640px) { .result-time { font-size: 48px; } .seg-stats { grid-template-columns: repeat(2, 1fr); } }
+:root {
+  --green:#1D9E75;--green-light:#E1F5EE;--green-dark:#0F6E56;--green-deep:#085041;
+  --coral:#D85A30;--amber:#EF9F27;--blue:#378ADD;--purple:#7F77DD;--blue-light:#85B7EB;
+  --bg:#F7F6F2;--surface:#FFFFFF;
+  --border:rgba(0,0,0,0.08);--border-mid:rgba(0,0,0,0.14);
+  --text:#1A1A18;--text-mid:#5A5A54;--text-muted:#9A9A90;
+  --radius:12px;--radius-sm:8px;--strava:#FC4C02;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--green-deep);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:8px;color:white;font-size:16px;font-weight:600;letter-spacing:-0.02em;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase;}
+.strava-btn{display:flex;align-items:center;gap:6px;background:var(--strava);color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.athlete-bar{display:flex;align-items:center;gap:8px;color:white;}
+.athlete-avatar{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);object-fit:cover;}
+.athlete-name{font-size:12px;font-weight:500;}
+.logout-btn{background:rgba(255,255,255,0.15);border:none;color:white;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;margin-left:4px;}
+.main{max-width:960px;margin:0 auto;padding:1.5rem 1.25rem 4rem;}
+.tabs{display:flex;gap:3px;margin-bottom:1.25rem;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:4px;flex-wrap:wrap;}
+.tab{flex:1;min-width:52px;padding:8px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:var(--radius-sm);cursor:pointer;color:var(--text-mid);border:none;background:none;font-family:inherit;transition:all 0.15s;}
+.tab:hover{background:var(--bg);}
+.tab.active{background:var(--green);color:white;}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;}
+.card-title{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:space-between;}
+.badge-new{font-size:9px;background:var(--green-light);color:var(--green-dark);padding:2px 6px;border-radius:4px;font-weight:600;}
+
+/* Login */
+.login-prompt{text-align:center;padding:2.5rem 1.5rem;border:1.5px dashed var(--border-mid);border-radius:var(--radius);margin-bottom:1rem;}
+.login-icon{width:52px;height:52px;background:#FEE8DF;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.login-title{font-size:15px;font-weight:500;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;}
+.login-strava-btn{display:inline-flex;align-items:center;gap:8px;background:var(--strava);color:white;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* Weather */
+.location-bar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:1rem;}
+.loc-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.loc-name{font-size:13px;font-weight:500;flex:1;}
+.loc-time{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;}
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:1rem;}
+.live-cell{background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px;}
+.live-label{font-size:10px;color:var(--text-muted);margin-bottom:2px;}
+.live-val{font-size:17px;font-weight:500;}
+.live-sub{font-size:10px;color:var(--text-muted);margin-top:1px;}
+.ftp-impact{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:1rem;font-size:12px;}
+.ftp-impact.neg{background:#FFF3CD;color:#7A5000;}
+.ftp-impact.pos{background:var(--green-light);color:var(--green-deep);}
+.ftp-impact.neu{background:var(--bg);color:var(--text-muted);}
+.days-scroll{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:1rem;scrollbar-width:none;}
+.days-scroll::-webkit-scrollbar{display:none;}
+.day-card{flex-shrink:0;width:68px;background:var(--bg);border-radius:10px;padding:9px 7px;text-align:center;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s;}
+.day-card:hover{border-color:var(--border-mid);}
+.day-card.active{background:var(--surface);border-color:var(--green);}
+.day-name{font-size:10px;color:var(--text-muted);margin-bottom:4px;font-weight:500;}
+.day-card.active .day-name{color:var(--green-dark);font-weight:600;}
+.day-icon{font-size:18px;margin-bottom:3px;height:24px;display:flex;align-items:center;justify-content:center;}
+.day-temp{font-size:12px;font-weight:500;}
+.day-wind{font-size:10px;color:var(--text-muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.chart-wrap{position:relative;width:100%;margin-bottom:1rem;}
+.time-slider-wrap{padding:0 2px;margin-bottom:1rem;}
+.time-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:5px;font-family:'DM Mono',monospace;}
+.selected-time-label{text-align:center;font-size:13px;font-weight:500;margin-top:6px;font-family:'DM Mono',monospace;}
+.moment-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
+.moment-cell{background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px;}
+.moment-label{font-size:10px;color:var(--text-muted);margin-bottom:2px;}
+.moment-val{font-size:15px;font-weight:500;}
+.moment-eff{font-size:10px;margin-top:2px;font-family:'DM Mono',monospace;}
+.moment-eff.neg{color:var(--coral);}
+.moment-eff.pos{color:var(--green);}
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted);}
+.leg-line{width:14px;height:2px;border-radius:1px;}
+
+/* Profile fields */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;}
+.field-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;}
+.field-input-wrap{position:relative;}
+.field-input{width:100%;padding:9px 12px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.15s;}
+.field-input:focus{border-color:var(--green);}
+.field-unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-muted);pointer-events:none;}
+.field-source{font-size:10px;color:var(--green-dark);margin-top:3px;}
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:1rem;}
+.metric-small{background:var(--bg);border-radius:var(--radius-sm);padding:9px 10px;}
+.metric-small .ml{font-size:10px;color:var(--text-muted);margin-bottom:2px;}
+.metric-small .mv{font-size:15px;font-weight:500;}
+.advice-box{background:var(--green-light);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:var(--green-deep);margin-top:1rem;line-height:1.6;}
+
+/* Bike garage */
+.bike-card{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:7px;border:1.5px solid transparent;cursor:pointer;transition:all 0.15s;}
+.bike-card:hover{border-color:var(--border-mid);}
+.bike-card.active{border-color:var(--green);background:var(--green-light);}
+.bike-icon-wrap{width:32px;height:32px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bike-card.active .bike-icon-wrap{background:var(--green-light);}
+.bike-name{font-size:13px;font-weight:500;}
+.bike-sub{font-size:11px;color:var(--text-muted);}
+.active-badge{margin-left:auto;font-size:10px;background:var(--green-light);color:var(--green-dark);padding:2px 8px;border-radius:10px;font-weight:500;flex-shrink:0;}
+.add-bike-btn{width:100%;padding:9px;background:none;border:0.5px dashed var(--border-mid);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;}
+.add-bike-btn:hover{border-color:var(--green);color:var(--green);}
+.bike-form{background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-top:8px;display:none;}
+.bike-form.open{display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.form-label{font-size:11px;color:var(--text-muted);margin-bottom:3px;}
+.form-input{width:100%;padding:7px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;}
+.form-input:focus{border-color:var(--green);}
+.form-select{width:100%;padding:7px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;}
+.save-bike-btn{background:var(--green);color:white;border:none;border-radius:var(--radius-sm);padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+
+/* Clothing */
+.clothing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.clothing-btn{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 6px;font-size:11px;color:var(--text-muted);cursor:pointer;font-family:inherit;text-align:center;transition:all 0.15s;line-height:1.3;}
+.clothing-btn:hover{border-color:var(--border-mid);}
+.clothing-btn.on{border-color:var(--green);background:var(--green-light);color:var(--green-dark);font-weight:500;}
+.clothing-weight{font-size:10px;color:var(--text-muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.clothing-btn.on .clothing-weight{color:var(--green-dark);}
+
+/* Segment */
+.search-wrap{display:flex;gap:7px;margin-bottom:1rem;}
+.search-input{flex:1;padding:8px 12px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;}
+.search-input:focus{border-color:var(--green);}
+.search-btn{background:var(--green);color:white;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+.segment-list{display:flex;flex-direction:column;gap:5px;}
+.segment-item{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;border:0.5px solid transparent;transition:all 0.15s;}
+.segment-item:hover,.segment-item.active{border-color:var(--green);background:var(--green-light);}
+.seg-name{font-size:13px;font-weight:500;}
+.seg-meta{font-size:10px;color:var(--text-muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.seg-right{text-align:right;flex-shrink:0;}
+.seg-grade{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;}
+.seg-grade.climb{color:var(--coral);}
+.seg-grade.flat{color:var(--green);}
+.seg-pr{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.seg-kom{font-size:10px;color:var(--coral);margin-top:1px;}
+.loading-text{font-size:12px;color:var(--text-muted);text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;}
+.seg-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:1rem;}
+.stat{background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px;}
+.stat-label{font-size:10px;color:var(--text-muted);margin-bottom:2px;font-family:'DM Mono',monospace;}
+.stat-val{font-size:15px;font-weight:600;}
+.profile-wrap{width:100%;height:80px;border-radius:var(--radius-sm);overflow:hidden;margin-top:1rem;}
+canvas.seg-canvas{width:100%;height:100%;display:block;}
+.mytime-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.mytime-row:last-child{margin-bottom:0;}
+.mytime-label{font-size:13px;width:80px;flex-shrink:0;}
+.mytime-row input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--border-mid);border-radius:2px;outline:none;cursor:pointer;}
+.mytime-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer;border:2.5px solid white;box-shadow:0 0 0 1px var(--green);}
+.mytime-val{font-size:13px;font-weight:500;width:60px;text-align:right;font-family:'DM Mono',monospace;flex-shrink:0;}
+.info-box{background:var(--green-light);border-radius:var(--radius-sm);padding:9px 12px;font-size:11px;color:var(--green-deep);margin-top:1rem;line-height:1.6;}
+
+/* Scenario */
+.row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.row:last-child{margin-bottom:0;}
+.row-label{font-size:13px;color:var(--text);width:150px;flex-shrink:0;}
+.row input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--border-mid);border-radius:2px;outline:none;cursor:pointer;}
+.row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer;border:2.5px solid white;box-shadow:0 0 0 1px var(--green);}
+.row-val{font-size:13px;font-weight:500;width:70px;text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;}
+.select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.select-row:last-child{margin-bottom:0;}
+.select-row label{font-size:13px;width:150px;flex-shrink:0;}
+.select-row select{flex:1;font-size:13px;padding:7px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:inherit;cursor:pointer;outline:none;}
+.select-row select:focus{border-color:var(--green);}
+.sep{height:0.5px;background:var(--border);margin:1rem 0;}
+.section-hdr{font-size:12px;font-weight:500;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:7px;}
+.section-dot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+
+/* Results */
+.result-big{text-align:center;padding:1.5rem 0 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;}
+.result-label{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+.result-time{font-size:60px;font-weight:600;letter-spacing:-0.04em;line-height:1;font-family:'DM Mono',monospace;}
+.result-diff{font-size:19px;font-weight:500;margin-top:6px;}
+.result-diff.win{color:var(--green);}
+.result-diff.loss{color:var(--coral);}
+.result-diff.neu{color:var(--text-muted);}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:1rem;}
+.metric{background:var(--bg);border-radius:var(--radius-sm);padding:11px;}
+.metric-label{font-size:10px;color:var(--text-muted);margin-bottom:3px;font-family:'DM Mono',monospace;}
+.metric-val{font-size:17px;font-weight:600;}
+.pr-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.pr-row:last-child{border-bottom:none;}
+.pr-left{display:flex;align-items:center;gap:8px;}
+.pr-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;font-family:'DM Mono',monospace;}
+.pr-silver{background:#E8E8E0;color:#444441;}
+.pr-bronze{background:#F5C4B3;color:#712B13;}
+.pr-name{color:var(--text-mid);}
+.pr-time{font-weight:600;font-family:'DM Mono',monospace;}
+.bd-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.bd-row:last-child{border-bottom:none;}
+.bd-name{color:var(--text-mid);display:flex;align-items:center;gap:7px;}
+.bd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.bd-val{font-weight:600;font-family:'DM Mono',monospace;}
+.bd-val.pos{color:var(--green);}
+.bd-val.neg{color:var(--coral);}
+.bd-val.neu{color:var(--text-muted);}
+.bar-wrap{height:7px;background:var(--bg);border-radius:4px;margin:12px 0 6px;overflow:hidden;display:flex;gap:2px;}
+.bar-seg{height:7px;border-radius:2px;}
+.hint{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;}
+.warn-box{background:#FFF3CD;border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:#7A5000;margin-bottom:1rem;line-height:1.6;display:none;}
+footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;}
+@media(max-width:640px){.result-time{font-size:48px;}.seg-stats{grid-template-columns:repeat(2,1fr);}.live-grid{grid-template-columns:repeat(2,1fr);}.metrics-row{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
-      <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/>
-      <path d="M15 5l-3.5 7.5H18.5"/>
+      <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
     </svg>
-    <div>
-      <div>Fiets Wat-Als Calculator</div>
-      <div class="logo-sub">Segment Simulator</div>
-    </div>
+    <div><div>Watts-up</div><div class="logo-sub">Segment Simulator</div></div>
   </div>
   <div id="header-auth">
     <button class="strava-btn" onclick="loginWithStrava()">
-      <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-      Inloggen met Strava
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+      Strava
     </button>
   </div>
 </header>
 
 <div class="main">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('profiel')"><span class="tab-num">1</span>Profiel</button>
-    <button class="tab" onclick="switchTab('segment')"><span class="tab-num">2</span>Segment</button>
-    <button class="tab" onclick="switchTab('scenario')"><span class="tab-num">3</span>Scenario</button>
-    <button class="tab" onclick="switchTab('weer')"><span class="tab-num">4</span>Weer</button>
-    <button class="tab" onclick="switchTab('materiaal')"><span class="tab-num">5</span>Materiaal</button>
-    <button class="tab" onclick="switchTab('resultaat')"><span class="tab-num">6</span>Resultaat</button>
+    <button class="tab active" onclick="switchTab('weer')">Weer</button>
+    <button class="tab" onclick="switchTab('profiel')">Profiel</button>
+    <button class="tab" onclick="switchTab('fiets')">Fiets</button>
+    <button class="tab" onclick="switchTab('segment')">Segment</button>
+    <button class="tab" onclick="switchTab('scenario')">Scenario</button>
+    <button class="tab" onclick="switchTab('resultaat')">Resultaat</button>
+  </div>
+
+  <!-- WEER -->
+  <div id="panel-weer" class="panel active">
+    <div class="card">
+      <div class="card-title">Live weer <span class="badge-new">automatisch</span></div>
+      <div id="weer-loading" class="loading-text">Locatie ophalen...</div>
+      <div id="weer-error" style="display:none;background:#FFF3CD;border-radius:8px;padding:10px;font-size:12px;color:#7A5000;"></div>
+      <div id="weer-live" style="display:none;">
+        <div class="location-bar">
+          <div class="loc-dot"></div>
+          <div class="loc-name" id="loc-name">--</div>
+          <div class="loc-time" id="loc-time">--</div>
+        </div>
+        <div class="live-grid">
+          <div class="live-cell"><div class="live-label">Temperatuur</div><div class="live-val" id="lv-temp">--</div><div class="live-sub" id="lv-feels">--</div></div>
+          <div class="live-cell"><div class="live-label">Wind</div><div class="live-val" id="lv-wind">--</div><div class="live-sub" id="lv-winddir">--</div></div>
+          <div class="live-cell"><div class="live-label">Neerslag</div><div class="live-val" id="lv-rain">--</div><div class="live-sub" id="lv-humid">--</div></div>
+          <div class="live-cell"><div class="live-label">Luchtdruk</div><div class="live-val" id="lv-pressure">--</div><div class="live-sub">hPa</div></div>
+          <div class="live-cell"><div class="live-label">Gevoelstemp.</div><div class="live-val" id="lv-apptemp">--</div><div class="live-sub">gevoeld</div></div>
+          <div class="live-cell"><div class="live-label">UV-index</div><div class="live-val" id="lv-uv">--</div><div class="live-sub" id="lv-uvlabel">--</div></div>
+        </div>
+        <div class="ftp-impact neu" id="ftp-impact-bar">
+          <span id="ftp-impact-text">FTP-effect berekenen...</span>
+          <span id="ftp-impact-val" style="font-weight:600;font-family:'DM Mono',monospace;"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="forecast-card" style="display:none;">
+      <div class="card-title">7-daagse voorspelling <span style="font-size:10px;font-weight:400;color:var(--text-muted);">klik op dag voor detail</span></div>
+      <div class="days-scroll" id="days-scroll"></div>
+    </div>
+
+    <div class="card" id="detail-card" style="display:none;">
+      <div class="card-title">
+        <span id="detail-title">24-uurs verloop</span>
+        <span style="font-size:10px;font-weight:400;color:var(--text-muted);">sleep slider naar rijtijdstip</span>
+      </div>
+      <div class="chart-wrap"><canvas id="weather-chart" height="160"></canvas></div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-line" style="background:var(--coral)"></div>Temp °C</div>
+        <div class="leg-item"><div class="leg-line" style="background:var(--blue)"></div>Wind km/u</div>
+        <div class="leg-item"><div class="leg-line" style="background:var(--blue-light)"></div>Neerslag mm</div>
+        <div class="leg-item"><div class="leg-line" style="background:var(--amber)"></div>FTP-effect %</div>
+        <div class="leg-item"><div class="leg-line" style="background:var(--purple)"></div>CdA-effect %</div>
+      </div>
+      <div class="time-slider-wrap" style="margin-top:1rem;">
+        <div class="time-labels"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+        <input type="range" id="time-slider" min="0" max="23" step="1" value="10" style="width:100%;">
+        <div class="selected-time-label" id="selected-time-label">10:00</div>
+      </div>
+      <div class="moment-grid">
+        <div class="moment-cell"><div class="moment-label">Temperatuur</div><div class="moment-val" id="mt-temp">--</div><div class="moment-eff" id="mt-temp-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">Wind</div><div class="moment-val" id="mt-wind">--</div><div class="moment-eff" id="mt-wind-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">Neerslag</div><div class="moment-val" id="mt-rain">--</div><div class="moment-eff" id="mt-rain-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">FTP-effect</div><div class="moment-val" id="mt-ftp">--</div><div class="moment-eff" id="mt-ftp-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">CdA-effect</div><div class="moment-val" id="mt-cda">--</div><div class="moment-eff" id="mt-cda-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">Netto tijdeffect</div><div class="moment-val" id="mt-netto">--</div><div class="moment-eff" id="mt-netto-eff"></div></div>
+      </div>
+    </div>
   </div>
 
   <!-- PROFIEL -->
-  <div id="panel-profiel" class="panel active">
+  <div id="panel-profiel" class="panel">
     <div class="card">
       <div class="card-title">Jouw gegevens</div>
-      <div id="profiel-strava-info" style="display:none;margin-bottom:1rem;">
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:1rem;">
-          <img id="profiel-avatar" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
-          <div>
-            <div id="profiel-naam" style="font-size:14px;font-weight:500;color:var(--text);"></div>
-            <div style="font-size:12px;color:var(--text-muted);">Opgehaald uit Strava - pas gerust aan</div>
+      <div id="profiel-strava-row" style="display:none;margin-bottom:1rem;">
+        <div class="location-bar">
+          <img id="profiel-avatar" src="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+          <div id="profiel-naam" style="font-size:13px;font-weight:500;flex:1;"></div>
+          <div style="font-size:10px;color:var(--green-dark);">Strava</div>
+        </div>
+      </div>
+      <div class="field-grid">
+        <div>
+          <div class="field-label">Gewicht (kg)</div>
+          <div class="field-input-wrap">
+            <input type="number" class="field-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()">
+            <span class="field-unit">kg</span>
+          </div>
+          <div class="field-source" id="pf-weight-src"></div>
+        </div>
+        <div>
+          <div class="field-label">Lengte (cm)</div>
+          <div class="field-input-wrap">
+            <input type="number" class="field-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()">
+            <span class="field-unit">cm</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">FTP (W)</div>
+          <div class="field-input-wrap">
+            <input type="number" class="field-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()">
+            <span class="field-unit">W</span>
+          </div>
+          <div class="field-source" id="pf-ftp-src"></div>
+        </div>
+        <div>
+          <div class="field-label">Leeftijd</div>
+          <div class="field-input-wrap">
+            <input type="number" class="field-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()">
+            <span class="field-unit">jr</span>
           </div>
         </div>
       </div>
-      <div class="row"><div class="row-label">Gewicht rijder (kg)</div><input type="range" id="profiel-weight" min="40" max="150" step="0.5" value="75"><div class="row-val"><span id="profiel-weight-out">75</span> kg</div></div>
-      <div class="row"><div class="row-label">Lengte (cm)</div><input type="range" id="profiel-height" min="140" max="220" step="1" value="175"><div class="row-val"><span id="profiel-height-out">175</span> cm</div></div>
-      <div class="row"><div class="row-label">Leeftijd</div><input type="range" id="profiel-age" min="15" max="80" step="1" value="35"><div class="row-val"><span id="profiel-age-out">35</span> jr</div></div>
-      <div class="row"><div class="row-label">FTP (W)</div><input type="range" id="profiel-ftp" min="80" max="500" step="5" value="220"><div class="row-val"><span id="profiel-ftp-out">220</span> W</div></div>
+      <div class="metrics-row">
+        <div class="metric-small"><div class="ml">W/kg</div><div class="mv" id="pf-wkg">--</div></div>
+        <div class="metric-small"><div class="ml">BMI</div><div class="mv" id="pf-bmi">--</div></div>
+        <div class="metric-small"><div class="ml">Totaal gewicht</div><div class="mv" id="pf-total">--</div></div>
+        <div class="metric-small"><div class="ml">W/kg totaal</div><div class="mv" id="pf-wkgt">--</div></div>
+      </div>
+      <div class="advice-box" id="pf-advice">Vul je gegevens in.</div>
     </div>
+  </div>
+
+  <!-- FIETS -->
+  <div id="panel-fiets" class="panel">
     <div class="card">
-      <div class="card-title">Fiets</div>
-      <div class="row"><div class="row-label">Gewicht fiets (kg)</div><input type="range" id="profiel-bikeweight" min="5" max="15" step="0.5" value="9"><div class="row-val"><span id="profiel-bikeweight-out">9.0</span> kg</div></div>
-      <div class="select-row"><label>Fietstype</label>
-        <select id="profiel-biketype" onchange="updateProfielBerekeningen()">
-          <option value="road">Racefiets</option>
-          <option value="tt">Tijdritfiets</option>
-          <option value="gravel">Gravel</option>
-          <option value="mtb">MTB</option>
-        </select>
+      <div class="card-title">Mijn garage <span class="badge-new">nieuw</span></div>
+      <div id="garage-list"></div>
+      <button class="add-bike-btn" onclick="toggleBikeForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Fiets toevoegen
+      </button>
+      <div class="bike-form" id="bike-form">
+        <div class="form-row">
+          <div><div class="form-label">Naam</div><input type="text" class="form-input" id="bf-name" placeholder="bijv. Canyon Ultimate"></div>
+          <div><div class="form-label">Type</div>
+            <select class="form-select" id="bf-type">
+              <option value="road">Racefiets</option>
+              <option value="tt">Tijdritfiets</option>
+              <option value="gravel">Gravel</option>
+              <option value="mtb">MTB</option>
+              <option value="climb">Klimfiets</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div><div class="form-label">Gewicht (kg)</div><input type="number" class="form-input" id="bf-weight" value="8.5" step="0.1" min="4" max="20"></div>
+          <div><div class="form-label">CdA waarde</div>
+            <select class="form-select" id="bf-cda">
+              <option value="0.200">TT-positie (0.200)</option>
+              <option value="0.230">Aerobars (0.230)</option>
+              <option value="0.307" selected>Drops (0.307)</option>
+              <option value="0.324">Hoods (0.324)</option>
+              <option value="0.350">Gravel positie (0.350)</option>
+              <option value="0.408">Tops (0.408)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div><div class="form-label">Bandtype</div>
+            <select class="form-select" id="bf-tire">
+              <option value="0.0025">Race tubeless</option>
+              <option value="0.0032" selected>Continental GP5000</option>
+              <option value="0.0040">Standaard clincher</option>
+              <option value="0.0055">Trainingsband</option>
+              <option value="0.0080">Gravel</option>
+              <option value="0.0120">MTB</option>
+            </select>
+          </div>
+          <div><div class="form-label">Bandspanning (bar)</div><input type="number" class="form-input" id="bf-pressure" value="6.5" step="0.5" min="1" max="9"></div>
+        </div>
+        <button class="save-bike-btn" onclick="saveBike()">Opslaan</button>
       </div>
     </div>
+
     <div class="card">
-      <div class="card-title">Berekende waarden</div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem;">
-        <div class="metric"><div class="metric-label">W/kg (FTP)</div><div class="metric-val" id="profiel-wkg">--</div></div>
-        <div class="metric"><div class="metric-label">BMI</div><div class="metric-val" id="profiel-bmi">--</div></div>
-        <div class="metric"><div class="metric-label">Totaal gewicht</div><div class="metric-val" id="profiel-totalweight">--</div></div>
-        <div class="metric"><div class="metric-label">W/kg totaal</div><div class="metric-val" id="profiel-wkgtotal">--</div></div>
+      <div class="card-title">Kleding & uitrusting <span class="badge-new">uitgebreid</span></div>
+      <div style="margin-bottom:8px;font-size:11px;color:var(--text-muted);">Klik aan wat je draagt — gewicht en CdA worden meegenomen</div>
+      <div id="clothing-grid-top" style="margin-bottom:1rem;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;font-family:'DM Mono',monospace;">Bovenkant</div>
+        <div class="clothing-grid" id="clothing-top"></div>
       </div>
-      <div class="info-box" id="profiel-advice">Vul je gegevens in voor gepersonaliseerd advies.</div>
+      <div id="clothing-grid-bottom" style="margin-bottom:1rem;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;font-family:'DM Mono',monospace;">Onderkant & schoenen</div>
+        <div class="clothing-grid" id="clothing-bottom"></div>
+      </div>
+      <div id="clothing-grid-extra">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;font-family:'DM Mono',monospace;">Extra's</div>
+        <div class="clothing-grid" id="clothing-extra"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);font-size:12px;">
+        <span style="color:var(--text-muted);">Totaal kledinggewicht</span>
+        <span style="font-weight:600;font-family:'DM Mono',monospace;" id="clothing-total-weight">-- kg</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px;">
+        <span style="color:var(--text-muted);">CdA-effect kleding</span>
+        <span style="font-weight:600;font-family:'DM Mono',monospace;" id="clothing-cda-effect">-- m²</span>
+      </div>
     </div>
   </div>
 
   <!-- SEGMENT -->
   <div id="panel-segment" class="panel">
-
-    <div id="setup-card" style="display:none;max-width:440px;margin:2rem auto;">
-      <div style="background:var(--green-deep);border-radius:16px 16px 0 0;padding:2rem;text-align:center;">
-        <div style="width:64px;height:64px;border-radius:16px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
-            <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
-          </svg>
-        </div>
-        <div style="font-size:20px;font-weight:500;color:white;margin-bottom:6px;">Fiets Wat-Als Calculator</div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.6;">Simuleer je Strava-segmenten en ontdek hoeveel sneller je kunt</div>
+    <div id="setup-card" style="display:none;max-width:420px;margin:2rem auto;">
+      <div style="background:var(--green-deep);border-radius:16px 16px 0 0;padding:1.5rem;text-align:center;">
+        <div style="font-size:18px;font-weight:500;color:white;margin-bottom:4px;">Watts-up</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.6;">Verbind met Strava om segmenten te laden</div>
       </div>
-      <div style="background:var(--surface);border-radius:0 0 16px 16px;border:0.5px solid var(--border);border-top:none;padding:1.5rem 2rem 2rem;">
-        <div style="margin-bottom:1.25rem;">
-          <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
-            <div style="width:24px;height:24px;border-radius:50%;background:var(--green-light);color:var(--green-deep);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
-            <div style="font-size:13px;color:var(--text-mid);line-height:1.6;">Ga naar <a href="https://www.strava.com/settings/api" target="_blank" style="color:var(--green);font-weight:500;">strava.com/settings/api</a> en kopieer je <strong style="color:var(--text);font-weight:500;">Client ID</strong></div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
-            <div style="width:24px;height:24px;border-radius:50%;background:var(--green-light);color:var(--green-deep);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
-            <div style="font-size:13px;color:var(--text-mid);line-height:1.6;">Plak je Client ID hieronder en klik op <strong style="color:var(--text);font-weight:500;">Inloggen met Strava</strong></div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;">
-            <div style="width:24px;height:24px;border-radius:50%;background:var(--green-light);color:var(--green-deep);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
-            <div style="font-size:13px;color:var(--text-mid);line-height:1.6;">Geef eenmalig toestemming - daarna ben je direct verbonden</div>
-          </div>
+      <div style="background:var(--surface);border-radius:0 0 16px 16px;border:0.5px solid var(--border);border-top:none;padding:1.5rem;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Strava Client ID</div>
+        <div style="display:flex;gap:7px;margin-bottom:10px;">
+          <input type="text" id="client-id-input" placeholder="bijv. 123456" style="flex:1;padding:9px 12px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:14px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;" oninput="this.style.borderColor=this.value.length>2?'var(--green)':'var(--border-mid)'">
         </div>
-        <div style="height:0.5px;background:var(--border);margin-bottom:1.25rem;"></div>
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Jouw Strava Client ID</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input type="text" id="client-id-input" placeholder="bijv. 123456"
-            style="flex:1;padding:10px 14px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:15px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;"
-            oninput="this.style.borderColor=this.value.length>2?'var(--green)':'var(--border-mid)'">
-        </div>
-        <button onclick="saveClientId()" style="width:100%;padding:12px;background:var(--strava);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        <button onclick="saveClientId()" style="width:100%;padding:11px;background:var(--strava);color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
           Inloggen met Strava
         </button>
-        <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px;line-height:1.5;">Je Client ID wordt alleen lokaal opgeslagen in je browser.</div>
+        <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:8px;">Client ID: strava.com/settings/api</div>
       </div>
     </div>
 
     <div id="login-prompt-card" class="login-prompt">
       <div class="login-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FC4C02" stroke-width="2">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FC4C02" stroke-width="2">
           <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
         </svg>
       </div>
       <div class="login-title">Verbind met Strava</div>
-      <div class="login-sub">Log in met je Strava-account om je gestemde segmenten te laden en te simuleren.</div>
+      <div class="login-sub">Log in om je gestemde segmenten te laden</div>
       <button class="login-strava-btn" onclick="loginWithStrava()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
         Inloggen met Strava
       </button>
-      <div style="margin-top:1rem;">
-        <button onclick="document.getElementById('setup-card').style.display='block';document.getElementById('login-prompt-card').style.display='none';" style="background:none;border:none;font-size:12px;color:var(--text-muted);cursor:pointer;text-decoration:underline;font-family:inherit;">Client ID wijzigen</button>
+      <div style="margin-top:10px;">
+        <button onclick="document.getElementById('setup-card').style.display='block';document.getElementById('login-prompt-card').style.display='none';" style="background:none;border:none;font-size:11px;color:var(--text-muted);cursor:pointer;text-decoration:underline;font-family:inherit;">Client ID wijzigen</button>
       </div>
     </div>
 
-    <div id="segment-search-card" class="card" style="display:none">
-      <div class="card-title">Zoek jouw segment</div>
+    <div id="segment-search-card" class="card" style="display:none;">
+      <div class="card-title">Zoek segment</div>
       <div class="search-wrap">
-        <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam, bijv. Cauberg..." oninput="filterSegments()">
+        <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam..." oninput="filterSegments()">
         <button class="search-btn" onclick="loadSegments()">Vernieuwen</button>
       </div>
-      <div id="segment-list" class="segment-list"><div class="loading-text">Segmenten laden...</div></div>
+      <div id="segment-list" class="segment-list"><div class="loading-text">Laden...</div></div>
     </div>
 
-    <div id="segment-detail-card" class="card" style="display:none">
-      <div class="card-title" id="seg-detail-title">Geselecteerd segment</div>
+    <div id="segment-detail-card" class="card" style="display:none;">
+      <div class="card-title" id="seg-detail-title">Segment</div>
       <div class="seg-stats">
         <div class="stat"><div class="stat-label">Afstand</div><div class="stat-val" id="seg-dist">--</div></div>
-        <div class="stat"><div class="stat-label">Hoogteverschil</div><div class="stat-val" id="seg-elev">--</div></div>
+        <div class="stat"><div class="stat-label">Hoogte</div><div class="stat-val" id="seg-elev">--</div></div>
         <div class="stat"><div class="stat-label">Gem. helling</div><div class="stat-val" id="seg-grade">--</div></div>
         <div class="stat"><div class="stat-label">Max helling</div><div class="stat-val" id="seg-maxgrade">--</div></div>
         <div class="stat"><div class="stat-label">Jouw PR</div><div class="stat-val" id="seg-pr">--</div></div>
-        <div class="stat"><div class="stat-label">Pogingen</div><div class="stat-val" id="seg-efforts">--</div></div>
+        <div class="stat"><div class="stat-label">PR datum</div><div class="stat-val" id="seg-pr-date" style="font-size:12px;">--</div></div>
       </div>
-      <div class="profile-wrap"><canvas id="profile-canvas"></canvas></div>
+      <div id="seg-kom-row" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:0.5px solid var(--border);margin-top:4px;font-size:12px;display:none;">
+        <span style="color:var(--text-muted);">Verschil met KOM</span>
+        <span style="font-weight:600;color:var(--coral);font-family:'DM Mono',monospace;" id="seg-kom-diff">--</span>
+      </div>
+      <div class="profile-wrap"><canvas class="seg-canvas" id="profile-canvas"></canvas></div>
     </div>
 
-    <div id="mytime-card" class="card" style="display:none">
-      <div class="card-title">Jouw doeltijd</div>
-      <div class="row">
-        <div class="row-label">Minuten</div>
+    <div id="mytime-card" class="card" style="display:none;">
+      <div class="card-title">Basistijd</div>
+      <div class="mytime-row">
+        <div class="mytime-label">Minuten</div>
         <input type="range" id="mytime-min" min="0" max="120" step="1" value="20">
-        <div class="row-val"><span id="mytime-min-out">20</span> min</div>
+        <div class="mytime-val"><span id="mytime-min-out">20</span> min</div>
       </div>
-      <div class="row">
-        <div class="row-label">Seconden</div>
+      <div class="mytime-row">
+        <div class="mytime-label">Seconden</div>
         <input type="range" id="mytime-sec" min="0" max="59" step="1" value="0">
-        <div class="row-val"><span id="mytime-sec-out">00</span> sec</div>
+        <div class="mytime-val"><span id="mytime-sec-out">00</span> sec</div>
       </div>
-      <div class="info-box" id="mytime-info">Dit is jouw PR op dit segment. Pas aan als je een andere basistijd wilt gebruiken.</div>
+      <div class="info-box" id="mytime-info">Jouw PR is automatisch ingevuld.</div>
     </div>
-
   </div>
 
   <!-- SCENARIO -->
   <div id="panel-scenario" class="panel">
     <div class="card">
-      <div class="card-title">Rijder en fiets</div>
-      <div class="row"><div class="row-label">Vermogen (W)</div><input type="range" id="power" min="100" max="500" step="5" value="220"><div class="row-val"><span id="power-out">220</span> W</div></div>
-      <div class="row"><div class="row-label">Gewicht rijder (kg)</div><input type="range" id="weight" min="50" max="130" step="1" value="78"><div class="row-val"><span id="weight-out">78</span> kg</div></div>
-      <div class="row"><div class="row-label">Gewicht fiets (kg)</div><input type="range" id="bikeweight" min="5" max="15" step="0.5" value="9"><div class="row-val"><span id="bikeweight-out">9.0</span> kg</div></div>
-      <div class="sep"></div>
-      <div class="section-header"><div class="section-dot"></div>Wat als?</div>
+      <div class="card-title">Wat als?</div>
       <div class="row"><div class="row-label">Gewichtsverlies (kg)</div><input type="range" id="wloss" min="0" max="20" step="0.5" value="0"><div class="row-val">-<span id="wloss-out">0.0</span> kg</div></div>
-      <div class="row"><div class="row-label">Fiets lichter (kg)</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="row-val">-<span id="bikeloss-out">0.0</span> kg</div></div>
       <div class="row"><div class="row-label">Extra vermogen (W)</div><input type="range" id="powergain" min="0" max="80" step="5" value="0"><div class="row-val">+<span id="powergain-out">0</span> W</div></div>
+      <div class="row"><div class="row-label">Fiets lichter (kg)</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="row-val">-<span id="bikeloss-out">0.0</span> kg</div></div>
     </div>
     <div class="card">
-      <div class="card-title">Aerodynamica</div>
+      <div class="card-title">Positie & groep</div>
       <div class="select-row"><label>Rijpositie</label>
         <select id="aero">
-          <option value="0">Tops (CdA 0.408)</option>
-          <option value="1" selected>Hoods (CdA 0.324)</option>
-          <option value="2">Drops (CdA 0.307)</option>
-          <option value="3">Aerobars (CdA 0.230)</option>
-          <option value="4">TT-positie (CdA 0.200)</option>
+          <option value="0.408">Tops (CdA 0.408)</option>
+          <option value="0.324" selected>Hoods (CdA 0.324)</option>
+          <option value="0.307">Drops (CdA 0.307)</option>
+          <option value="0.230">Aerobars (CdA 0.230)</option>
+          <option value="0.200">TT-positie (CdA 0.200)</option>
         </select>
       </div>
       <div class="select-row"><label>Groepsrit</label>
@@ -320,51 +533,10 @@
         </select>
       </div>
     </div>
-  </div>
-
-  <!-- WEER -->
-  <div id="panel-weer" class="panel">
     <div class="card">
-      <div class="card-title">Weersomstandigheden</div>
-      <div class="row"><div class="row-label">Temperatuur (C)</div><input type="range" id="temp" min="-10" max="45" step="1" value="18"><div class="row-val"><span id="temp-out">18</span> C</div></div>
-      <div class="row"><div class="row-label">Luchtdruk (hPa)</div><input type="range" id="pressure" min="950" max="1050" step="1" value="1013"><div class="row-val"><span id="pressure-out">1013</span></div></div>
-      <div class="row"><div class="row-label">Luchtvochtigheid (%)</div><input type="range" id="humidity" min="0" max="100" step="5" value="60"><div class="row-val"><span id="humidity-out">60</span> %</div></div>
-      <div class="row"><div class="row-label">Hoogte boven zee (m)</div><input type="range" id="altitude" min="0" max="3000" step="50" value="0"><div class="row-val"><span id="altitude-out">0</span> m</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Wind</div>
-      <div class="row"><div class="row-label">Windsnelheid (km/u)</div><input type="range" id="wind" min="-40" max="40" step="1" value="0"><div class="row-val"><span id="wind-out">0</span> km/u</div></div>
-      <div class="row"><div class="row-label">Zijwind hoek (gr)</div><input type="range" id="windangle" min="0" max="90" step="5" value="0"><div class="row-val"><span id="windangle-out">0</span> gr</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Fysiologisch effect</div>
-      <div class="row"><div class="row-label">Hitte-effect op FTP (%)</div><input type="range" id="heateffect" min="-20" max="0" step="1" value="0"><div class="row-val"><span id="heateffect-out">0</span> %</div></div>
+      <div class="card-title">Weer & conditie</div>
+      <div class="row"><div class="row-label">Wind (km/u, + is tegen)</div><input type="range" id="wind" min="-40" max="40" step="1" value="0"><div class="row-val"><span id="wind-out">0</span> km/u</div></div>
       <div class="row"><div class="row-label">Vermoeidheid (dag)</div><input type="range" id="fatigue" min="1" max="5" step="1" value="1"><div class="row-val">dag <span id="fatigue-out">1</span></div></div>
-    </div>
-  </div>
-
-  <!-- MATERIAAL -->
-  <div id="panel-materiaal" class="panel">
-    <div class="card">
-      <div class="card-title">Banden</div>
-      <div class="select-row"><label>Bandtype</label>
-        <select id="tire">
-          <option value="0.0025">Race tubeless (Crr 0.0025)</option>
-          <option value="0.0032" selected>Continental GP5000 (Crr 0.0032)</option>
-          <option value="0.0040">Standaard clincher (Crr 0.0040)</option>
-          <option value="0.0055">Trainingsband (Crr 0.0055)</option>
-          <option value="0.0080">Gravel (Crr 0.0080)</option>
-        </select>
-      </div>
-      <div class="row"><div class="row-label">Bandspanning (psi)</div><input type="range" id="tirep" min="60" max="120" step="5" value="90"><div class="row-val"><span id="tirep-out">90</span> psi</div></div>
-      <div class="select-row"><label>Wegdek</label>
-        <select id="surface">
-          <option value="0">Goed asfalt</option>
-          <option value="1">Matig asfalt</option>
-          <option value="2">Klinkers</option>
-          <option value="3">Gravel</option>
-        </select>
-      </div>
     </div>
     <div class="card">
       <div class="card-title">Aandrijflijn</div>
@@ -376,7 +548,7 @@
           <option value="0.990">Gewaxte ketting (99.0%)</option>
         </select>
       </div>
-      <div class="select-row"><label>Derailleur wieltjes</label>
+      <div class="select-row"><label>Derailleur</label>
         <select id="derailleur">
           <option value="0.995" selected>Stalen lagers (99.5%)</option>
           <option value="0.997">Keramische lagers (99.7%)</option>
@@ -384,51 +556,23 @@
         </select>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">Kleding en uitrusting</div>
-      <div class="select-row"><label>Kleding</label>
-        <select id="clothing">
-          <option value="0.010">Casual kleding (+CdA 0.010)</option>
-          <option value="0.005" selected>Normale fietskleding (+0.005)</option>
-          <option value="0.000">Aero fietskleding (0.000)</option>
-          <option value="-0.010">Skinsuit (-0.010)</option>
-          <option value="-0.020">TT skinsuit (-0.020)</option>
-        </select>
-      </div>
-      <div class="select-row"><label>Helm</label>
-        <select id="helmet">
-          <option value="0.010">Gewone fietshelm (+0.010)</option>
-          <option value="0.005" selected>Aero fietshelm (+0.005)</option>
-          <option value="0.000">TT aerohelm (0.000)</option>
-        </select>
-      </div>
-      <div class="select-row"><label>Wielset</label>
-        <select id="wheels">
-          <option value="0.010">Standaard wielen (+0.010)</option>
-          <option value="0.005" selected>40mm carbon (+0.005)</option>
-          <option value="0.000">60mm carbon (0.000)</option>
-          <option value="-0.010">80mm carbon (-0.010)</option>
-          <option value="-0.015">Disc (-0.015)</option>
-        </select>
-      </div>
-    </div>
   </div>
 
   <!-- RESULTAAT -->
   <div id="panel-resultaat" class="panel">
-    <div class="warn-box" id="no-seg-warn">Selecteer eerst een segment op het Segment-tabblad.</div>
+    <div class="warn-box" id="no-seg-warn">Selecteer eerst een segment.</div>
     <div id="results-content">
       <div class="card">
         <div class="card-title">Gesimuleerde tijd</div>
         <div class="result-big">
-          <div class="result-label-top">Nieuwe tijd</div>
+          <div class="result-label">Nieuwe tijd</div>
           <div class="result-time" id="res-time">--</div>
           <div class="result-diff neu" id="res-diff">--</div>
         </div>
         <div class="metrics">
           <div class="metric"><div class="metric-label">Jouw PR</div><div class="metric-val" id="res-mybase">--</div></div>
           <div class="metric"><div class="metric-label">Gem. snelheid</div><div class="metric-val" id="res-speed">--</div></div>
-          <div class="metric"><div class="metric-label">Verschil met PR</div><div class="metric-val" id="res-pr">--</div></div>
+          <div class="metric"><div class="metric-label">Verschil PR</div><div class="metric-val" id="res-pr">--</div></div>
           <div class="metric"><div class="metric-label">W/kg</div><div class="metric-val" id="res-wkg">--</div></div>
         </div>
       </div>
@@ -444,81 +588,404 @@
       </div>
       <div class="card">
         <div class="card-title">Advies</div>
-        <div id="advice" style="font-size:13px;color:var(--text-mid);line-height:1.8;"></div>
+        <div id="advice" style="font-size:12px;color:var(--text-mid);line-height:1.8;"></div>
       </div>
     </div>
   </div>
-
 </div>
 
-<footer>Fiets Wat-Als Calculator -- berekeningen gebaseerd op fysische modellen. Resultaten zijn schattingen.</footer>
+<footer>Watts-up — berekeningen gebaseerd op fysische modellen. Resultaten zijn schattingen.</footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 var accessToken = null;
 var athlete = null;
 var allSegments = [];
 var selectedSegment = null;
 var gpxPoints = [];
-var profielData = null;
-try { profielData = JSON.parse(localStorage.getItem('profiel_data') || 'null'); } catch(e) {}
+var weatherData = null;
+var weatherChart = null;
+var selectedDay = 0;
 var STRAVA_CLIENT_ID = localStorage.getItem('strava_client_id') || '';
 
-function updateProfielBerekeningen() {
-  var weight = parseFloat(document.getElementById('profiel-weight').value);
-  var height = parseFloat(document.getElementById('profiel-height').value);
-  var ftp    = parseFloat(document.getElementById('profiel-ftp').value);
-  var bikeW  = parseFloat(document.getElementById('profiel-bikeweight').value);
-  var wkg      = (ftp / weight).toFixed(2);
-  var bmi      = (weight / Math.pow(height / 100, 2)).toFixed(1);
-  var totalW   = (weight + bikeW).toFixed(1);
-  var wkgTotal = (ftp / (weight + bikeW)).toFixed(2);
-  document.getElementById('profiel-wkg').textContent = wkg + ' W/kg';
-  document.getElementById('profiel-bmi').textContent = bmi;
-  document.getElementById('profiel-totalweight').textContent = totalW + ' kg';
-  document.getElementById('profiel-wkgtotal').textContent = wkgTotal + ' W/kg';
-  var adv = wkg < 2.5 ? 'Beginnersniveau -- focus op basisconditie opbouwen.' :
-            wkg < 3.5 ? 'Recreatief niveau -- goede basis, ruimte voor verbetering.' :
-            wkg < 4.5 ? 'Gevorderd niveau -- sterk! Vergelijkbaar met clubrenners.' :
-            wkg < 5.5 ? 'Semi-pro niveau -- uitstekend vermogen.' : 'Pro niveau -- wereldklasse prestatie.';
-  document.getElementById('profiel-advice').textContent = adv;
-  document.getElementById('weight').value = weight;
-  document.getElementById('weight-out').textContent = weight;
-  document.getElementById('bikeweight').value = bikeW;
-  document.getElementById('bikeweight-out').textContent = bikeW.toFixed(1);
-  document.getElementById('power').value = ftp;
-  document.getElementById('power-out').textContent = ftp;
-  try { localStorage.setItem('profiel_data', JSON.stringify({ weight: weight, height: height, ftp: ftp, bikeW: bikeW })); } catch(e) {}
+var profiel = { weight: 75, height: 175, ftp: 220, age: 35 };
+var bikes = [];
+var activebikeIdx = 0;
+
+var clothingItems = {
+  top: [
+    { id:'shirt', label:'Fietsshirt', weight:0.18, cda:0.002, on:true },
+    { id:'base', label:'Ondershirt', weight:0.10, cda:0.001, on:false },
+    { id:'windjack', label:'Windjasje', weight:0.22, cda:0.008, on:false },
+    { id:'regenjas', label:'Regenjasje', weight:0.35, cda:0.015, on:false },
+    { id:'armw', label:'Armwarmers', weight:0.08, cda:0.001, on:false },
+    { id:'gloves', label:'Handschoenen', weight:0.06, cda:0.001, on:false }
+  ],
+  bottom: [
+    { id:'broek', label:'Fietsbroek', weight:0.22, cda:0.002, on:true },
+    { id:'bib', label:'Bibshort', weight:0.24, cda:0.002, on:false },
+    { id:'legw', label:'Beenwarmers', weight:0.12, cda:0.002, on:false },
+    { id:'shoes', label:'Fietsschoenen', weight:0.52, cda:0.003, on:true },
+    { id:'socks', label:'Sokken', weight:0.06, cda:0.000, on:true },
+    { id:'overshoes', label:'Overschoenen', weight:0.14, cda:-0.004, on:false }
+  ],
+  extra: [
+    { id:'helm', label:'Aero helm', weight:0.26, cda:-0.005, on:true },
+    { id:'helmnorm', label:'Gewone helm', weight:0.28, cda:0.005, on:false },
+    { id:'bidon1', label:'1 bidon 500ml', weight:0.52, cda:0.000, on:true },
+    { id:'bidon2', label:'2 bidons', weight:1.04, cda:0.000, on:false },
+    { id:'bidon3', label:'Bidon 750ml', weight:0.78, cda:0.000, on:false },
+    { id:'tas', label:'Fietstasje', weight:0.45, cda:0.008, on:false }
+  ]
+};
+
+var windDirs = ['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
+function degToDir(deg) { return windDirs[Math.round(deg/22.5)%16]; }
+
+function calcFtpEffect(temp) {
+  if (temp >= 15 && temp <= 25) return 0;
+  if (temp < 15) return Math.round((15-temp)*-0.3*10)/10;
+  return Math.round((temp-25)*-0.5*10)/10;
+}
+
+function calcCdaEffect(temp, pressure, humidity) {
+  var rhoStd = 1.225;
+  var T = temp+273.15;
+  var P = pressure*100;
+  var Psat = 610.78*Math.exp(17.27*temp/(temp+237.3));
+  var Pv = (humidity/100)*Psat;
+  var rho = (P*0.028964-Pv*0.010948)/(8.314*T);
+  return Math.round((rho-rhoStd)/rhoStd*100*10)/10;
+}
+
+function weatherIcon(code) {
+  if (code === 0) return '☀';
+  if (code <= 2) return '⛅';
+  if (code === 3) return '☁';
+  if (code <= 48) return '🌫';
+  if (code <= 55) return '🌦';
+  if (code <= 65) return '🌧';
+  if (code <= 75) return '❄';
+  if (code <= 82) return '🌦';
+  return '⛈';
+}
+
+function dayName(dateStr, idx) {
+  var days = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
+  var d = new Date(dateStr);
+  if (idx === 0) return 'Vandaag';
+  if (idx === 1) return 'Morgen';
+  return days[d.getDay()];
+}
+
+function updateClock() {
+  var now = new Date();
+  var el = document.getElementById('loc-time');
+  if (el) el.textContent = now.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function initWeather() {
+  if (!navigator.geolocation) {
+    document.getElementById('weer-loading').style.display = 'none';
+    document.getElementById('weer-error').style.display = 'block';
+    document.getElementById('weer-error').textContent = 'Geolocatie niet beschikbaar.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async function(pos) {
+    var lat = pos.coords.latitude, lon = pos.coords.longitude;
+    try {
+      var place = 'Jouw locatie';
+      try {
+        var gr = await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json&accept-language=nl');
+        var gd = await gr.json();
+        place = gd.address.city || gd.address.town || gd.address.village || gd.address.municipality || 'Jouw locatie';
+      } catch(e) {}
+      document.getElementById('loc-name').textContent = place;
+      updateClock();
+      setInterval(updateClock, 30000);
+
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+
+        '&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index,weather_code'+
+        '&hourly=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,weather_code'+
+        '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,precipitation_sum'+
+        '&timezone=auto&forecast_days=7';
+      var wr = await fetch(url);
+      weatherData = await wr.json();
+      document.getElementById('weer-loading').style.display = 'none';
+      document.getElementById('weer-live').style.display = 'block';
+      document.getElementById('forecast-card').style.display = 'block';
+      renderLiveWeather(weatherData);
+      renderDays(weatherData);
+      selectDay(0);
+    } catch(e) {
+      document.getElementById('weer-loading').style.display = 'none';
+      document.getElementById('weer-error').style.display = 'block';
+      document.getElementById('weer-error').textContent = 'Kon weerdata niet laden: ' + e.message;
+    }
+  }, function() {
+    document.getElementById('weer-loading').style.display = 'none';
+    document.getElementById('weer-error').style.display = 'block';
+    document.getElementById('weer-error').textContent = 'Locatietoestemming geweigerd. Sta locatietoegang toe.';
+  }, {timeout:10000});
+}
+
+function renderLiveWeather(data) {
+  var c = data.current;
+  document.getElementById('lv-temp').textContent = Math.round(c.temperature_2m) + 'C';
+  document.getElementById('lv-feels').textContent = 'Gevoels ' + Math.round(c.apparent_temperature) + 'C';
+  document.getElementById('lv-wind').textContent = Math.round(c.wind_speed_10m) + ' km/u';
+  document.getElementById('lv-winddir').textContent = degToDir(c.wind_direction_10m);
+  document.getElementById('lv-rain').textContent = c.precipitation.toFixed(1) + ' mm';
+  document.getElementById('lv-humid').textContent = 'Vocht ' + c.relative_humidity_2m + '%';
+  document.getElementById('lv-pressure').textContent = Math.round(c.surface_pressure);
+  document.getElementById('lv-apptemp').textContent = Math.round(c.apparent_temperature) + 'C';
+  var uv = c.uv_index || 0;
+  document.getElementById('lv-uv').textContent = uv.toFixed(1);
+  document.getElementById('lv-uvlabel').textContent = uv < 3 ? 'Laag' : uv < 6 ? 'Matig' : 'Hoog';
+  var ftpEff = calcFtpEffect(c.temperature_2m);
+  var ftp = parseFloat(document.getElementById('pf-ftp').value) || 220;
+  var watts = Math.round(ftp * Math.abs(ftpEff) / 100);
+  var bar = document.getElementById('ftp-impact-bar');
+  document.getElementById('ftp-impact-text').textContent = 'FTP-effect bij ' + Math.round(c.temperature_2m) + 'C';
+  document.getElementById('ftp-impact-val').textContent = (ftpEff >= 0 ? '+' : '') + ftpEff + '% (' + (ftpEff < 0 ? '-' : '+') + watts + 'W)';
+  bar.className = 'ftp-impact ' + (ftpEff < -1 ? 'neg' : ftpEff > 0 ? 'pos' : 'neu');
+}
+
+function renderDays(data) {
+  var html = '';
+  for (var i = 0; i < data.daily.time.length; i++) {
+    var active = i === selectedDay ? ' active' : '';
+    html += '<div class="day-card'+active+'" onclick="selectDay('+i+')">'+
+      '<div class="day-name">'+dayName(data.daily.time[i],i)+'</div>'+
+      '<div class="day-icon">'+weatherIcon(data.daily.weather_code[i])+'</div>'+
+      '<div class="day-temp">'+Math.round(data.daily.temperature_2m_max[i])+'° / '+Math.round(data.daily.temperature_2m_min[i])+'°</div>'+
+      '<div class="day-wind">'+Math.round(data.daily.wind_speed_10m_max[i])+' km/u</div>'+
+      '</div>';
+  }
+  document.getElementById('days-scroll').innerHTML = html;
+}
+
+function selectDay(idx) {
+  selectedDay = idx;
+  renderDays(weatherData);
+  document.getElementById('detail-title').textContent = '24-uurs verloop - ' + dayName(weatherData.daily.time[idx], idx);
+  renderHourlyChart(weatherData, idx);
+  document.getElementById('detail-card').style.display = 'block';
+}
+
+function renderHourlyChart(data, dayIdx) {
+  var s = dayIdx * 24;
+  var temps = data.hourly.temperature_2m.slice(s, s+24);
+  var winds = data.hourly.wind_speed_10m.slice(s, s+24);
+  var rains = data.hourly.precipitation.slice(s, s+24);
+  var humids = data.hourly.relative_humidity_2m.slice(s, s+24);
+  var pressures = data.hourly.surface_pressure.slice(s, s+24);
+  var ftpEffs = temps.map(function(t) { return calcFtpEffect(t); });
+  var cdaEffs = temps.map(function(t,i) { return calcCdaEffect(t, pressures[i]||1013, humids[i]||60); });
+  var labels = [];
+  for (var h = 0; h < 24; h++) labels.push(String(h).padStart(2,'0')+':00');
+  var canvas = document.getElementById('weather-chart');
+  if (weatherChart) { weatherChart.destroy(); weatherChart = null; }
+  var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var gc = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  var tc = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
+  weatherChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: labels, datasets: [
+      { label:'Temp', data:temps, borderColor:'#D85A30', backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.4, yAxisID:'y' },
+      { label:'Wind', data:winds, borderColor:'#378ADD', backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.4, yAxisID:'y' },
+      { label:'Neerslag', data:rains, borderColor:'#85B7EB', backgroundColor:'rgba(133,183,235,0.12)', borderWidth:1.5, pointRadius:0, fill:true, yAxisID:'y2' },
+      { label:'FTP-eff', data:ftpEffs, borderColor:'#EF9F27', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, borderDash:[4,3], yAxisID:'y3' },
+      { label:'CdA-eff', data:cdaEffs, borderColor:'#7F77DD', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, borderDash:[2,3], yAxisID:'y3' }
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var u=['°C',' km/u',' mm','%','%'];return ctx.dataset.label+': '+(typeof ctx.raw==='number'?ctx.raw.toFixed(1):ctx.raw)+(u[ctx.datasetIndex]||'');
+      }}}},
+      scales:{
+        x:{grid:{color:gc},ticks:{color:tc,maxTicksLimit:8,font:{size:10}}},
+        y:{position:'left',grid:{color:gc},ticks:{color:tc,font:{size:10}}},
+        y2:{position:'right',grid:{display:false},ticks:{color:'#85B7EB',font:{size:10}}},
+        y3:{position:'right',grid:{display:false},ticks:{color:'#EF9F27',font:{size:10}},offset:true}
+      }
+    }
+  });
+  updateMomentData(data, dayIdx, parseInt(document.getElementById('time-slider').value));
+}
+
+function updateMomentData(data, dayIdx, hour) {
+  var s = dayIdx * 24 + hour;
+  var temp = data.hourly.temperature_2m[s] || 15;
+  var wind = data.hourly.wind_speed_10m[s] || 0;
+  var windDir = data.hourly.wind_direction_10m[s] || 0;
+  var rain = data.hourly.precipitation[s] || 0;
+  var humid = data.hourly.relative_humidity_2m[s] || 60;
+  var pressure = data.hourly.surface_pressure[s] || 1013;
+  var ftpEff = calcFtpEffect(temp);
+  var cdaEff = calcCdaEffect(temp, pressure, humid);
+  var windEffect = -(wind * 0.8);
+  var rainEffect = rain > 0.5 ? -1.5 : 0;
+  var netto = ftpEff + cdaEff + windEffect + rainEffect;
+  var ftp = parseFloat(document.getElementById('pf-ftp').value) || 220;
+  document.getElementById('selected-time-label').textContent = String(hour).padStart(2,'0') + ':00 - ' + dayName(data.daily.time[dayIdx], dayIdx);
+  document.getElementById('mt-temp').textContent = Math.round(temp) + 'C';
+  setMomentEff('mt-temp-eff', ftpEff !== 0 ? 'FTP: '+(ftpEff>0?'+':'')+ftpEff+'%' : 'Optimaal bereik', ftpEff);
+  document.getElementById('mt-wind').textContent = Math.round(wind) + ' km/u ' + degToDir(windDir);
+  setMomentEff('mt-wind-eff', 'Weerstand: '+windEffect.toFixed(1)+'%', windEffect);
+  document.getElementById('mt-rain').textContent = rain.toFixed(1) + ' mm';
+  setMomentEff('mt-rain-eff', rain > 0.5 ? 'Nat: -1.5%' : 'Droog', rainEffect);
+  document.getElementById('mt-ftp').textContent = (ftpEff>=0?'+':'')+ftpEff+'%';
+  setMomentEff('mt-ftp-eff', (ftpEff<0?'-':'+')+Math.round(ftp*Math.abs(ftpEff)/100)+'W', ftpEff);
+  document.getElementById('mt-cda').textContent = (cdaEff>=0?'+':'')+cdaEff+'%';
+  setMomentEff('mt-cda-eff', cdaEff<0?'Dunner lucht':'Dikker lucht', -cdaEff);
+  document.getElementById('mt-netto').textContent = (netto>=0?'+':'')+netto.toFixed(1)+'%';
+  setMomentEff('mt-netto-eff', 'Totaal weereffect', -netto);
+}
+
+function setMomentEff(id, text, val) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'moment-eff ' + (val > 0.2 ? 'pos' : val < -0.2 ? 'neg' : '');
+}
+
+document.getElementById('time-slider').addEventListener('input', function() {
+  if (weatherData) updateMomentData(weatherData, selectedDay, parseInt(this.value));
+});
+
+function updateProfiel() {
+  var w = parseFloat(document.getElementById('pf-weight').value) || 75;
+  var h = parseFloat(document.getElementById('pf-height').value) || 175;
+  var ftp = parseFloat(document.getElementById('pf-ftp').value) || 220;
+  var bikeW = getActiveBike() ? parseFloat(getActiveBike().weight) : 9;
+  profiel = { weight:w, height:h, ftp:ftp, age:parseInt(document.getElementById('pf-age').value)||35 };
+  document.getElementById('pf-wkg').textContent = (ftp/w).toFixed(2) + ' W/kg';
+  document.getElementById('pf-bmi').textContent = (w/Math.pow(h/100,2)).toFixed(1);
+  document.getElementById('pf-total').textContent = (w+bikeW).toFixed(1) + ' kg';
+  document.getElementById('pf-wkgt').textContent = (ftp/(w+bikeW)).toFixed(2) + ' W/kg';
+  var wkg = ftp/w;
+  var adv = wkg<2.5?'Beginnersniveau - focus op basisconditie.':wkg<3.5?'Recreatief niveau - goede basis.':wkg<4.5?'Gevorderd - vergelijkbaar met clubrenners.':wkg<5.5?'Semi-pro niveau.':'Pro niveau.';
+  document.getElementById('pf-advice').textContent = adv;
+  try { localStorage.setItem('profiel_data', JSON.stringify(profiel)); } catch(e) {}
   calcResult();
 }
 
-function laadProfielVanStrava() {
-  if (!athlete) return;
-  if (athlete.weight && athlete.weight > 0) {
-    document.getElementById('profiel-weight').value = athlete.weight;
-    document.getElementById('profiel-weight-out').textContent = athlete.weight;
-  }
-  if (athlete.ftp && athlete.ftp > 0) {
-    document.getElementById('profiel-ftp').value = athlete.ftp;
-    document.getElementById('profiel-ftp-out').textContent = athlete.ftp;
-  }
-  if (athlete.profile) document.getElementById('profiel-avatar').src = athlete.profile;
-  if (athlete.firstname) document.getElementById('profiel-naam').textContent = athlete.firstname + ' ' + (athlete.lastname || '');
-  document.getElementById('profiel-strava-info').style.display = 'block';
-  updateProfielBerekeningen();
+function loadSavedProfiel() {
+  try {
+    var p = JSON.parse(localStorage.getItem('profiel_data') || 'null');
+    if (p) {
+      if (p.weight) document.getElementById('pf-weight').value = p.weight;
+      if (p.height) document.getElementById('pf-height').value = p.height;
+      if (p.ftp) document.getElementById('pf-ftp').value = p.ftp;
+      if (p.age) document.getElementById('pf-age').value = p.age;
+    }
+  } catch(e) {}
+  updateProfiel();
 }
 
-function laadOpgeslagenProfiel() {
-  if (!profielData) return;
-  if (profielData.weight) { document.getElementById('profiel-weight').value = profielData.weight; document.getElementById('profiel-weight-out').textContent = profielData.weight; }
-  if (profielData.height) { document.getElementById('profiel-height').value = profielData.height; document.getElementById('profiel-height-out').textContent = profielData.height; }
-  if (profielData.ftp)    { document.getElementById('profiel-ftp').value = profielData.ftp; document.getElementById('profiel-ftp-out').textContent = profielData.ftp; }
-  if (profielData.bikeW)  { document.getElementById('profiel-bikeweight').value = profielData.bikeW; document.getElementById('profiel-bikeweight-out').textContent = parseFloat(profielData.bikeW).toFixed(1); }
-  updateProfielBerekeningen();
+function getActiveBike() {
+  if (!bikes.length) return null;
+  return bikes[Math.min(activebikeIdx, bikes.length-1)];
+}
+
+function renderGarage() {
+  var html = '';
+  if (!bikes.length) { html = '<div class="loading-text">Nog geen fietsen. Voeg je eerste fiets toe.</div>'; }
+  else {
+    bikes.forEach(function(b, i) {
+      var active = i === activebikeIdx ? ' active' : '';
+      html += '<div class="bike-card'+active+'" onclick="selectBike('+i+')">'+
+        '<div class="bike-icon-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(active?'#1D9E75':'var(--text-muted)')+'" stroke-width="2"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/></svg></div>'+
+        '<div><div class="bike-name">'+b.name+'</div><div class="bike-sub">'+b.weight+' kg - CdA '+b.cda+'</div></div>'+
+        (active ? '<div class="active-badge">actief</div>' : '')+
+        '</div>';
+    });
+  }
+  document.getElementById('garage-list').innerHTML = html;
+  updateProfiel();
+}
+
+function selectBike(idx) {
+  activebikeIdx = idx;
+  renderGarage();
+  calcResult();
+  try { localStorage.setItem('active_bike', idx); } catch(e) {}
+}
+
+function toggleBikeForm() {
+  var f = document.getElementById('bike-form');
+  f.classList.toggle('open');
+}
+
+function saveBike() {
+  var name = document.getElementById('bf-name').value.trim();
+  if (!name) { alert('Vul een naam in.'); return; }
+  var bike = {
+    name: name,
+    type: document.getElementById('bf-type').value,
+    weight: parseFloat(document.getElementById('bf-weight').value),
+    cda: parseFloat(document.getElementById('bf-cda').value),
+    tire: parseFloat(document.getElementById('bf-tire').value),
+    tirePressure: parseFloat(document.getElementById('bf-pressure').value)
+  };
+  bikes.push(bike);
+  activebikeIdx = bikes.length - 1;
+  try { localStorage.setItem('bikes_data', JSON.stringify(bikes)); localStorage.setItem('active_bike', activebikeIdx); } catch(e) {}
+  document.getElementById('bike-form').classList.remove('open');
+  document.getElementById('bf-name').value = '';
+  renderGarage();
+}
+
+function loadSavedBikes() {
+  try {
+    var b = JSON.parse(localStorage.getItem('bikes_data') || 'null');
+    if (b && b.length) bikes = b;
+    var ai = localStorage.getItem('active_bike');
+    if (ai !== null) activebikeIdx = parseInt(ai);
+  } catch(e) {}
+  renderGarage();
+}
+
+function renderClothing() {
+  function renderGroup(items, containerId) {
+    var html = items.map(function(item) {
+      return '<button class="clothing-btn'+(item.on?' on':'')+'" onclick="toggleClothing(\''+item.id+'\')">'+
+        item.label+'<div class="clothing-weight">'+(item.weight*1000).toFixed(0)+'g / CdA '+(item.cda>=0?'+':'')+item.cda.toFixed(3)+'</div>'+
+        '</button>';
+    }).join('');
+    document.getElementById(containerId).innerHTML = html;
+  }
+  renderGroup(clothingItems.top, 'clothing-top');
+  renderGroup(clothingItems.bottom, 'clothing-bottom');
+  renderGroup(clothingItems.extra, 'clothing-extra');
+  updateClothingTotals();
+}
+
+function toggleClothing(id) {
+  var allItems = clothingItems.top.concat(clothingItems.bottom).concat(clothingItems.extra);
+  allItems.forEach(function(item) { if (item.id === id) item.on = !item.on; });
+  renderClothing();
+  calcResult();
+}
+
+function updateClothingTotals() {
+  var allItems = clothingItems.top.concat(clothingItems.bottom).concat(clothingItems.extra);
+  var totalW = 0, totalCda = 0;
+  allItems.forEach(function(item) { if (item.on) { totalW += item.weight; totalCda += item.cda; } });
+  document.getElementById('clothing-total-weight').textContent = totalW.toFixed(2) + ' kg';
+  document.getElementById('clothing-cda-effect').textContent = (totalCda>=0?'+':'')+totalCda.toFixed(3) + ' m2';
+}
+
+function getClothingTotals() {
+  var allItems = clothingItems.top.concat(clothingItems.bottom).concat(clothingItems.extra);
+  var totalW = 0, totalCda = 0;
+  allItems.forEach(function(item) { if (item.on) { totalW += item.weight; totalCda += item.cda; } });
+  return { weight: totalW, cda: totalCda };
 }
 
 function saveClientId() {
   var val = document.getElementById('client-id-input').value.trim();
-  if (!val || isNaN(val)) { alert('Vul een geldig Client ID in (alleen cijfers).'); return; }
+  if (!val || isNaN(val)) { alert('Vul een geldig Client ID in.'); return; }
   STRAVA_CLIENT_ID = val;
   localStorage.setItem('strava_client_id', val);
   document.getElementById('setup-card').style.display = 'none';
@@ -533,7 +1000,7 @@ function loginWithStrava() {
   }
   var redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
   var scope = 'read%2Cactivity%3Aread_all%2Cprofile%3Aread_all';
-  window.location.href = 'https://www.strava.com/oauth/authorize?client_id=' + STRAVA_CLIENT_ID + '&response_type=code&redirect_uri=' + redirectUri + '&scope=' + scope + '&approval_prompt=auto';
+  window.location.href = 'https://www.strava.com/oauth/authorize?client_id='+STRAVA_CLIENT_ID+'&response_type=code&redirect_uri='+redirectUri+'&scope='+scope+'&approval_prompt=auto';
 }
 
 async function handleOAuthCallback() {
@@ -552,325 +1019,324 @@ async function handleOAuthCallback() {
       showLoggedIn();
       return true;
     }
-  } catch(e) { console.error('Auth fout:', e); }
+  } catch(e) { console.error(e); }
   return false;
 }
 
 function showLoggedIn() {
   document.getElementById('header-auth').innerHTML =
-    '<div class="athlete-bar">' +
-    '<img class="athlete-avatar" src="' + (athlete.profile || '') + '" alt="">' +
-    '<span class="athlete-name">' + (athlete.firstname || '') + ' ' + (athlete.lastname || '') + '</span>' +
-    '<button class="logout-btn" onclick="logout()">Uitloggen</button></div>';
+    '<div class="athlete-bar">'+
+    '<img class="athlete-avatar" src="'+(athlete.profile||'')+'" alt="">'+
+    '<span class="athlete-name">'+(athlete.firstname||'')+' '+(athlete.lastname||'')+'</span>'+
+    '<button class="logout-btn" onclick="logout()">Uit</button></div>';
   document.getElementById('login-prompt-card').style.display = 'none';
   document.getElementById('segment-search-card').style.display = 'block';
-  laadProfielVanStrava();
+  if (athlete.weight && athlete.weight > 0) {
+    document.getElementById('pf-weight').value = athlete.weight;
+    document.getElementById('pf-weight-src').textContent = 'uit Strava';
+  }
+  if (athlete.ftp && athlete.ftp > 0) {
+    document.getElementById('pf-ftp').value = athlete.ftp;
+    document.getElementById('pf-ftp-src').textContent = 'uit Strava';
+  }
+  if (athlete.profile) document.getElementById('profiel-avatar').src = athlete.profile;
+  if (athlete.firstname) document.getElementById('profiel-naam').textContent = athlete.firstname + ' ' + (athlete.lastname||'');
+  document.getElementById('profiel-strava-row').style.display = 'block';
+  updateProfiel();
   loadSegments();
 }
 
 function logout() { sessionStorage.clear(); window.location.reload(); }
 
 async function loadSegments() {
-  document.getElementById('segment-list').innerHTML = '<div class="loading-text">Segmenten laden...</div>';
+  document.getElementById('segment-list').innerHTML = '<div class="loading-text">Laden...</div>';
   try {
     var res = await fetch('/api/strava-segments?token=' + accessToken);
     allSegments = await res.json();
     renderSegmentList(allSegments);
   } catch(e) {
-    document.getElementById('segment-list').innerHTML = '<div class="loading-text">Fout bij laden. Probeer opnieuw.</div>';
+    document.getElementById('segment-list').innerHTML = '<div class="loading-text">Fout. Probeer opnieuw.</div>';
   }
 }
 
 function filterSegments() {
   var q = document.getElementById('seg-search').value.toLowerCase();
-  var filtered = q ? allSegments.filter(function(s) { return s.name.toLowerCase().indexOf(q) !== -1; }) : allSegments;
-  renderSegmentList(filtered);
+  renderSegmentList(q ? allSegments.filter(function(s){return s.name.toLowerCase().indexOf(q)!==-1;}) : allSegments);
 }
 
 function renderSegmentList(segments) {
-  if (!segments.length) { document.getElementById('segment-list').innerHTML = '<div class="loading-text">Geen segmenten gevonden. Ster segmenten in Strava.</div>'; return; }
+  if (!segments.length) { document.getElementById('segment-list').innerHTML = '<div class="loading-text">Geen segmenten. Ster segmenten in Strava.</div>'; return; }
   document.getElementById('segment-list').innerHTML = segments.map(function(s) {
-    var gc = Math.abs(s.average_grade) > 3 ? 'climb' : 'flat';
-    var pr = s.athlete_pr_effort ? 'PR: ' + fmt(s.athlete_pr_effort.elapsed_time) : 'Geen PR';
-    return '<div class="segment-item" onclick="selectSegment(' + s.id + ')">' +
-      '<div><div class="seg-name">' + s.name + '</div>' +
-      '<div class="seg-meta">' + ((s.distance || 0) / 1000).toFixed(1) + ' km - ' + (s.city || '') + '</div></div>' +
-      '<div class="seg-right"><div class="seg-grade ' + gc + '">' + (s.average_grade > 0 ? '+' : '') + (s.average_grade || 0).toFixed(1) + '%</div>' +
-      '<div class="seg-pr">' + pr + '</div></div></div>';
+    var gc = Math.abs(s.average_grade)>3?'climb':'flat';
+    var pr = s.athlete_pr_effort ? 'PR: '+fmt(s.athlete_pr_effort.elapsed_time) : 'Geen PR';
+    return '<div class="segment-item" onclick="selectSegment('+s.id+')">'+
+      '<div><div class="seg-name">'+s.name+'</div><div class="seg-meta">'+((s.distance||0)/1000).toFixed(1)+' km - '+(s.city||'')+'</div></div>'+
+      '<div class="seg-right"><div class="seg-grade '+gc+'">'+(s.average_grade>0?'+':'')+(s.average_grade||0).toFixed(1)+'%</div>'+
+      '<div class="seg-pr">'+pr+'</div></div></div>';
   }).join('');
 }
 
 async function selectSegment(id) {
-  document.querySelectorAll('.segment-item').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.segment-item').forEach(function(el){el.classList.remove('active');});
   document.getElementById('segment-detail-card').style.display = 'none';
   document.getElementById('mytime-card').style.display = 'none';
   try {
-    var res = await fetch('/api/strava-segment-detail?token=' + accessToken + '&id=' + id);
+    var res = await fetch('/api/strava-segment-detail?token='+accessToken+'&id='+id);
     var seg = await res.json();
-    if (seg.error) { alert('Fout: ' + seg.error); return; }
+    if (seg.error) { alert('Fout: '+seg.error); return; }
     selectedSegment = seg;
     gpxPoints = seg.points || [];
     document.getElementById('seg-detail-title').textContent = seg.name || 'Segment';
-    document.getElementById('seg-dist').textContent = ((seg.distance || 0) / 1000).toFixed(2) + ' km';
-    document.getElementById('seg-elev').textContent = Math.round(seg.total_elevation_gain || 0) + ' m';
-    document.getElementById('seg-grade').textContent = (seg.average_grade || 0).toFixed(1) + '%';
-    document.getElementById('seg-maxgrade').textContent = (seg.maximum_grade || 0).toFixed(1) + '%';
+    document.getElementById('seg-dist').textContent = ((seg.distance||0)/1000).toFixed(2)+' km';
+    document.getElementById('seg-elev').textContent = Math.round(seg.total_elevation_gain||0)+' m';
+    document.getElementById('seg-grade').textContent = (seg.average_grade||0).toFixed(1)+'%';
+    document.getElementById('seg-maxgrade').textContent = (seg.maximum_grade||0).toFixed(1)+'%';
     if (seg.pr && seg.pr.pr_elapsed_time) {
       var prSec = seg.pr.pr_elapsed_time;
       document.getElementById('seg-pr').textContent = fmt(prSec);
-      document.getElementById('seg-efforts').textContent = seg.pr.effort_count || '0';
-      document.getElementById('mytime-min').value = Math.floor(prSec / 60);
-      document.getElementById('mytime-min-out').textContent = Math.floor(prSec / 60);
-      document.getElementById('mytime-sec').value = prSec % 60;
-      document.getElementById('mytime-sec-out').textContent = String(prSec % 60).padStart(2, '0');
-      document.getElementById('mytime-info').textContent = 'Jouw Strava PR is automatisch ingevuld.';
+      var prDate = seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '--';
+      document.getElementById('seg-pr-date').textContent = prDate;
+      document.getElementById('mytime-min').value = Math.floor(prSec/60);
+      document.getElementById('mytime-min-out').textContent = Math.floor(prSec/60);
+      document.getElementById('mytime-sec').value = prSec%60;
+      document.getElementById('mytime-sec-out').textContent = String(prSec%60).padStart(2,'0');
+      document.getElementById('mytime-info').textContent = 'PR automatisch ingevuld.';
     } else {
       document.getElementById('seg-pr').textContent = 'Geen PR';
-      document.getElementById('seg-efforts').textContent = '0';
+      document.getElementById('seg-pr-date').textContent = '--';
     }
     document.getElementById('segment-detail-card').style.display = 'block';
     document.getElementById('mytime-card').style.display = 'block';
-    setTimeout(function() { drawProfile(gpxPoints); }, 50);
+    setTimeout(function(){drawProfile(gpxPoints);}, 50);
     calcResult();
-  } catch(e) { alert('Kon segmentdata niet laden: ' + e.message); }
+  } catch(e) { alert('Kon segment niet laden: '+e.message); }
 }
 
 function drawProfile(points) {
   var canvas = document.getElementById('profile-canvas');
-  var W = canvas.offsetWidth || 700, H = 90;
+  var W = canvas.offsetWidth||700, H = 80;
   canvas.width = W; canvas.height = H;
   var ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-  if (!points || points.length < 2) return;
-  var eles = points.map(function(p) { return p.ele; });
-  var minE = Math.min.apply(null, eles), maxE = Math.max.apply(null, eles);
-  var range = maxE - minE || 1;
-  var totalDist = points[points.length - 1].dist;
-  var pad = 6;
+  ctx.clearRect(0,0,W,H);
+  if (!points||points.length<2) return;
+  var eles = points.map(function(p){return p.ele;});
+  var minE = Math.min.apply(null,eles), maxE = Math.max.apply(null,eles);
+  var range = maxE-minE||1;
+  var totalDist = points[points.length-1].dist;
+  var pad = 5;
   ctx.beginPath();
-  points.forEach(function(p, i) {
-    var x = pad + (p.dist / totalDist) * (W - 2 * pad);
-    var y = H - pad - ((p.ele - minE) / range) * (H - 2 * pad - 4);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  points.forEach(function(p,i){
+    var x = pad+(p.dist/totalDist)*(W-2*pad);
+    var y = H-pad-((p.ele-minE)/range)*(H-2*pad-3);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   });
-  ctx.lineTo(W - pad, H - pad); ctx.lineTo(pad, H - pad); ctx.closePath();
-  ctx.fillStyle = '#E1F5EE'; ctx.fill();
+  ctx.lineTo(W-pad,H-pad); ctx.lineTo(pad,H-pad); ctx.closePath();
+  ctx.fillStyle='#E1F5EE'; ctx.fill();
   ctx.beginPath();
-  points.forEach(function(p, i) {
-    var x = pad + (p.dist / totalDist) * (W - 2 * pad);
-    var y = H - pad - ((p.ele - minE) / range) * (H - 2 * pad - 4);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  points.forEach(function(p,i){
+    var x = pad+(p.dist/totalDist)*(W-2*pad);
+    var y = H-pad-((p.ele-minE)/range)*(H-2*pad-3);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   });
-  ctx.strokeStyle = '#1D9E75'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle='#1D9E75'; ctx.lineWidth=2; ctx.stroke();
 }
 
-var aeroCdA = [0.408, 0.324, 0.307, 0.230, 0.200];
-var surfaceCrr = [0.0, 0.0008, 0.002, 0.004];
-var fatigueLoss = [0, 0.02, 0.04, 0.07, 0.12];
+var aeroCdAMap = {'0.408':0.408,'0.324':0.324,'0.307':0.307,'0.230':0.230,'0.200':0.200};
+var fatigueLoss = [0,0.02,0.04,0.07,0.12];
 
-function calcRho(tempC, pressHpa, humidPct, altM) {
-  var T = tempC + 273.15;
-  var P = pressHpa * 100 * Math.exp(-altM / 8500);
-  var Psat = 610.78 * Math.exp(17.27 * tempC / (tempC + 237.3));
-  var Pv = (humidPct / 100) * Psat;
-  return (P * 0.028964 - Pv * 0.010948) / (8.314 * T);
+function calcRho(tempC, pressHpa, humidPct) {
+  var T=tempC+273.15, P=pressHpa*100;
+  var Psat=610.78*Math.exp(17.27*tempC/(tempC+237.3));
+  var Pv=(humidPct/100)*Psat;
+  return (P*0.028964-Pv*0.010948)/(8.314*T);
 }
 
 function simSegment(points, P, totalMass, CdA, Crr, windMs, draftFactor, rho, chainEff, deraEff) {
-  if (!points || points.length < 2) return 3600;
-  var g = 9.81, eff = chainEff * deraEff;
-  var totalTime = 0;
-  for (var i = 1; i < points.length; i++) {
-    var d = points[i].dist - points[i - 1].dist;
-    if (d < 0.1) continue;
-    var grade = (points[i].grade || 0) / 100;
-    var lo = 0.1, hi = 30;
-    for (var j = 0; j < 60; j++) {
-      var mid = (lo + hi) / 2;
-      var Vaero = mid + windMs;
-      var Faero = 0.5 * CdA * draftFactor * rho * Vaero * Vaero;
-      var Froll = Crr * totalMass * g;
-      var Fgrav = totalMass * g * Math.sin(Math.atan(grade));
-      if ((Faero + Froll + Fgrav) * mid / eff < P) lo = mid; else hi = mid;
+  if (!points||points.length<2) return 3600;
+  var g=9.81, eff=chainEff*deraEff, totalTime=0;
+  for (var i=1; i<points.length; i++) {
+    var d=points[i].dist-points[i-1].dist;
+    if (d<0.1) continue;
+    var grade=(points[i].grade||0)/100;
+    var lo=0.1, hi=30;
+    for (var j=0; j<60; j++) {
+      var mid=(lo+hi)/2;
+      var Vaero=mid+windMs;
+      var Faero=0.5*CdA*draftFactor*rho*Vaero*Vaero;
+      var Froll=Crr*totalMass*g;
+      var Fgrav=totalMass*g*Math.sin(Math.atan(grade));
+      if ((Faero+Froll+Fgrav)*mid/eff<P) lo=mid; else hi=mid;
     }
-    totalTime += d / ((lo + hi) / 2);
+    totalTime+=d/((lo+hi)/2);
   }
   return totalTime;
 }
 
 function fmt(sec) {
-  var s = Math.abs(Math.round(sec));
-  var h = Math.floor(s / 3600);
-  var m = Math.floor((s % 3600) / 60);
-  var ss = s % 60;
-  if (h > 0) return h + 'u ' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
-  return m + ':' + String(ss).padStart(2, '0');
+  var s=Math.abs(Math.round(sec));
+  var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  if (h>0) return h+'u '+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+  return m+':'+String(ss).padStart(2,'0');
 }
 
 function fmtDiff(sec) {
-  if (Math.abs(sec) < 1) return '+/- 0s';
-  var s = Math.abs(Math.round(sec));
-  var m = Math.floor(s / 60);
-  var ss = s % 60;
-  var str = m > 0 ? m + 'm ' + String(ss).padStart(2, '0') + 's' : ss + 's';
-  return (sec > 0 ? '-' : '+') + str;
+  if (Math.abs(sec)<1) return '+/- 0s';
+  var s=Math.abs(Math.round(sec)), m=Math.floor(s/60), ss=s%60;
+  var str=m>0?m+'m '+String(ss).padStart(2,'0')+'s':ss+'s';
+  return (sec>0?'-':'+')+str;
 }
 
 function calcResult() {
-  if (!gpxPoints.length) { document.getElementById('no-seg-warn').style.display = 'block'; return; }
-  document.getElementById('no-seg-warn').style.display = 'none';
-  var myTimeSec  = parseInt(document.getElementById('mytime-min').value) * 60 + parseInt(document.getElementById('mytime-sec').value);
-  var P0         = parseFloat(document.getElementById('power').value);
-  var weight     = parseFloat(document.getElementById('weight').value);
-  var bikeW      = parseFloat(document.getElementById('bikeweight').value);
-  var wloss      = parseFloat(document.getElementById('wloss').value);
-  var bikeloss   = parseFloat(document.getElementById('bikeloss').value);
-  var powergain  = parseFloat(document.getElementById('powergain').value);
-  var aeroIdx    = parseInt(document.getElementById('aero').value);
-  var draftF     = parseFloat(document.getElementById('draft').value);
-  var tempC      = parseFloat(document.getElementById('temp').value);
-  var pressure   = parseFloat(document.getElementById('pressure').value);
-  var humidity   = parseFloat(document.getElementById('humidity').value);
-  var altitude   = parseFloat(document.getElementById('altitude').value);
-  var windKmh    = parseFloat(document.getElementById('wind').value);
-  var windAngle  = parseFloat(document.getElementById('windangle').value);
-  var heatEff    = parseFloat(document.getElementById('heateffect').value);
-  var fatigueIdx = parseInt(document.getElementById('fatigue').value) - 1;
-  var tireBaseCrr = parseFloat(document.getElementById('tire').value);
-  var tirep      = parseFloat(document.getElementById('tirep').value);
-  var surfaceIdx = parseInt(document.getElementById('surface').value);
-  var chainEff   = parseFloat(document.getElementById('chain').value);
-  var deraEff    = parseFloat(document.getElementById('derailleur').value);
-  var clothingCdA = parseFloat(document.getElementById('clothing').value);
-  var helmetCdA  = parseFloat(document.getElementById('helmet').value);
-  var wheelsCdA  = parseFloat(document.getElementById('wheels').value);
+  if (!gpxPoints.length) { document.getElementById('no-seg-warn').style.display='block'; return; }
+  document.getElementById('no-seg-warn').style.display='none';
+  var myTimeSec = parseInt(document.getElementById('mytime-min').value)*60+parseInt(document.getElementById('mytime-sec').value);
+  var weight = parseFloat(document.getElementById('pf-weight').value)||75;
+  var ftp = parseFloat(document.getElementById('pf-ftp').value)||220;
+  var bike = getActiveBike();
+  var bikeW = bike ? parseFloat(bike.weight) : 9;
+  var bikeCda = bike ? parseFloat(bike.cda) : 0.324;
+  var bikeCrr = bike ? parseFloat(bike.tire) : 0.0032;
+  var bikePressureBar = bike ? parseFloat(bike.tirePressure) : 6.5;
+  var clothing = getClothingTotals();
+  var wloss = parseFloat(document.getElementById('wloss').value)||0;
+  var bikeloss = parseFloat(document.getElementById('bikeloss').value)||0;
+  var powergain = parseFloat(document.getElementById('powergain').value)||0;
+  var aeroCdA = parseFloat(document.getElementById('aero').value)||0.324;
+  var draftF = parseFloat(document.getElementById('draft').value)||1.0;
+  var windKmh = parseFloat(document.getElementById('wind').value)||0;
+  var fatigueIdx = parseInt(document.getElementById('fatigue').value)-1;
+  var chainEff = parseFloat(document.getElementById('chain').value)||0.985;
+  var deraEff = parseFloat(document.getElementById('derailleur').value)||0.995;
 
-  var P = (P0 + powergain) * (1 - fatigueLoss[fatigueIdx]) * (1 + heatEff / 100);
-  var rho = calcRho(tempC, pressure, humidity, altitude);
   var rhoStd = 1.225;
-  var effWindMs = windKmh * Math.cos(windAngle * Math.PI / 180) / 3.6;
-  var finalCrr = tireBaseCrr + surfaceCrr[surfaceIdx] + (90 - tirep) * 0.00002;
-  var baseCdA = aeroCdA[1] + 0.005 + 0.005 + 0.005;
-  var newCdA  = aeroCdA[aeroIdx] + clothingCdA + helmetCdA + wheelsCdA;
+  var rho = rhoStd;
+  var tempForCalc = 15;
+  if (weatherData) {
+    var hour = parseInt(document.getElementById('time-slider').value);
+    var s = selectedDay*24+hour;
+    tempForCalc = weatherData.hourly.temperature_2m[s]||15;
+    var humid = weatherData.hourly.relative_humidity_2m[s]||60;
+    var pressure = weatherData.hourly.surface_pressure[s]||1013;
+    rho = calcRho(tempForCalc, pressure, humid);
+  }
+
+  var ftpEffect = 1 + calcFtpEffect(tempForCalc)/100;
+  var P0 = ftp;
+  var P = (P0+powergain) * (1-fatigueLoss[fatigueIdx]) * ftpEffect;
+
+  var tirePressureCrr = (6.5-bikePressureBar)*0.0003;
+  var finalCrr = bikeCrr + tirePressureCrr;
+  var newCdA = aeroCdA + clothing.cda;
   var baseM = weight + bikeW;
-  var newM  = (weight - wloss) + (bikeW - bikeloss);
+  var newM = (weight-wloss) + (bikeW-bikeloss);
+  var effWindMs = windKmh/3.6;
 
-  var baseSim = simSegment(gpxPoints, P0, baseM, baseCdA, 0.004, 0, 1.0, rhoStd, 0.985, 0.995);
-  var scaleFactor = myTimeSec / baseSim;
+  var baseSim = simSegment(gpxPoints, P0, baseM, bikeCda, 0.004, 0, 1.0, rhoStd, 0.985, 0.995);
+  var scaleFactor = myTimeSec/baseSim;
   var newSim = simSegment(gpxPoints, P, newM, newCdA, finalCrr, effWindMs, draftF, rho, chainEff, deraEff);
-  var newTimeScaled = newSim * scaleFactor;
-  var diff = myTimeSec - newTimeScaled;
-  var totalDist = gpxPoints[gpxPoints.length - 1].dist;
+  var newTimeScaled = newSim*scaleFactor;
+  var diff = myTimeSec-newTimeScaled;
+  var totalDist = gpxPoints[gpxPoints.length-1].dist;
 
-  document.getElementById('res-time').textContent   = fmt(newTimeScaled);
+  document.getElementById('res-time').textContent = fmt(newTimeScaled);
   document.getElementById('res-mybase').textContent = fmt(myTimeSec);
-  document.getElementById('res-speed').textContent  = (totalDist / newTimeScaled * 3.6).toFixed(1) + ' km/u';
-  document.getElementById('res-wkg').textContent    = (P / Math.max(1, weight - wloss)).toFixed(2) + ' W/kg';
+  document.getElementById('res-speed').textContent = (totalDist/newTimeScaled*3.6).toFixed(1)+' km/u';
+  document.getElementById('res-wkg').textContent = (P/Math.max(1,weight-wloss)).toFixed(2)+' W/kg';
 
-  var prDiff = newTimeScaled - myTimeSec;
+  var prDiff = newTimeScaled-myTimeSec;
   var prEl = document.getElementById('res-pr');
-  prEl.textContent = Math.abs(prDiff) < 2 ? '+/- 0s' : (prDiff > 0 ? '+' : '-') + fmt(Math.abs(prDiff));
-  prEl.style.color = prDiff <= 0 ? 'var(--green)' : 'var(--coral)';
+  prEl.textContent = Math.abs(prDiff)<2?'+/- 0s':(prDiff>0?'+':'-')+fmt(Math.abs(prDiff));
+  prEl.style.color = prDiff<=0?'var(--green)':'var(--coral)';
 
   var diffEl = document.getElementById('res-diff');
-  if (Math.abs(diff) < 1) { diffEl.textContent = 'Geen verandering'; diffEl.className = 'result-diff neu'; }
-  else { diffEl.textContent = (diff > 0 ? '-' : '+') + fmt(Math.abs(diff)) + (diff > 0 ? ' sneller' : ' langzamer'); diffEl.className = 'result-diff ' + (diff > 1 ? 'win' : 'loss'); }
+  if (Math.abs(diff)<1) { diffEl.textContent='Geen verandering'; diffEl.className='result-diff neu'; }
+  else { diffEl.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer'); diffEl.className='result-diff '+(diff>1?'win':'loss'); }
 
-  var entries = [
-    { label: 'Jouw huidige PR', time: myTimeSec, badge: 'pr-silver', badgeText: 'PR' },
-    { label: 'Gesimuleerd scenario', time: newTimeScaled, badge: 'pr-bronze', badgeText: 'Scenario' }
-  ].sort(function(a, b) { return a.time - b.time; });
-  document.getElementById('pr-list').innerHTML = entries.map(function(e) {
-    return '<div class="pr-row"><div class="pr-left"><span class="pr-badge ' + e.badge + '">' + e.badgeText + '</span><span class="pr-name">' + e.label + '</span></div><span class="pr-time">' + fmt(e.time) + '</span></div>';
+  var entries = [{label:'Jouw PR',time:myTimeSec,badge:'pr-silver',badgeText:'PR'},{label:'Scenario',time:newTimeScaled,badge:'pr-bronze',badgeText:'Scenario'}].sort(function(a,b){return a.time-b.time;});
+  document.getElementById('pr-list').innerHTML = entries.map(function(e){
+    return '<div class="pr-row"><div class="pr-left"><span class="pr-badge '+e.badge+'">'+e.badgeText+'</span><span class="pr-name">'+e.label+'</span></div><span class="pr-time">'+fmt(e.time)+'</span></div>';
   }).join('');
 
-  function contrib(fn) { return myTimeSec - fn() * scaleFactor; }
+  function contrib(fn) { return myTimeSec-fn()*scaleFactor; }
   var factors = [
-    { name: 'Gewicht rijder',  color: '#1D9E75', val: contrib(function() { return simSegment(gpxPoints, P0, (weight-wloss)+bikeW, baseCdA, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Gewicht fiets',   color: '#5DCAA5', val: contrib(function() { return simSegment(gpxPoints, P0, weight+(bikeW-bikeloss), baseCdA, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Extra vermogen',  color: '#0F6E56', val: contrib(function() { return simSegment(gpxPoints, P0+powergain, baseM, baseCdA, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Rijpositie',      color: '#9FE1CB', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, aeroCdA[aeroIdx]+0.005+0.005+0.005, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Kleding en helm', color: '#378ADD', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, aeroCdA[1]+clothingCdA+helmetCdA+0.005, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Wielset',         color: '#85B7EB', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, aeroCdA[1]+0.005+0.005+wheelsCdA, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Banden',          color: '#7F77DD', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, baseCdA, finalCrr, 0, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Wind',            color: '#D85A30', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, baseCdA, 0.004, effWindMs, 1.0, rhoStd, 0.985, 0.995); }) },
-    { name: 'Luchtdichtheid',  color: '#EF9F27', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, baseCdA, 0.004, 0, 1.0, rho, 0.985, 0.995); }) },
-    { name: 'Groepsrit',       color: '#639922', val: contrib(function() { return simSegment(gpxPoints, P0, baseM, baseCdA, 0.004, 0, draftF, rhoStd, 0.985, 0.995); }) },
-    { name: 'Vermoeidheid',    color: '#F09595', val: contrib(function() { return simSegment(gpxPoints, P0*(1-fatigueLoss[fatigueIdx])*(1+heatEff/100), baseM, baseCdA, 0.004, 0, 1.0, rhoStd, 0.985, 0.995); }) }
+    {name:'Gewicht rijder',color:'#1D9E75',val:contrib(function(){return simSegment(gpxPoints,P0,(weight-wloss)+bikeW,bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Gewicht fiets',color:'#5DCAA5',val:contrib(function(){return simSegment(gpxPoints,P0,weight+(bikeW-bikeloss),bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Extra vermogen',color:'#0F6E56',val:contrib(function(){return simSegment(gpxPoints,P0+powergain,baseM,bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Rijpositie',color:'#9FE1CB',val:contrib(function(){return simSegment(gpxPoints,P0,baseM,aeroCdA,0.004,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Kleding',color:'#378ADD',val:contrib(function(){return simSegment(gpxPoints,P0,baseM,bikeCda+clothing.cda,0.004,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Wind',color:'#D85A30',val:contrib(function(){return simSegment(gpxPoints,P0,baseM,bikeCda,0.004,effWindMs,1.0,rhoStd,0.985,0.995);})},
+    {name:'Luchtdichtheid',color:'#EF9F27',val:contrib(function(){return simSegment(gpxPoints,P0,baseM,bikeCda,0.004,0,1.0,rho,0.985,0.995);})},
+    {name:'FTP-effect weer',color:'#BA7517',val:contrib(function(){return simSegment(gpxPoints,P0*ftpEffect,baseM,bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Groepsrit',color:'#7F77DD',val:contrib(function(){return simSegment(gpxPoints,P0,baseM,bikeCda,0.004,0,draftF,rhoStd,0.985,0.995);})},
+    {name:'Banden',color:'#AFA9EC',val:contrib(function(){return simSegment(gpxPoints,P0,baseM,bikeCda,finalCrr,0,1.0,rhoStd,0.985,0.995);})},
+    {name:'Vermoeidheid',color:'#F09595',val:contrib(function(){return simSegment(gpxPoints,P0*(1-fatigueLoss[fatigueIdx]),baseM,bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);})}
   ];
 
-  document.getElementById('breakdown-list').innerHTML = factors.map(function(f) {
-    var cls = f.val > 1 ? 'pos' : f.val < -1 ? 'neg' : 'neu';
-    return '<div class="bd-row"><span class="bd-name"><span class="bd-dot" style="background:' + f.color + '"></span>' + f.name + '</span><span class="bd-val ' + cls + '">' + fmtDiff(f.val) + '</span></div>';
+  document.getElementById('breakdown-list').innerHTML = factors.map(function(f){
+    var cls=f.val>1?'pos':f.val<-1?'neg':'neu';
+    return '<div class="bd-row"><span class="bd-name"><span class="bd-dot" style="background:'+f.color+'"></span>'+f.name+'</span><span class="bd-val '+cls+'">'+fmtDiff(f.val)+'</span></div>';
   }).join('');
 
-  var wins = factors.filter(function(f) { return f.val > 1; });
-  var total = wins.reduce(function(a, c) { return a + c.val; }, 0);
-  document.getElementById('bar-wrap').innerHTML = total < 1 ? '' : wins.map(function(f) {
-    return '<div class="bar-seg" style="width:' + (f.val / total * 100).toFixed(1) + '%;background:' + f.color + '"></div>';
+  var wins=factors.filter(function(f){return f.val>1;});
+  var total=wins.reduce(function(a,c){return a+c.val;},0);
+  document.getElementById('bar-wrap').innerHTML = total<1?'':wins.map(function(f){
+    return '<div class="bar-seg" style="width:'+(f.val/total*100).toFixed(1)+'%;background:'+f.color+'"></div>';
   }).join('');
 
-  var top = factors.slice().sort(function(a, b) { return b.val - a.val; })[0];
-  document.getElementById('hint').textContent = total > 2 ? 'Grootste winst: ' + top.name + ' (' + fmtDiff(top.val) + ')' : 'Pas het scenario aan.';
+  var top=factors.slice().sort(function(a,b){return b.val-a.val;})[0];
+  document.getElementById('hint').textContent = total>2?'Grootste winst: '+top.name+' ('+fmtDiff(top.val)+')':'Pas scenario aan.';
 
-  var advice = [];
-  if (selectedSegment && selectedSegment.average_grade > 3 && wloss === 0) advice.push('Dit is een klim -- gewichtsverlies heeft hier de meeste impact.');
-  if (selectedSegment && selectedSegment.average_grade < 2 && aeroIdx <= 1) advice.push('Op vlak terrein levert een aeropositie de meeste tijdwinst.');
-  if (draftF === 1.0) advice.push('Wiel zitten spaart 35% luchtweerstand -- enorm op vlakke segmenten.');
-  if (!advice.length) advice.push('Experimenteer met de sliders voor de optimale combinatie op dit segment.');
-  document.getElementById('advice').innerHTML = advice.map(function(a) { return '-> ' + a; }).join('<br>');
+  var adv=[];
+  if (selectedSegment&&selectedSegment.average_grade>3&&wloss===0) adv.push('Klimsegment - gewichtsverlies heeft hier de meeste impact.');
+  if (selectedSegment&&selectedSegment.average_grade<2&&parseFloat(document.getElementById('aero').value)>0.307) adv.push('Vlak segment - aeropositie levert de meeste winst.');
+  if (draftF===1.0) adv.push('Wiel zitten spaart 35% luchtweerstand.');
+  if (!adv.length) adv.push('Experimenteer met de instellingen voor dit segment.');
+  document.getElementById('advice').innerHTML = adv.map(function(a){return '-> '+a;}).join('<br>');
 }
 
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  var tabs = ['profiel', 'segment', 'scenario', 'weer', 'materiaal', 'resultaat'];
-  var idx = tabs.indexOf(name);
-  if (idx >= 0) document.querySelectorAll('.tab')[idx].classList.add('active');
-  var panel = document.getElementById('panel-' + name);
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  var tabs=['weer','profiel','fiets','segment','scenario','resultaat'];
+  var idx=tabs.indexOf(name);
+  if (idx>=0) document.querySelectorAll('.tab')[idx].classList.add('active');
+  var panel=document.getElementById('panel-'+name);
   if (panel) panel.classList.add('active');
-  if (name === 'resultaat') calcResult();
+  if (name==='resultaat') calcResult();
 }
 
-['profiel-weight', 'profiel-height', 'profiel-age', 'profiel-ftp', 'profiel-bikeweight'].forEach(function(id) {
-  var el = document.getElementById(id);
+['mytime-min','mytime-sec','wloss','bikeloss','powergain','wind','fatigue'].forEach(function(id){
+  var el=document.getElementById(id);
   if (!el) return;
-  el.addEventListener('input', function() {
-    var out = document.getElementById(id + '-out');
-    if (out) out.textContent = el.value;
-    updateProfielBerekeningen();
-  });
-});
-
-['mytime-min', 'mytime-sec', 'power', 'weight', 'bikeweight', 'wloss', 'bikeloss', 'powergain',
- 'temp', 'pressure', 'humidity', 'altitude', 'wind', 'windangle', 'heateffect', 'fatigue', 'tirep'].forEach(function(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('input', function() {
-    var out = document.getElementById(id + '-out');
-    if (out) out.textContent = id === 'mytime-sec' ? String(el.value).padStart(2, '0') : el.value;
+  el.addEventListener('input',function(){
+    var out=document.getElementById(id+'-out');
+    if (out) out.textContent=id==='mytime-sec'?String(el.value).padStart(2,'0'):el.value;
     calcResult();
   });
 });
 
-['aero', 'draft', 'tire', 'surface', 'chain', 'derailleur', 'clothing', 'helmet', 'wheels'].forEach(function(id) {
-  var el = document.getElementById(id);
-  if (el) el.addEventListener('change', function() { calcResult(); });
+['aero','draft','chain','derailleur'].forEach(function(id){
+  var el=document.getElementById(id);
+  if (el) el.addEventListener('change',function(){calcResult();});
 });
 
 (async function init() {
-  laadOpgeslagenProfiel();
+  loadSavedProfiel();
+  loadSavedBikes();
+  renderClothing();
+  initWeather();
+
   if (!STRAVA_CLIENT_ID) {
-    document.getElementById('setup-card').style.display = 'block';
-    document.getElementById('login-prompt-card').style.display = 'none';
+    document.getElementById('setup-card').style.display='block';
+    document.getElementById('login-prompt-card').style.display='none';
     return;
   }
-  document.getElementById('client-id-input').value = STRAVA_CLIENT_ID;
-  var savedToken = sessionStorage.getItem('strava_token');
-  var savedAthlete = sessionStorage.getItem('strava_athlete');
-  if (savedToken && savedAthlete) {
-    accessToken = savedToken;
-    try { athlete = JSON.parse(savedAthlete); } catch(e) {}
+  document.getElementById('client-id-input').value=STRAVA_CLIENT_ID;
+  var savedToken=sessionStorage.getItem('strava_token');
+  var savedAthlete=sessionStorage.getItem('strava_athlete');
+  if (savedToken&&savedAthlete) {
+    accessToken=savedToken;
+    try{athlete=JSON.parse(savedAthlete);}catch(e){}
     showLoggedIn();
     return;
   }

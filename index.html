@@ -190,6 +190,7 @@ canvas.seg-canvas{width:100%;height:100%;display:block;}
 .seg-bike-opt{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--surface);border-radius:var(--rs);margin-bottom:4px;cursor:pointer;border:1px solid var(--border);transition:all 0.12s;}
 .seg-bike-opt:hover{border-color:var(--borderm);}
 .seg-bike-opt.active{border-color:var(--green);background:var(--gl);}
+.seg-inline-detail{border-radius:0 0 var(--rs) var(--rs);overflow:hidden;}
 .seg-bike-name{font-size:12px;font-weight:500;}
 .seg-bike-sub{font-size:10px;color:var(--textmu);}
 
@@ -668,7 +669,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-// ── State ──────────────────────────────────────────────────────────────────
+//
 var accessToken = null;
 var athlete = null;
 var allSegments = [];
@@ -708,7 +709,7 @@ var clothingItems = {
   ]
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+//
 var windDirs=['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
 function degToDir(d){return windDirs[Math.round(d/22.5)%16];}
 function calcFtpEff(t){if(t>=15&&t<=25)return 0;if(t<15)return Math.round((15-t)*-0.3*10)/10;return Math.round((t-25)*-0.5*10)/10;}
@@ -720,7 +721,7 @@ function fmt(s){s=Math.abs(Math.round(s));var h=Math.floor(s/3600),m=Math.floor(
 function fmtD(s){if(Math.abs(s)<1)return'+/- 0s';var a=Math.abs(Math.round(s)),m=Math.floor(a/60),ss=a%60,str=m>0?m+'m '+String(ss).padStart(2,'0')+'s':ss+'s';return(s>0?'-':'+')+str;}
 function setEff(id,txt,val){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='moment-eff '+(val>0.2?'pos':val<-0.2?'neg':'');}
 
-// ── Profiel ────────────────────────────────────────────────────────────────
+//
 function toggleProfiel(){document.getElementById('profiel-panel').classList.toggle('open');}
 document.addEventListener('click',function(e){
   var p=document.getElementById('profiel-panel'),b=document.querySelector('.profiel-btn');
@@ -746,7 +747,7 @@ function loadProfiel(){
   updateProfiel();
 }
 
-// ── Garage ─────────────────────────────────────────────────────────────────
+//
 function getActiveBike(){return bikes.length?bikes[Math.min(activebikeIdx,bikes.length-1)]:null;}
 function renderGarage(){
   var html=!bikes.length?'<div class="loading-text">Nog geen fietsen.</div>':bikes.map(function(b,i){
@@ -785,7 +786,7 @@ function renderAccGarage(){
   if(sumEl&&getActiveBike())sumEl.textContent=getActiveBike().name;
 }
 function selectBike(i){activebikeIdx=i;try{localStorage.setItem('active_bike',i);}catch(e){}renderGarage();calcResult();}
-function selectBikeAcc(i){activebikeIdx=i;try{localStorage.setItem('active_bike',i);}catch(e){}renderGarage();calcResult();}
+function selectBikeAcc(i){activebikeIdx=i;try{localStorage.setItem('active_bike',i);}catch(e){}renderGarage();renderIlGarage();calcResult();}
 function toggleBikeForm(){document.getElementById('bike-form').classList.toggle('open');}
 function saveBike(){
   var n=document.getElementById('bf-name').value.trim();if(!n){alert('Vul een naam in.');return;}
@@ -800,7 +801,7 @@ function loadBikes(){
   renderGarage();
 }
 
-// ── Clothing ───────────────────────────────────────────────────────────────
+//
 function allClothingItems(){return clothingItems.top.concat(clothingItems.bottom).concat(clothingItems.extra);}
 function getClothingTotals(){var w=0,c=0;allClothingItems().forEach(function(i){if(i.on){w+=i.weight;c+=i.cda;}});return{weight:w,cda:c};}
 function renderClothingGroup(items,containerId){
@@ -827,16 +828,16 @@ function renderAccClothing(){
 }
 function toggleClothingItem(id){
   allClothingItems().forEach(function(i){if(i.id===id)i.on=!i.on;});
-  renderClothing();calcResult();
+  renderClothing();renderIlClothing();calcResult();
 }
 
-// ── Accordion ──────────────────────────────────────────────────────────────
+//
 function toggleAccord(id,btn){
   document.getElementById(id).classList.toggle('open');
   btn.classList.toggle('open');
 }
 
-// ── Weather ────────────────────────────────────────────────────────────────
+//
 async function initWeather(){
   if(!navigator.geolocation){showWeerError('Geolocatie niet beschikbaar.');return;}
   navigator.geolocation.getCurrentPosition(async function(pos){
@@ -948,7 +949,7 @@ document.getElementById('acc-time-slider').addEventListener('input',function(){
   calcResult();
 });
 
-// ── Strava auth ────────────────────────────────────────────────────────────
+//
 function loginWithStrava(){
   if(!STRAVA_CLIENT_ID){document.getElementById('clientid-screen').style.display='block';return;}
   var r=encodeURIComponent(window.location.origin+window.location.pathname);
@@ -986,7 +987,7 @@ function showLoggedIn(){
 }
 function logout(){sessionStorage.clear();window.location.reload();}
 
-// ── Segments ───────────────────────────────────────────────────────────────
+//
 async function loadSegments(){
   document.getElementById('segment-list').innerHTML='<div class="loading-text">Laden...</div>';
   try{var r=await fetch('/api/strava-segments?token='+accessToken);allSegments=await r.json();renderSegmentList(allSegments);}
@@ -995,54 +996,279 @@ async function loadSegments(){
 function filterSegments(){var q=document.getElementById('seg-search').value.toLowerCase();renderSegmentList(q?allSegments.filter(function(s){return s.name.toLowerCase().indexOf(q)!==-1;}):allSegments);}
 function renderSegmentList(segs){
   if(!segs.length){document.getElementById('segment-list').innerHTML='<div class="loading-text">Geen segmenten. Ster segmenten in Strava.</div>';return;}
-  document.getElementById('segment-list').innerHTML=segs.map(function(s){
+  var html = segs.map(function(s){
     var gc=Math.abs(s.average_grade)>3?'climb':'flat';
     var pr=s.athlete_pr_effort?'PR: '+fmt(s.athlete_pr_effort.elapsed_time):'Geen PR';
-    return '<div class="segment-item" onclick="selectSegment('+s.id+')">'+
+    return '<div class="segment-item" id="seg-item-'+s.id+'" onclick="selectSegment('+s.id+',this)">'+
       '<div><div class="seg-name">'+s.name+'</div><div class="seg-meta">'+((s.distance||0)/1000).toFixed(1)+' km - '+(s.city||'')+'</div></div>'+
       '<div class="seg-right"><div class="seg-grade '+gc+'">'+(s.average_grade>0?'+':'')+(s.average_grade||0).toFixed(1)+'%</div>'+
-      '<div class="seg-pr-small">'+pr+'</div></div></div>';
+      '<div class="seg-pr-small">'+pr+'</div></div></div>'+
+      '<div class="seg-inline-detail" id="seg-inline-'+s.id+'" style="display:none;"></div>';
   }).join('');
+  document.getElementById('segment-list').innerHTML = html;
 }
-async function selectSegment(id){
+function buildInlineDetail(prSec) {
+  var minV = Math.floor(prSec/60);
+  var secV = prSec % 60;
+  var curH = new Date().getHours();
+  var hStr = String(curH).padStart(2,'0') + ':00';
+  var secStr = String(secV).padStart(2,'0');
+
+  var html = '';
+  html += '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
+
+  // Stats row
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);">';
+  html += '<div style="padding:8px 10px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Afstand</div><div style="font-size:13px;font-weight:600;" id="il-dist">--</div></div>';
+  html += '<div style="padding:8px 10px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Helling</div><div style="font-size:13px;font-weight:600;" id="il-grade">--</div></div>';
+  html += '<div style="padding:8px 10px;border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">PR</div><div style="font-size:13px;font-weight:600;" id="il-pr">--</div></div>';
+  html += '</div>';
+
+  // Profile canvas
+  html += '<div style="padding:8px 10px 0;"><canvas id="il-canvas" style="width:100%;height:60px;display:block;border-radius:4px;"></canvas></div>';
+
+  // Mini result
+  html += '<div style="padding:10px;border-top:0.5px solid var(--border);margin-top:8px;">';
+  html += '<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;">';
+  html += '<div><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gesimuleerde tijd</div>';
+  html += '<div style="font-size:26px;font-weight:600;font-family:monospace;letter-spacing:-0.03em;line-height:1;" id="il-time">--</div></div>';
+  html += '<div style="text-align:right;"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">t.o.v. PR</div>';
+  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;" id="il-diff">--</div>';
+  html += '<div style="font-size:10px;color:var(--textmu);margin-top:1px;" id="il-speed">--</div></div>';
+  html += '</div>';
+  html += '<div id="il-factors" style="margin-bottom:6px;"></div>';
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 8px;font-size:10px;color:var(--textmu);line-height:1.5;" id="il-weer">Weer laden...</div>';
+  html += '</div>';
+
+  // Accordions section
+  html += '<div style="border-top:0.5px solid var(--border);padding:0 10px;">';
+  html += '<div style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);padding:8px 0 4px;font-family:monospace;">Instellingen</div>';
+
+  // Basistijd
+  var tijdBody = '';
+  tijdBody += '<div class="srow"><div class="srow-lbl">Minuten</div>';
+  tijdBody += '<input type="range" id="mytime-min" min="0" max="120" step="1" value="' + minV + '">';
+  tijdBody += '<div class="srow-val"><span id="mytime-min-out">' + minV + '</span> min</div></div>';
+  tijdBody += '<div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Seconden</div>';
+  tijdBody += '<input type="range" id="mytime-sec" min="0" max="59" step="1" value="' + secV + '">';
+  tijdBody += '<div class="srow-val"><span id="mytime-sec-out">' + secStr + '</span> sec</div></div>';
+  html += buildAccRow('il-acc-tijd', 'Basistijd', tijdBody);
+
+  // Fiets
+  var fietsBody = '<div id="il-garage"></div>';
+  fietsBody += '<div style="display:flex;gap:5px;margin-top:5px;">';
+  fietsBody += '<div style="flex:1;background:var(--bg);border-radius:var(--rs);padding:5px 7px;font-size:10px;"><div style="color:var(--textmu);margin-bottom:1px;">Band</div><div style="font-weight:600;font-family:monospace;" id="il-tire">--</div></div>';
+  fietsBody += '<div style="flex:1;background:var(--bg);border-radius:var(--rs);padding:5px 7px;font-size:10px;"><div style="color:var(--textmu);margin-bottom:1px;">Spanning</div><div style="font-weight:600;font-family:monospace;" id="il-bar">--</div></div>';
+  fietsBody += '</div>';
+  html += buildAccRow('il-acc-fiets', 'Fiets', fietsBody);
+
+  // Kleding
+  var kledingBody = '';
+  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Bovenkant</div>';
+  kledingBody += '<div class="clothing-grid" id="il-cloth-top" style="margin-bottom:7px;"></div>';
+  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Onderkant</div>';
+  kledingBody += '<div class="clothing-grid" id="il-cloth-bottom" style="margin-bottom:7px;"></div>';
+  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Extras</div>';
+  kledingBody += '<div class="clothing-grid" id="il-cloth-extra"></div>';
+  html += buildAccRow('il-acc-kleding', 'Kleding', kledingBody);
+
+  // Weer
+  var weerBody = '';
+  weerBody += '<div style="font-size:11px;color:var(--textmu);margin-bottom:6px;" id="il-weer-loc">Geen weerdata.</div>';
+  weerBody += '<input type="range" id="il-time-slider" min="0" max="23" step="1" value="' + curH + '" style="width:100%;margin-bottom:3px;">';
+  weerBody += '<div style="text-align:center;font-size:11px;font-weight:500;font-family:monospace;margin-bottom:6px;" id="il-time-lbl">' + hStr + '</div>';
+  weerBody += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;" id="il-weer-cells"></div>';
+  html += buildAccRow('il-acc-weer', 'Weer en tijdstip', weerBody);
+
+  // Wat als
+  var watalsBody = '';
+  watalsBody += '<div class="srow"><div class="srow-lbl">Gewichtsverlies</div><input type="range" id="wloss" min="0" max="20" step="0.5" value="0"><div class="srow-val">-<span id="wloss-out">0.0</span> kg</div></div>';
+  watalsBody += '<div class="srow"><div class="srow-lbl">Extra vermogen</div><input type="range" id="powergain" min="0" max="80" step="5" value="0"><div class="srow-val">+<span id="powergain-out">0</span> W</div></div>';
+  watalsBody += '<div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Fiets lichter</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="srow-val">-<span id="bikeloss-out">0.0</span> kg</div></div>';
+  html += buildAccRow('il-acc-watals', 'Wat als?', watalsBody);
+
+  // Positie
+  var positieBody = '';
+  positieBody += '<div class="sel-row"><label>Rijpositie</label><select id="aero" onchange="calcResult()"><option value="0.408">Tops</option><option value="0.324" selected>Hoods</option><option value="0.307">Drops</option><option value="0.230">Aerobars</option><option value="0.200">TT</option></select></div>';
+  positieBody += '<div class="sel-row" style="margin-bottom:0;"><label>Groepsrit</label><select id="draft" onchange="calcResult()"><option value="1.00" selected>Solo</option><option value="0.85">Klein groepje</option><option value="0.72">Groot peloton</option><option value="0.65">Wiel zitten</option></select></div>';
+  html += buildAccRow('il-acc-positie', 'Positie en groep', positieBody);
+
+  // Conditie
+  var condBody = '';
+  condBody += '<div class="sel-row"><label>Ketting</label><select id="chain" onchange="calcResult()"><option value="0.985" selected>Schoon</option><option value="0.975">Licht vuil</option><option value="0.960">Vuil</option><option value="0.990">Gewaxte</option></select></div>';
+  condBody += '<div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Vermoeidheid</div><input type="range" id="fatigue" min="1" max="5" step="1" value="1"><div class="srow-val">dag <span id="fatigue-out">1</span></div></div>';
+  html += buildAccRow('il-acc-cond', 'Conditie', condBody);
+
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function buildAccRow(id, label, body) {
+  var div = document.createElement('div');
+  div.style.borderTop = '0.5px solid var(--border)';
+  var btn = document.createElement('button');
+  btn.className = 'accord-btn';
+  btn.setAttribute('data-accord', id);
+  btn.innerHTML = '<span>' + label + '</span><span class="accord-arrow">&#9660;</span>';
+  btn.addEventListener('click', function() { toggleAccord(id, this); });
+  var body_div = document.createElement('div');
+  body_div.className = 'accord-body';
+  body_div.id = id;
+  body_div.innerHTML = body;
+  div.appendChild(btn);
+  div.appendChild(body_div);
+  return div.outerHTML;
+}
+
+var currentOpenSegId = null;
+
+async function selectSegment(id, itemEl){
+  // Toggle: if already open, close it
+  if(currentOpenSegId === id){
+    var prev = document.getElementById('seg-inline-'+id);
+    if(prev) prev.style.display='none';
+    document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
+    currentOpenSegId = null;
+    selectedSegment = null; gpxPoints = [];
+    return;
+  }
+  // Close any previously open detail
+  if(currentOpenSegId !== null){
+    var prevDetail = document.getElementById('seg-inline-'+currentOpenSegId);
+    if(prevDetail) prevDetail.style.display='none';
+    var prevItem = document.getElementById('seg-item-'+currentOpenSegId);
+    if(prevItem) prevItem.classList.remove('active');
+  }
+  currentOpenSegId = id;
   document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
-  document.getElementById('seg-detail').style.display='none';
-  document.getElementById('mini-result').style.display='none';
+  var clickedItem = document.getElementById('seg-item-'+id);
+  if(clickedItem) clickedItem.classList.add('active');
+  var inlineEl = document.getElementById('seg-inline-'+id);
+  if(!inlineEl) return;
+  inlineEl.style.display='block';
+  inlineEl.innerHTML='<div style="padding:12px;text-align:center;font-size:12px;color:var(--textmu);font-family:monospace;">Laden...</div>';
+
   try{
     var res=await fetch('/api/strava-segment-detail?token='+accessToken+'&id='+id);
     var seg=await res.json();
-    if(seg.error){alert('Fout: '+seg.error);return;}
+    if(seg.error){inlineEl.innerHTML='<div style="padding:12px;color:var(--coral);font-size:12px;">Fout: '+seg.error+'</div>';return;}
     selectedSegment=seg;gpxPoints=seg.points||[];
-    document.getElementById('seg-title').textContent=seg.name||'Segment';
-    document.getElementById('seg-dist').textContent=((seg.distance||0)/1000).toFixed(2)+' km';
-    document.getElementById('seg-elev').textContent=Math.round(seg.total_elevation_gain||0)+' m';
-    document.getElementById('seg-grade').textContent=(seg.average_grade||0).toFixed(1)+'%';
-    document.getElementById('seg-maxgrade').textContent=(seg.maximum_grade||0).toFixed(1)+'%';
-    if(seg.pr&&seg.pr.pr_elapsed_time){
-      var prSec=seg.pr.pr_elapsed_time;
-      document.getElementById('seg-pr').textContent=fmt(prSec);
-      var prDate=seg.pr.pr_date?new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}):'--';
-      document.getElementById('seg-prdate').textContent=prDate;
-      document.getElementById('mytime-min').value=Math.floor(prSec/60);
-      document.getElementById('mytime-min-out').textContent=Math.floor(prSec/60);
-      document.getElementById('mytime-sec').value=prSec%60;
-      document.getElementById('mytime-sec-out').textContent=String(prSec%60).padStart(2,'0');
-      document.getElementById('acc-tijd-sum').textContent=fmt(prSec);
-    }else{document.getElementById('seg-pr').textContent='Geen PR';document.getElementById('seg-prdate').textContent='--';}
-    document.getElementById('seg-detail').style.display='block';
-    document.getElementById('mini-result').style.display='block';
-    renderAccGarage();renderAccClothing();updateAccWeer();
+
+    var prSec = seg.pr&&seg.pr.pr_elapsed_time ? seg.pr.pr_elapsed_time : 0;
+    var prStr = prSec ? fmt(prSec) : 'Geen PR';
+    var prDate = seg.pr&&seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+
+    inlineEl.innerHTML = buildInlineDetail(prSec);
+
+    // Fill in data
+    // Fill in data
+    document.getElementById('il-dist').textContent = ((seg.distance||0)/1000).toFixed(2)+' km';
+    document.getElementById('il-grade').textContent = (seg.average_grade||0).toFixed(1)+'%';
+    document.getElementById('il-pr').textContent = prStr+(prDate?' ('+prDate+')':'');
+
+    // Draw profile
     setTimeout(function(){
-      drawProfile(gpxPoints);
-      // Scroll segment detail into view
-      var el = document.getElementById('seg-detail');
-      if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
-    },100);
+      var cv = document.getElementById('il-canvas');
+      if(cv) drawProfileOn(cv, gpxPoints);
+    }, 50);
+
+    // Wire sliders
+    wireIlSliders();
+    renderIlGarage();
+    renderIlClothing();
+    updateIlWeer();
     calcResult();
-  }catch(e){alert('Kon segment niet laden: '+e.message);}
+
+  }catch(e){inlineEl.innerHTML='<div style="padding:12px;color:var(--coral);font-size:12px;">Kon segment niet laden: '+e.message+'</div>';}
 }
 
-// ── Profile canvas ─────────────────────────────────────────────────────────
+
+
+function wireIlSliders(){
+  ['mytime-min','mytime-sec','wloss','bikeloss','powergain','fatigue'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.addEventListener('input',function(){
+      var out=document.getElementById(id+'-out');
+      if(out)out.textContent=id==='mytime-sec'?String(el.value).padStart(2,'0'):el.value;
+      if(id==='mytime-min'||id==='mytime-sec'){
+        var s=document.getElementById('il-tijd-sum');
+        if(s)s.textContent=document.getElementById('mytime-min').value+'m '+String(document.getElementById('mytime-sec').value).padStart(2,'0')+'s';
+      }
+      calcResult();
+    });
+  });
+  var its=document.getElementById('il-time-slider');
+  if(its){its.addEventListener('input',function(){
+    var h=parseInt(this.value);
+    var tl=document.getElementById('il-time-lbl');if(tl)tl.textContent=String(h).padStart(2,'0')+':00';
+    var ms=document.getElementById('time-slider');if(ms)ms.value=h;
+    updateIlWeer();calcResult();
+  });}
+}
+
+function renderIlGarage(){
+  var el=document.getElementById('il-garage');if(!el)return;
+  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:3px 0;">Voeg fietsen toe via Fiets/Kleding tab.</div>';return;}
+  el.innerHTML=bikes.map(function(b,i){
+    var a=i===activebikeIdx?' active':'';
+    return '<div class="seg-bike-opt'+a+'" onclick="selectBikeAcc('+i+')">'+
+      '<div style="width:20px;height:20px;border-radius:5px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="'+(a?'#1D9E75':'var(--textmu)')+'" stroke-width="2"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/></svg>'+
+      '</div>'+
+      '<div><div class="seg-bike-name">'+b.name+'</div><div class="seg-bike-sub">'+b.weight+' kg</div></div>'+
+      '</div>';
+  }).join('');
+  var bike=getActiveBike();
+  var tireNames={'0.0025':'Tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};
+  var te=document.getElementById('il-tire');var be=document.getElementById('il-bar');
+  if(bike){if(te)te.textContent=tireNames[String(bike.tire)]||'Onbekend';if(be)be.textContent=bike.tirePressure+' bar';}
+  var fs=document.getElementById('il-fiets-sum');if(fs&&bike)fs.textContent=bike.name;
+}
+
+function renderIlClothing(){
+  function rg(items,cid){
+    var el=document.getElementById(cid);if(!el)return;
+    el.innerHTML="";
+    items.forEach(function(item){
+      var btn=document.createElement("button");
+      btn.className="clothing-btn"+(item.on?" on":"");
+      btn.innerHTML=item.label+"<div class=\"clothing-weight\">"+(item.weight*1000).toFixed(0)+"g</div>";
+      btn.addEventListener("click",function(){toggleClothingItem(item.id);});
+      el.appendChild(btn);
+    });
+  }
+  rg(clothingItems.top,"il-cloth-top");
+  rg(clothingItems.bottom,"il-cloth-bottom");
+  rg(clothingItems.extra,"il-cloth-extra");
+  var on=allClothingItems().filter(function(i){return i.on;});
+  var s=document.getElementById("il-kleding-sum");if(s)s.textContent=on.length+" items";
+}
+
+function updateIlWeer(){
+  if(!weatherData){var el=document.getElementById('il-weer-loc');if(el)el.textContent='Geen weerdata — open de Weer-tab.';return;}
+  var h=parseInt((document.getElementById('il-time-slider')||{value:new Date().getHours()}).value);
+  var s=selectedDay*24+h;
+  var temp=weatherData.hourly.temperature_2m[s]||15,wind=weatherData.hourly.wind_speed_10m[s]||0,windDir=weatherData.hourly.wind_direction_10m[s]||0,rain=weatherData.hourly.precipitation[s]||0,humid=weatherData.hourly.relative_humidity_2m[s]||60,pressure=weatherData.hourly.surface_pressure[s]||1013;
+  var locEl=document.getElementById('il-weer-loc');if(locEl)locEl.textContent=document.getElementById('loc-name').textContent+' - '+dayLabel(weatherData.daily.time[selectedDay],selectedDay);
+  var fe=calcFtpEff(temp),ce=calcCdaEff(temp,pressure,humid);
+  var ws=document.getElementById('il-weer-sum');if(ws)ws.textContent=Math.round(temp)+'C, '+Math.round(wind)+' km/u';
+  var cells=document.getElementById('il-weer-cells');
+  if(cells)cells.innerHTML=[{l:'Temp',v:Math.round(temp)+'C'},{l:'Wind',v:Math.round(wind)+' km/u'},{l:'Neerslag',v:rain.toFixed(1)+' mm'},{l:'FTP',v:(fe>=0?'+':'')+fe+'%'},{l:'CdA',v:(ce>=0?'+':'')+ce+'%'},{l:'Vocht',v:humid+'%'}].map(function(c){return '<div style="background:var(--surface);border-radius:var(--rs);padding:5px 6px;"><div style="font-size:9px;color:var(--textmu);margin-bottom:1px;">'+c.l+'</div><div style="font-size:10px;font-weight:500;font-family:monospace;">'+c.v+'</div></div>';}).join('');
+}
+
+function drawProfileOn(cv, pts){
+  var W=cv.offsetWidth||300,H=60;cv.width=W;cv.height=H;
+  var ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
+  if(!pts||pts.length<2)return;
+  var eles=pts.map(function(p){return p.ele;}),minE=Math.min.apply(null,eles),maxE=Math.max.apply(null,eles),range=maxE-minE||1,td=pts[pts.length-1].dist,pad=4;
+  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.lineTo(W-pad,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();ctx.fillStyle='#E1F5EE';ctx.fill();
+  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
+}
+
+//
 function drawProfile(pts){
   var cv=document.getElementById('profile-canvas');if(!cv)return;
   var W=cv.offsetWidth||700,H=75;cv.width=W;cv.height=H;
@@ -1055,7 +1281,7 @@ function drawProfile(pts){
   ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
 }
 
-// ── Physics ────────────────────────────────────────────────────────────────
+//
 function simSeg(pts,P,mass,CdA,Crr,windMs,draft,rho,ce,de){
   if(!pts||pts.length<2)return 3600;
   var g=9.81,eff=ce*de,t=0;
@@ -1067,7 +1293,7 @@ function simSeg(pts,P,mass,CdA,Crr,windMs,draft,rho,ce,de){
   }return t;
 }
 
-// ── Calc result ────────────────────────────────────────────────────────────
+//
 function calcResult(){
   if(!gpxPoints.length){
     document.getElementById('no-seg-warn').style.display='block';
@@ -1109,12 +1335,15 @@ function calcResult(){
   var scale=myT/baseSim;
   var newSim=simSeg(gpxPoints,P,newM,newCda,finalCrr,0,draft,rho,chain,0.995);
   var newT=newSim*scale,diff=myT-newT,td=gpxPoints[gpxPoints.length-1].dist;
-  // Update mini result
-  document.getElementById('mini-time').textContent=fmt(newT);
-  document.getElementById('mini-speed').textContent=(td/newT*3.6).toFixed(1)+' km/u';
-  var mde=document.getElementById('mini-diff');
-  if(Math.abs(diff)<1){mde.textContent='+/- 0s';mde.className='mini-diff neu';}
-  else{mde.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');mde.className='mini-diff '+(diff>1?'win':'loss');}
+  // Update inline result
+  var ilTime=document.getElementById('il-time');if(ilTime)ilTime.textContent=fmt(newT);
+  var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u';
+  var ilDiff=document.getElementById('il-diff');
+  if(ilDiff){if(Math.abs(diff)<1){ilDiff.textContent='+/- 0s';ilDiff.style.color='var(--textmu)';}else{ilDiff.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');ilDiff.style.color=diff>1?'var(--green)':'var(--coral)';}}
+  // Also update old mini-result if present
+  var mt=document.getElementById('mini-time');if(mt)mt.textContent=fmt(newT);
+  var ms2=document.getElementById('mini-speed');if(ms2)ms2.textContent=(td/newT*3.6).toFixed(1)+' km/u';
+  var md=document.getElementById('mini-diff');if(md){if(Math.abs(diff)<1){md.textContent='+/- 0s';md.className='mini-diff neu';}else{md.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');md.className='mini-diff '+(diff>1?'win':'loss');}}
   // Update resultaat tab
   document.getElementById('res-time').textContent=fmt(newT);
   document.getElementById('res-pr').textContent=fmt(myT);
@@ -1138,16 +1367,16 @@ function calcResult(){
     {n:'Banden',col:'#AFA9EC',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,finalCrr,0,1,rhoStd,0.985,0.995);})},
     {n:'Vermoeidheid',col:'#F09595',v:c(function(){return simSeg(gpxPoints,P0*(1-fatigueLoss[fi]),baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})}
   ];
-  // Mini factors top 4
+  // Factors top 4
   var top4=factors.slice().sort(function(a,b){return Math.abs(b.v)-Math.abs(a.v);}).slice(0,4);
-  document.getElementById('mini-factors').innerHTML=top4.map(function(f){
-    var cls=f.v>1?'pos':f.v<-1?'neg':'neu';
-    return '<div class="mini-factor"><span class="mini-factor-name"><span class="mini-dot" style="background:'+f.col+'"></span>'+f.n+'</span><span class="mini-factor-val '+cls+'">'+fmtD(f.v)+'</span></div>';
-  }).join('');
+  var factorsHtml=top4.map(function(f){var cls=f.v>1?'pos':f.v<-1?'neg':'neu';return '<div class="mini-factor"><span class="mini-factor-name"><span class="mini-dot" style="background:'+f.col+'"></span>'+f.n+'</span><span class="mini-factor-val '+cls+'">'+fmtD(f.v)+'</span></div>';}).join('');
+  var ilf=document.getElementById('il-factors');if(ilf)ilf.innerHTML=factorsHtml;
+  var mf=document.getElementById('mini-factors');if(mf)mf.innerHTML=factorsHtml;
   // Mini weer
   var weerTxt='Geen weerdata beschikbaar.';
   if(weatherData){var h2=parseInt(document.getElementById('acc-time-slider').value),s2=selectedDay*24+h2,t2=weatherData.hourly.temperature_2m[s2]||15,w2=weatherData.hourly.wind_speed_10m[s2]||0,r2=weatherData.hourly.precipitation[s2]||0,fe=calcFtpEff(t2),ce2=calcCdaEff(t2,weatherData.hourly.surface_pressure[s2]||1013,weatherData.hourly.relative_humidity_2m[s2]||60);weerTxt=String(h2).padStart(2,'0')+':00 - '+Math.round(t2)+'C, wind '+Math.round(w2)+' km/u'+(r2>0?', '+r2.toFixed(1)+'mm regen':'')+' | FTP: '+(fe>=0?'+':'')+fe+'%, CdA: '+(ce2>=0?'+':'')+ce2+'%';}
-  document.getElementById('mini-weer').textContent=weerTxt;
+  var mw=document.getElementById('mini-weer');if(mw)mw.textContent=weerTxt;
+  var iw=document.getElementById('il-weer');if(iw)iw.textContent=weerTxt;
   // Band info in accordion
   if(bike){var tireNames={'0.0025':'Race tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};var tn=document.getElementById('acc-tire');var tp=document.getElementById('acc-pressure');if(tn)tn.textContent=(tireNames[String(bike.tire)]||'Onbekend');var pressEffect=(6.5-bikeBar)*0.0003*myT*15;if(tp)tp.textContent=bikeBar+' bar'+(Math.abs(pressEffect)>1?' ('+fmtD(pressEffect)+' vs 6.5bar)':'');}
   // Full breakdown
@@ -1160,7 +1389,7 @@ function calcResult(){
   document.getElementById('advice').innerHTML=adv.map(function(a){return '-> '+a;}).join('<br>');
 }
 
-// ── Tab navigation ─────────────────────────────────────────────────────────
+//
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
@@ -1170,7 +1399,7 @@ function switchTab(name){
   if(name==='resultaat')calcResult();
 }
 
-// ── Slider wiring ──────────────────────────────────────────────────────────
+//
 ['mytime-min','mytime-sec','wloss','bikeloss','powergain','fatigue'].forEach(function(id){
   var el=document.getElementById(id);if(!el)return;
   el.addEventListener('input',function(){
@@ -1181,7 +1410,7 @@ function switchTab(name){
   });
 });
 
-// ── Init ───────────────────────────────────────────────────────────────────
+//
 (async function init(){
   loadProfiel();loadBikes();renderClothing();
   var h=new Date().getHours();

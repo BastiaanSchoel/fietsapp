@@ -43,28 +43,28 @@ header{background:var(--green-deep);padding:0 1.5rem;display:flex;align-items:ce
 .login-strava-btn{display:inline-flex;align-items:center;gap:8px;background:var(--strava);color:white;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
 
 /* Weather */
-.location-bar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:1rem;}
+.location-bar{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:0.75rem;}
 .loc-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
 .loc-name{font-size:13px;font-weight:500;flex:1;}
 .loc-time{font-size:11px;color:var(--text-muted);font-family:monospace;}
-.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:1rem;}
-.live-cell{background:var(--bg);border-radius:var(--radius-sm);padding:9px 11px;}
-.live-label{font-size:10px;color:var(--text-muted);margin-bottom:2px;}
-.live-val{font-size:17px;font-weight:500;}
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:0.75rem;}
+.live-cell{background:var(--bg);border-radius:var(--radius-sm);padding:7px 9px;}
+.live-label{font-size:10px;color:var(--text-muted);margin-bottom:1px;}
+.live-val{font-size:14px;font-weight:500;}
 .live-sub{font-size:10px;color:var(--text-muted);margin-top:1px;}
-.ftp-impact{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:1rem;font-size:12px;}
+.ftp-impact{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:var(--radius-sm);margin-bottom:0.75rem;font-size:11px;}
 .ftp-impact.neg{background:#FFF3CD;color:#7A5000;}
 .ftp-impact.pos{background:var(--green-light);color:var(--green-deep);}
 .ftp-impact.neu{background:var(--bg);color:var(--text-muted);}
 .days-scroll{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:1rem;scrollbar-width:none;}
 .days-scroll::-webkit-scrollbar{display:none;}
-.day-card{flex-shrink:0;width:68px;background:var(--bg);border-radius:10px;padding:9px 7px;text-align:center;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s;}
+.day-card{flex-shrink:0;width:62px;background:var(--bg);border-radius:8px;padding:7px 5px;text-align:center;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s;}
 .day-card:hover{border-color:var(--border-mid);}
 .day-card.active{background:var(--surface);border-color:var(--green);}
-.day-name{font-size:10px;color:var(--text-muted);margin-bottom:4px;font-weight:500;}
+.day-name{font-size:10px;color:var(--text-muted);margin-bottom:2px;font-weight:500;}
 .day-card.active .day-name{color:var(--green-dark);font-weight:600;}
-.day-icon{font-size:18px;margin-bottom:3px;height:24px;display:flex;align-items:center;justify-content:center;}
-.day-temp{font-size:12px;font-weight:500;}
+.day-icon{font-size:16px;margin-bottom:2px;height:20px;display:flex;align-items:center;justify-content:center;}
+.day-temp{font-size:11px;font-weight:500;}
 .day-wind{font-size:10px;color:var(--text-muted);margin-top:2px;font-family:monospace;}
 .chart-wrap{position:relative;width:100%;margin-bottom:1rem;}
 .time-slider-wrap{padding:0 2px;margin-bottom:1rem;}
@@ -401,7 +401,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
         <span id="detail-title">24-uurs verloop</span>
         <span style="font-size:10px;font-weight:400;color:var(--text-muted);">sleep slider naar rijtijdstip</span>
       </div>
-      <div class="chart-wrap"><canvas id="weather-chart" height="160"></canvas></div>
+      <div class="chart-wrap"><canvas id="weather-chart" height="130"></canvas></div>
       <div class="chart-legend">
         <div class="leg-item"><div class="leg-line" style="background:var(--coral)"></div>Temp °C</div>
         <div class="leg-item"><div class="leg-line" style="background:var(--blue)"></div>Wind km/u</div>
@@ -1283,7 +1283,6 @@ function renderSegmentList(segments) {
 async function selectSegment(id) {
   document.querySelectorAll('.segment-item').forEach(function(el){el.classList.remove('active');});
   document.getElementById('segment-detail-card').style.display = 'none';
-  document.getElementById('mytime-card').style.display = 'none';
   try {
     var res = await fetch('/api/strava-segment-detail?token='+accessToken+'&id='+id);
     var seg = await res.json();
@@ -1300,22 +1299,23 @@ async function selectSegment(id) {
       document.getElementById('seg-pr').textContent = fmt(prSec);
       var prDate = seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '--';
       document.getElementById('seg-pr-date').textContent = prDate;
-      document.getElementById('mytime-min').value = Math.floor(prSec/60);
-      document.getElementById('mytime-min-out').textContent = Math.floor(prSec/60);
-      document.getElementById('mytime-sec').value = prSec%60;
-      document.getElementById('mytime-sec-out').textContent = String(prSec%60).padStart(2,'0');
-      document.getElementById('mytime-info').textContent = 'PR automatisch ingevuld.';
+      var minEl = document.getElementById('mytime-min');
+      var secEl = document.getElementById('mytime-sec');
+      if (minEl) { minEl.value = Math.floor(prSec/60); document.getElementById('mytime-min-out').textContent = Math.floor(prSec/60); }
+      if (secEl) { secEl.value = prSec%60; document.getElementById('mytime-sec-out').textContent = String(prSec%60).padStart(2,'0'); }
+      var infoEl = document.getElementById('mytime-info');
+      if (infoEl) infoEl.textContent = 'PR automatisch ingevuld.';
     } else {
       document.getElementById('seg-pr').textContent = 'Geen PR';
       document.getElementById('seg-pr-date').textContent = '--';
     }
     document.getElementById('segment-detail-card').style.display = 'block';
-    document.getElementById('mytime-card').style.display = 'block';
-    document.getElementById('mini-result-card').style.display = 'block';
-    setTimeout(function(){
-      drawProfile(gpxPoints);
-      document.getElementById('mini-result-card').scrollIntoView({behavior:'smooth', block:'start'});
-    }, 100);
+    var miniCard = document.getElementById('mini-result-card');
+    if (miniCard) miniCard.style.display = 'block';
+    renderSegGarage();
+    renderSegClothing();
+    updateSegWeer();
+    setTimeout(function(){ drawProfile(gpxPoints); }, 50);
     calcResult();
   } catch(e) { alert('Kon segment niet laden: '+e.message); }
 }

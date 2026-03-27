@@ -284,6 +284,74 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
 </div>
 
 <div class="main">
+
+  <!-- WELKOMSTSCHERM -->
+  <div id="welcome-screen" style="display:none;max-width:400px;margin:3rem auto;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="width:72px;height:72px;background:var(--green-deep);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+          <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
+        </svg>
+      </div>
+      <div style="font-size:24px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;">Watts-up</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6;">Simuleer je Strava-segmenten en ontdek<br>hoeveel sneller je kunt worden</div>
+    </div>
+
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;">
+      <div style="padding:1.25rem;border-bottom:0.5px solid var(--border);">
+        <div style="font-size:12px;font-weight:500;margin-bottom:1rem;">Wat kun je verwachten:</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+            </div>
+            <div><div style="font-weight:500;">Live weer</div><div style="color:var(--text-muted);font-size:11px;">Op basis van jouw locatie, 7-daagse voorspelling</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div><div style="font-weight:500;">Segmenten uit Strava</div><div style="color:var(--text-muted);font-size:11px;">PR, KOM-verschil, effect per factor</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div><div style="font-weight:500;">Wat als? simulaties</div><div style="color:var(--text-muted);font-size:11px;">Gewicht, aero, materiaal, conditie</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:1.25rem;">
+        <button onclick="loginWithStrava()" style="width:100%;padding:13px;background:var(--strava);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+          Verbinden met Strava
+        </button>
+        <div style="text-align:center;margin-top:10px;">
+          <button onclick="skipStrava()" style="background:none;border:none;font-size:11px;color:var(--text-muted);cursor:pointer;font-family:inherit;text-decoration:underline;">Doorgaan zonder Strava</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:11px;color:var(--text-muted);line-height:1.6;">
+      Watts-up vraagt alleen leestoegang tot jouw segmenten en profiel.<br>
+      Er wordt niets gewijzigd in jouw Strava-account.
+    </div>
+  </div>
+
+  <!-- CLIENT ID SETUP (als geen token maar wel known user) -->
+  <div id="clientid-screen" style="display:none;max-width:400px;margin:3rem auto;">
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.5rem;">
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px;">Strava Client ID invullen</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">Ga naar <a href="https://www.strava.com/settings/api" target="_blank" style="color:var(--green);">strava.com/settings/api</a> en kopieer je Client ID.</div>
+      <input type="text" id="client-id-input" placeholder="bijv. 123456" style="width:100%;padding:9px 12px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:15px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;margin-bottom:8px;" oninput="this.style.borderColor=this.value.length>2?'var(--green)':'var(--border-mid)'">
+      <button onclick="saveClientId()" style="width:100%;padding:10px;background:var(--strava);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        Inloggen met Strava
+      </button>
+    </div>
+  </div>
+
   <div class="tabs">
     <button class="tab active" onclick="switchTab('weer')">Weer</button>
     <button class="tab" onclick="switchTab('fiets')">Fiets/Kleding</button>
@@ -492,6 +560,33 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
         <span style="font-weight:600;color:var(--coral);font-family:monospace;" id="seg-kom-diff">--</span>
       </div>
       <div class="profile-wrap"><canvas class="seg-canvas" id="profile-canvas"></canvas></div>
+
+      <!-- Mini resultaat direct onder hoogteprofiel -->
+      <div id="mini-result-card" style="display:none;margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+          <div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">Gesimuleerde tijd</div>
+            <div style="font-size:28px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-0.03em;" id="mini-res-time">--</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">t.o.v. PR</div>
+            <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;" id="mini-res-diff">--</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:1px;" id="mini-res-speed">--</div>
+          </div>
+        </div>
+        <div id="mini-factors" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;"></div>
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;color:var(--text-muted);line-height:1.5;" id="mini-weer-info">Weer: laden...</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;">
+            <div style="color:var(--text-muted);margin-bottom:1px;">Bandtype</div>
+            <div style="font-weight:600;font-family:'DM Mono',monospace;" id="mini-tire-effect">--</div>
+          </div>
+          <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;">
+            <div style="color:var(--text-muted);margin-bottom:1px;">Spanning</div>
+            <div style="font-weight:600;font-family:'DM Mono',monospace;" id="mini-pressure-effect">--</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="mytime-card" class="card" style="display:none;">
@@ -509,34 +604,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
       <div class="info-box" id="mytime-info">Jouw PR is automatisch ingevuld.</div>
     </div>
 
-    <div id="mini-result-card" class="card" style="display:none;padding:1rem;">
-      <div class="card-title" style="margin-bottom:0.75rem;">Effect huidig scenario <span class="badge-new">live</span></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:0.5px solid var(--border);">
-        <div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Gesimuleerde tijd</div>
-          <div style="font-size:28px;font-weight:600;font-family:monospace;letter-spacing:-0.03em;" id="mini-res-time">--</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">t.o.v. jouw PR</div>
-          <div style="font-size:16px;font-weight:600;font-family:monospace;" id="mini-res-diff">--</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="mini-res-speed">--</div>
-        </div>
-      </div>
-      <div id="mini-factors" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
-      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:var(--text-muted);" id="mini-weer-info">
-        Weer: geen weerdata beschikbaar.
-      </div>
-      <div style="margin-top:8px;display:flex;gap:6px;">
-        <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;">
-          <div style="color:var(--text-muted);margin-bottom:2px;">Bandtype effect</div>
-          <div style="font-weight:600;font-family:monospace;" id="mini-tire-effect">--</div>
-        </div>
-        <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;">
-          <div style="color:var(--text-muted);margin-bottom:2px;">Spanning (bar) effect</div>
-          <div style="font-weight:600;font-family:monospace;" id="mini-pressure-effect">--</div>
-        </div>
-      </div>
-    </div>
+
   </div>
 
   <!-- SCENARIO -->
@@ -1035,8 +1103,7 @@ function saveClientId() {
   if (!val || isNaN(val)) { alert('Vul een geldig Client ID in.'); return; }
   STRAVA_CLIENT_ID = val;
   localStorage.setItem('strava_client_id', val);
-  document.getElementById('setup-card').style.display = 'none';
-  document.getElementById('login-prompt-card').style.display = 'block';
+  loginWithStrava();
 }
 
 function loginWithStrava() {
@@ -1071,6 +1138,7 @@ async function handleOAuthCallback() {
 }
 
 function showLoggedIn() {
+  showMainApp();
   document.getElementById('header-auth').innerHTML =
     '<div class="athlete-bar">'+
     '<img class="athlete-avatar" src="'+(athlete.profile||'')+'" alt="">'+
@@ -1078,6 +1146,8 @@ function showLoggedIn() {
     '<button class="logout-btn" onclick="logout()">Uit</button></div>';
   document.getElementById('login-prompt-card').style.display = 'none';
   document.getElementById('segment-search-card').style.display = 'block';
+  // Switch to segment tab after login
+  switchTab('segment');
   if (athlete.weight && athlete.weight > 0) {
     document.getElementById('pf-weight').value = athlete.weight;
     document.getElementById('pf-weight-src').textContent = 'uit Strava';
@@ -1155,7 +1225,10 @@ async function selectSegment(id) {
     document.getElementById('segment-detail-card').style.display = 'block';
     document.getElementById('mytime-card').style.display = 'block';
     document.getElementById('mini-result-card').style.display = 'block';
-    setTimeout(function(){drawProfile(gpxPoints);}, 50);
+    setTimeout(function(){
+      drawProfile(gpxPoints);
+      document.getElementById('mini-result-card').scrollIntoView({behavior:'smooth', block:'start'});
+    }, 100);
     calcResult();
   } catch(e) { alert('Kon segment niet laden: '+e.message); }
 }
@@ -1429,6 +1502,21 @@ function switchTab(name) {
   if (el) el.addEventListener('change',function(){calcResult();});
 });
 
+function skipStrava() {
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('clientid-screen').style.display = 'none';
+  showMainApp();
+}
+
+function showMainApp() {
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('clientid-screen').style.display = 'none';
+  document.querySelector('.tabs').style.display = 'flex';
+  document.querySelectorAll('.panel').forEach(function(p) {
+    if (p.id === 'panel-weer') p.classList.add('active');
+  });
+}
+
 function toggleProfielPanel() {
   var panel = document.getElementById('profiel-panel');
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -1448,27 +1536,47 @@ document.addEventListener('click', function(e) {
   loadSavedProfiel();
   loadSavedBikes();
   renderClothing();
+
   // Set time slider to current hour
   var currentHour = new Date().getHours();
   var slider = document.getElementById('time-slider');
-  if (slider) { slider.value = currentHour; document.getElementById('selected-time-label').textContent = String(currentHour).padStart(2,'0') + ':00'; }
-  initWeather();
+  if (slider) {
+    slider.value = currentHour;
+    var stl = document.getElementById('selected-time-label');
+    if (stl) stl.textContent = String(currentHour).padStart(2,'0') + ':00';
+  }
 
-  if (!STRAVA_CLIENT_ID) {
-    document.getElementById('setup-card').style.display='block';
-    document.getElementById('login-prompt-card').style.display='none';
-    return;
-  }
-  document.getElementById('client-id-input').value=STRAVA_CLIENT_ID;
-  var savedToken=sessionStorage.getItem('strava_token');
-  var savedAthlete=sessionStorage.getItem('strava_athlete');
-  if (savedToken&&savedAthlete) {
-    accessToken=savedToken;
-    try{athlete=JSON.parse(savedAthlete);}catch(e){}
+  // Hide tabs initially
+  document.querySelector('.tabs').style.display = 'none';
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+
+  // Check if already logged in via session
+  var savedToken = sessionStorage.getItem('strava_token');
+  var savedAthlete = sessionStorage.getItem('strava_athlete');
+  if (savedToken && savedAthlete) {
+    accessToken = savedToken;
+    try { athlete = JSON.parse(savedAthlete); } catch(e) {}
+    showMainApp();
     showLoggedIn();
+    initWeather();
     return;
   }
-  await handleOAuthCallback();
+
+  // Check OAuth callback (returning from Strava)
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('code')) {
+    var ok = await handleOAuthCallback();
+    if (ok) { showMainApp(); initWeather(); return; }
+  }
+
+  // Show welcome screen
+  initWeather();
+  if (!STRAVA_CLIENT_ID) {
+    document.getElementById('welcome-screen').style.display = 'block';
+  } else {
+    document.getElementById('client-id-input').value = STRAVA_CLIENT_ID;
+    document.getElementById('welcome-screen').style.display = 'block';
+  }
 })();
 </script>
 </body>

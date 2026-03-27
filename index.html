@@ -1128,16 +1128,16 @@ async function selectSegment(id, itemEl){
   // Toggle: if already open, close it
   if(currentOpenSegId === id){
     var prev = document.getElementById('seg-inline-'+id);
-    if(prev) prev.style.display='none';
+    if(prev){ prev.style.display='none'; prev.innerHTML=''; }
     document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
     currentOpenSegId = null;
     selectedSegment = null; gpxPoints = [];
     return;
   }
-  // Close any previously open detail
+  // Close any previously open detail and CLEAR its HTML to remove duplicate IDs
   if(currentOpenSegId !== null){
     var prevDetail = document.getElementById('seg-inline-'+currentOpenSegId);
-    if(prevDetail) prevDetail.style.display='none';
+    if(prevDetail){ prevDetail.style.display='none'; prevDetail.innerHTML=''; }
     var prevItem = document.getElementById('seg-item-'+currentOpenSegId);
     if(prevItem) prevItem.classList.remove('active');
   }

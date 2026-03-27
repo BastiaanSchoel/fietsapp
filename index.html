@@ -1105,21 +1105,22 @@ function buildInlineDetail(prSec) {
 }
 
 function buildAccRow(id, label, body) {
-  var div = document.createElement('div');
-  div.style.borderTop = '0.5px solid var(--border)';
-  var btn = document.createElement('button');
-  btn.className = 'accord-btn';
-  btn.setAttribute('data-accord', id);
-  btn.innerHTML = '<span>' + label + '</span><span class="accord-arrow">&#9660;</span>';
-  btn.addEventListener('click', function() { toggleAccord(id, this); });
-  var body_div = document.createElement('div');
-  body_div.className = 'accord-body';
-  body_div.id = id;
-  body_div.innerHTML = body;
-  div.appendChild(btn);
-  div.appendChild(body_div);
-  return div.outerHTML;
+  return '<div style="border-top:0.5px solid var(--border);">' +
+    '<button class="accord-btn" data-target="' + id + '" onclick="ilToggle(this)">' +
+      '<span>' + label + '</span><span class="accord-arrow">&#9660;</span>' +
+    '</button>' +
+    '<div class="accord-body" id="' + id + '">' + body + '</div>' +
+  '</div>';
 }
+
+function ilToggle(btn) {
+  var id = btn.getAttribute('data-target');
+  var body = document.getElementById(id);
+  if (!body) return;
+  body.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
 
 var currentOpenSegId = null;
 
@@ -1186,26 +1187,30 @@ async function selectSegment(id, itemEl){
 
 
 function wireIlSliders(){
-  ['mytime-min','mytime-sec','wloss','bikeloss','powergain','fatigue'].forEach(function(id){
-    var el=document.getElementById(id);if(!el)return;
-    el.addEventListener('input',function(){
-      var out=document.getElementById(id+'-out');
-      if(out)out.textContent=id==='mytime-sec'?String(el.value).padStart(2,'0'):el.value;
-      if(id==='mytime-min'||id==='mytime-sec'){
-        var s=document.getElementById('il-tijd-sum');
-        if(s)s.textContent=document.getElementById('mytime-min').value+'m '+String(document.getElementById('mytime-sec').value).padStart(2,'0')+'s';
-      }
+  var ids = ['mytime-min','mytime-sec','wloss','bikeloss','powergain','fatigue'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.oninput = function(){
+      var out = document.getElementById(id+'-out');
+      if (out) out.textContent = id==='mytime-sec' ? String(el.value).padStart(2,'0') : el.value;
       calcResult();
-    });
+    };
   });
-  var its=document.getElementById('il-time-slider');
-  if(its){its.addEventListener('input',function(){
-    var h=parseInt(this.value);
-    var tl=document.getElementById('il-time-lbl');if(tl)tl.textContent=String(h).padStart(2,'0')+':00';
-    var ms=document.getElementById('time-slider');if(ms)ms.value=h;
-    updateIlWeer();calcResult();
-  });}
+  var its = document.getElementById('il-time-slider');
+  if (its) {
+    its.oninput = function(){
+      var h = parseInt(this.value);
+      var tl = document.getElementById('il-time-lbl');
+      if (tl) tl.textContent = String(h).padStart(2,'0') + ':00';
+      var ms = document.getElementById('time-slider');
+      if (ms) ms.value = h;
+      updateIlWeer();
+      calcResult();
+    };
+  }
 }
+
 
 function renderIlGarage(){
   var el=document.getElementById('il-garage');if(!el)return;

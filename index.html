@@ -216,13 +216,72 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
     </svg>
     <div><div>Watts-up</div><div class="logo-sub">Segment Simulator</div></div>
   </div>
-  <div id="header-auth">
-    <button class="strava-btn" onclick="loginWithStrava()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-      Strava
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button onclick="toggleProfielPanel()" id="profiel-header-btn" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);color:white;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profiel
     </button>
+    <div id="header-auth">
+      <button class="strava-btn" onclick="loginWithStrava()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        Strava
+      </button>
+    </div>
   </div>
 </header>
+
+<div id="profiel-panel" style="display:none;position:fixed;top:56px;right:0;width:320px;max-height:calc(100vh - 56px);overflow-y:auto;background:var(--surface);border-left:0.5px solid var(--border-mid);border-bottom:0.5px solid var(--border-mid);z-index:200;padding:1.25rem;box-shadow:-4px 4px 16px rgba(0,0,0,0.08);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);font-family:'DM Mono',monospace;">Profiel</div>
+    <button onclick="toggleProfielPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1;padding:0 2px;">x</button>
+  </div>
+  <div id="profiel-strava-row" style="display:none;margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm);">
+      <img id="profiel-avatar" src="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+      <div id="profiel-naam" style="font-size:13px;font-weight:500;flex:1;"></div>
+      <div style="font-size:10px;color:var(--green-dark);">Strava</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;">
+    <div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Gewicht (kg)</div>
+      <div style="position:relative;">
+        <input type="number" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()" style="width:100%;padding:8px 28px 8px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;">
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-muted);">kg</span>
+      </div>
+      <div style="font-size:10px;color:var(--green-dark);margin-top:3px;" id="pf-weight-src"></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Lengte (cm)</div>
+      <div style="position:relative;">
+        <input type="number" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()" style="width:100%;padding:8px 28px 8px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;">
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-muted);">cm</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">FTP (W)</div>
+      <div style="position:relative;">
+        <input type="number" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()" style="width:100%;padding:8px 28px 8px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;">
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-muted);">W</span>
+      </div>
+      <div style="font-size:10px;color:var(--green-dark);margin-top:3px;" id="pf-ftp-src"></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Leeftijd</div>
+      <div style="position:relative;">
+        <input type="number" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()" style="width:100%;padding:8px 28px 8px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;">
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text-muted);">jr</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:1rem;">
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">W/kg</div><div style="font-size:15px;font-weight:500;" id="pf-wkg">--</div></div>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">BMI</div><div style="font-size:15px;font-weight:500;" id="pf-bmi">--</div></div>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">Totaal gewicht</div><div style="font-size:15px;font-weight:500;" id="pf-total">--</div></div>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">W/kg totaal</div><div style="font-size:15px;font-weight:500;" id="pf-wkgt">--</div></div>
+  </div>
+  <div style="background:var(--green-light);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:var(--green-deep);line-height:1.6;" id="pf-advice">Vul je gegevens in.</div>
+</div>
 
 <div class="main">
   <div class="tabs">
@@ -291,59 +350,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
         <div class="moment-cell"><div class="moment-label">CdA-effect</div><div class="moment-val" id="mt-cda">--</div><div class="moment-eff" id="mt-cda-eff"></div></div>
         <div class="moment-cell"><div class="moment-label">Netto tijdeffect</div><div class="moment-val" id="mt-netto">--</div><div class="moment-eff" id="mt-netto-eff"></div></div>
       </div>
-    </div>
-  </div>
-
-  <!-- PROFIEL -->
-  <div id="panel-profiel" class="panel">
-    <div class="card">
-      <div class="card-title">Jouw gegevens</div>
-      <div id="profiel-strava-row" style="display:none;margin-bottom:1rem;">
-        <div class="location-bar">
-          <img id="profiel-avatar" src="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-          <div id="profiel-naam" style="font-size:13px;font-weight:500;flex:1;"></div>
-          <div style="font-size:10px;color:var(--green-dark);">Strava</div>
-        </div>
-      </div>
-      <div class="field-grid">
-        <div>
-          <div class="field-label">Gewicht (kg)</div>
-          <div class="field-input-wrap">
-            <input type="number" class="field-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()">
-            <span class="field-unit">kg</span>
-          </div>
-          <div class="field-source" id="pf-weight-src"></div>
-        </div>
-        <div>
-          <div class="field-label">Lengte (cm)</div>
-          <div class="field-input-wrap">
-            <input type="number" class="field-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()">
-            <span class="field-unit">cm</span>
-          </div>
-        </div>
-        <div>
-          <div class="field-label">FTP (W)</div>
-          <div class="field-input-wrap">
-            <input type="number" class="field-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()">
-            <span class="field-unit">W</span>
-          </div>
-          <div class="field-source" id="pf-ftp-src"></div>
-        </div>
-        <div>
-          <div class="field-label">Leeftijd</div>
-          <div class="field-input-wrap">
-            <input type="number" class="field-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()">
-            <span class="field-unit">jr</span>
-          </div>
-        </div>
-      </div>
-      <div class="metrics-row">
-        <div class="metric-small"><div class="ml">W/kg</div><div class="mv" id="pf-wkg">--</div></div>
-        <div class="metric-small"><div class="ml">BMI</div><div class="mv" id="pf-bmi">--</div></div>
-        <div class="metric-small"><div class="ml">Totaal gewicht</div><div class="mv" id="pf-total">--</div></div>
-        <div class="metric-small"><div class="ml">W/kg totaal</div><div class="mv" id="pf-wkgt">--</div></div>
-      </div>
-      <div class="advice-box" id="pf-advice">Vul je gegevens in.</div>
     </div>
   </div>
 
@@ -503,16 +509,16 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
       <div class="info-box" id="mytime-info">Jouw PR is automatisch ingevuld.</div>
     </div>
 
-    <div id="mini-result-card" class="card" style="display:none;">
-      <div class="card-title">Effect op dit segment <span class="badge-new">live</span></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border);">
+    <div id="mini-result-card" class="card" style="display:none;padding:1rem;">
+      <div class="card-title" style="margin-bottom:0.75rem;">Effect huidig scenario <span class="badge-new">live</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:0.5px solid var(--border);">
         <div>
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Gesimuleerde tijd</div>
-          <div style="font-size:36px;font-weight:600;font-family:monospace;letter-spacing:-0.03em;" id="mini-res-time">--</div>
+          <div style="font-size:28px;font-weight:600;font-family:monospace;letter-spacing:-0.03em;" id="mini-res-time">--</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">t.o.v. jouw PR</div>
-          <div style="font-size:20px;font-weight:600;font-family:monospace;" id="mini-res-diff">--</div>
+          <div style="font-size:16px;font-weight:600;font-family:monospace;" id="mini-res-diff">--</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="mini-res-speed">--</div>
         </div>
       </div>
@@ -1148,6 +1154,7 @@ async function selectSegment(id) {
     }
     document.getElementById('segment-detail-card').style.display = 'block';
     document.getElementById('mytime-card').style.display = 'block';
+    document.getElementById('mini-result-card').style.display = 'block';
     setTimeout(function(){drawProfile(gpxPoints);}, 50);
     calcResult();
   } catch(e) { alert('Kon segment niet laden: '+e.message); }
@@ -1422,10 +1429,29 @@ function switchTab(name) {
   if (el) el.addEventListener('change',function(){calcResult();});
 });
 
+function toggleProfielPanel() {
+  var panel = document.getElementById('profiel-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+  var panel = document.getElementById('profiel-panel');
+  var btn = document.getElementById('profiel-header-btn');
+  if (panel && panel.style.display === 'block') {
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  }
+});
+
 (async function init() {
   loadSavedProfiel();
   loadSavedBikes();
   renderClothing();
+  // Set time slider to current hour
+  var currentHour = new Date().getHours();
+  var slider = document.getElementById('time-slider');
+  if (slider) { slider.value = currentHour; document.getElementById('selected-time-label').textContent = String(currentHour).padStart(2,'0') + ':00'; }
   initWeather();
 
   if (!STRAVA_CLIENT_ID) {

@@ -202,6 +202,17 @@ canvas.seg-canvas{width:100%;height:100%;display:block;}
 .bar-seg{height:7px;border-radius:2px;}
 .hint{font-size:11px;color:var(--text-muted);font-family:monospace;}
 .warn-box{background:#FFF3CD;border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:#7A5000;margin-bottom:1rem;line-height:1.6;display:none;}
+.accord-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 0;background:none;border:none;border-top:0.5px solid var(--border);cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text);}
+.accord-btn:first-child{border-top:none;}
+.accord-arrow{transition:transform 0.2s;font-size:11px;color:var(--text-muted);}
+.accord-btn.open .accord-arrow{transform:rotate(180deg);}
+.accord-body{display:none;padding-bottom:10px;}
+.accord-body.open{display:block;}
+.seg-bike-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer;border:1px solid transparent;}
+.seg-bike-opt:hover{border-color:var(--border-mid);}
+.seg-bike-opt.active{border-color:var(--green);background:var(--green-light);}
+.seg-bike-name{font-size:12px;font-weight:500;}
+.seg-bike-sub{font-size:10px;color:var(--text-muted);}
 footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);font-family:monospace;}
 @media(max-width:640px){.result-time{font-size:48px;}.seg-stats{grid-template-columns:repeat(2,1fr);}.live-grid{grid-template-columns:repeat(2,1fr);}.metrics-row{grid-template-columns:repeat(2,1fr);}}
 </style>
@@ -372,14 +383,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
           <div class="loc-name" id="loc-name">--</div>
           <div class="loc-time" id="loc-time">--</div>
         </div>
-        <div class="live-grid">
-          <div class="live-cell"><div class="live-label">Temperatuur</div><div class="live-val" id="lv-temp">--</div><div class="live-sub" id="lv-feels">--</div></div>
-          <div class="live-cell"><div class="live-label">Wind</div><div class="live-val" id="lv-wind">--</div><div class="live-sub" id="lv-winddir">--</div></div>
-          <div class="live-cell"><div class="live-label">Neerslag</div><div class="live-val" id="lv-rain">--</div><div class="live-sub" id="lv-humid">--</div></div>
-          <div class="live-cell"><div class="live-label">Luchtdruk</div><div class="live-val" id="lv-pressure">--</div><div class="live-sub">hPa</div></div>
-          <div class="live-cell"><div class="live-label">Gevoelstemp.</div><div class="live-val" id="lv-apptemp">--</div><div class="live-sub">gevoeld</div></div>
-          <div class="live-cell"><div class="live-label">UV-index</div><div class="live-val" id="lv-uv">--</div><div class="live-sub" id="lv-uvlabel">--</div></div>
-        </div>
+
         <div class="ftp-impact neu" id="ftp-impact-bar">
           <span id="ftp-impact-text">FTP-effect berekenen...</span>
           <span id="ftp-impact-val" style="font-weight:600;font-family:monospace;"></span>
@@ -412,8 +416,11 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
       </div>
       <div class="moment-grid">
         <div class="moment-cell"><div class="moment-label">Temperatuur</div><div class="moment-val" id="mt-temp">--</div><div class="moment-eff" id="mt-temp-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">Gevoelstemperatuur</div><div class="moment-val" id="mt-feels">--</div><div class="moment-eff" id="mt-feels-eff"></div></div>
         <div class="moment-cell"><div class="moment-label">Wind</div><div class="moment-val" id="mt-wind">--</div><div class="moment-eff" id="mt-wind-eff"></div></div>
         <div class="moment-cell"><div class="moment-label">Neerslag</div><div class="moment-val" id="mt-rain">--</div><div class="moment-eff" id="mt-rain-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">Luchtdruk</div><div class="moment-val" id="mt-pressure">--</div><div class="moment-eff" id="mt-pressure-eff"></div></div>
+        <div class="moment-cell"><div class="moment-label">UV-index</div><div class="moment-val" id="mt-uv">--</div><div class="moment-eff" id="mt-uv-eff"></div></div>
         <div class="moment-cell"><div class="moment-label">FTP-effect</div><div class="moment-val" id="mt-ftp">--</div><div class="moment-eff" id="mt-ftp-eff"></div></div>
         <div class="moment-cell"><div class="moment-label">CdA-effect</div><div class="moment-val" id="mt-cda">--</div><div class="moment-eff" id="mt-cda-eff"></div></div>
         <div class="moment-cell"><div class="moment-label">Netto tijdeffect</div><div class="moment-val" id="mt-netto">--</div><div class="moment-eff" id="mt-netto-eff"></div></div>
@@ -561,8 +568,10 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
       </div>
       <div class="profile-wrap"><canvas class="seg-canvas" id="profile-canvas"></canvas></div>
 
-      <!-- Mini resultaat direct onder hoogteprofiel -->
+      <!-- Basistijd -->
       <div id="mini-result-card" style="display:none;margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border);">
+
+        <!-- Tijd balk -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
           <div>
             <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">Gesimuleerde tijd</div>
@@ -574,66 +583,132 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
             <div style="font-size:11px;color:var(--text-muted);margin-top:1px;" id="mini-res-speed">--</div>
           </div>
         </div>
+
+        <!-- Basistijd sliders -->
+        <div style="margin-bottom:0.75rem;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;font-family:monospace;margin-bottom:8px;">Jouw basistijd</div>
+          <div class="mytime-row">
+            <div class="mytime-label">Minuten</div>
+            <input type="range" id="mytime-min" min="0" max="120" step="1" value="20">
+            <div class="mytime-val"><span id="mytime-min-out">20</span> min</div>
+          </div>
+          <div class="mytime-row" style="margin-bottom:0;">
+            <div class="mytime-label">Seconden</div>
+            <input type="range" id="mytime-sec" min="0" max="59" step="1" value="0">
+            <div class="mytime-val"><span id="mytime-sec-out">00</span> sec</div>
+          </div>
+          <div style="font-size:10px;color:var(--green-dark);margin-top:6px;" id="mytime-info"></div>
+        </div>
+
+        <!-- Factoren balk -->
         <div id="mini-factors" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;"></div>
-        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;color:var(--text-muted);line-height:1.5;" id="mini-weer-info">Weer: laden...</div>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;">
-            <div style="color:var(--text-muted);margin-bottom:1px;">Bandtype</div>
-            <div style="font-weight:600;font-family:'DM Mono',monospace;" id="mini-tire-effect">--</div>
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:8px;" id="mini-weer-info">Weer: laden...</div>
+
+        <!-- ACCORDEON SETUP -->
+        <div id="seg-accordions">
+
+          <!-- 1. Fiets -->
+          <button class="accord-btn open" onclick="toggleAccord('acc-fiets',this)">
+            <span>Fiets</span><span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body open" id="acc-fiets">
+            <div id="seg-garage-list" style="margin-bottom:4px;"></div>
+            <div style="display:flex;gap:6px;margin-top:4px;">
+              <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;">
+                <div style="color:var(--text-muted);margin-bottom:1px;">Bandtype</div>
+                <div style="font-weight:600;font-family:monospace;" id="mini-tire-effect">--</div>
+              </div>
+              <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;">
+                <div style="color:var(--text-muted);margin-bottom:1px;">Spanning</div>
+                <div style="font-weight:600;font-family:monospace;" id="mini-pressure-effect">--</div>
+              </div>
+            </div>
           </div>
-          <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;font-size:11px;">
-            <div style="color:var(--text-muted);margin-bottom:1px;">Spanning</div>
-            <div style="font-weight:600;font-family:'DM Mono',monospace;" id="mini-pressure-effect">--</div>
+
+          <!-- 2. Kleding -->
+          <button class="accord-btn" onclick="toggleAccord('acc-kleding',this)">
+            <span>Kleding <span style="font-size:10px;color:var(--text-muted);font-weight:400;" id="acc-kleding-summary"></span></span><span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-kleding">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;font-family:monospace;">Bovenkant</div>
+            <div class="clothing-grid" id="seg-clothing-top" style="margin-bottom:10px;"></div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;font-family:monospace;">Onderkant & schoenen</div>
+            <div class="clothing-grid" id="seg-clothing-bottom" style="margin-bottom:10px;"></div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;font-family:monospace;">Extras</div>
+            <div class="clothing-grid" id="seg-clothing-extra"></div>
           </div>
+
+          <!-- 3. Weer -->
+          <button class="accord-btn" onclick="toggleAccord('acc-weer',this)">
+            <span>Weer & tijdstip <span style="font-size:10px;color:var(--text-muted);font-weight:400;" id="acc-weer-summary"></span></span><span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-weer">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;" id="acc-weer-loc">Locatie laden...</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">Tijdstip</div>
+            <input type="range" id="seg-time-slider" min="0" max="23" step="1" value="10" style="width:100%;margin-bottom:4px;">
+            <div style="text-align:center;font-size:12px;font-weight:500;font-family:monospace;margin-bottom:8px;" id="seg-time-label">10:00</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;" id="seg-weer-cells"></div>
+          </div>
+
+          <!-- 4. Wat als -->
+          <button class="accord-btn" onclick="toggleAccord('acc-watals',this)">
+            <span>Wat als?</span><span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-watals">
+            <div class="mytime-row">
+              <div class="mytime-label" style="width:130px;">Gewichtsverlies</div>
+              <input type="range" id="wloss" min="0" max="20" step="0.5" value="0">
+              <div class="mytime-val">-<span id="wloss-out">0.0</span> kg</div>
+            </div>
+            <div class="mytime-row">
+              <div class="mytime-label" style="width:130px;">Extra vermogen</div>
+              <input type="range" id="powergain" min="0" max="80" step="5" value="0">
+              <div class="mytime-val">+<span id="powergain-out">0</span> W</div>
+            </div>
+            <div class="mytime-row" style="margin-bottom:0;">
+              <div class="mytime-label" style="width:130px;">Fiets lichter</div>
+              <input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0">
+              <div class="mytime-val">-<span id="bikeloss-out">0.0</span> kg</div>
+            </div>
+          </div>
+
+          <!-- 5. Positie & groep -->
+          <button class="accord-btn" onclick="toggleAccord('acc-positie',this)">
+            <span>Positie & groep</span><span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-positie">
+            <div class="select-row" style="margin-bottom:8px;">
+              <label style="width:110px;">Rijpositie</label>
+              <select id="aero" style="flex:1;font-size:13px;padding:6px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:inherit;">
+                <option value="0.408">Tops (CdA 0.408)</option>
+                <option value="0.324" selected>Hoods (CdA 0.324)</option>
+                <option value="0.307">Drops (CdA 0.307)</option>
+                <option value="0.230">Aerobars (CdA 0.230)</option>
+                <option value="0.200">TT-positie (CdA 0.200)</option>
+              </select>
+            </div>
+            <div class="select-row" style="margin-bottom:0;">
+              <label style="width:110px;">Groepsrit</label>
+              <select id="draft" style="flex:1;font-size:13px;padding:6px 10px;border:0.5px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:inherit;">
+                <option value="1.00" selected>Solo</option>
+                <option value="0.85">Klein groepje (-15%)</option>
+                <option value="0.72">Groot peloton (-28%)</option>
+                <option value="0.65">Wiel zitten (-35%)</option>
+              </select>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
-
-    <div id="mytime-card" class="card" style="display:none;">
-      <div class="card-title">Basistijd</div>
-      <div class="mytime-row">
-        <div class="mytime-label">Minuten</div>
-        <input type="range" id="mytime-min" min="0" max="120" step="1" value="20">
-        <div class="mytime-val"><span id="mytime-min-out">20</span> min</div>
-      </div>
-      <div class="mytime-row">
-        <div class="mytime-label">Seconden</div>
-        <input type="range" id="mytime-sec" min="0" max="59" step="1" value="0">
-        <div class="mytime-val"><span id="mytime-sec-out">00</span> sec</div>
-      </div>
-      <div class="info-box" id="mytime-info">Jouw PR is automatisch ingevuld.</div>
-    </div>
-
 
   </div>
 
   <!-- SCENARIO -->
   <div id="panel-scenario" class="panel">
     <div class="card">
-      <div class="card-title">Wat als?</div>
-      <div class="row"><div class="row-label">Gewichtsverlies (kg)</div><input type="range" id="wloss" min="0" max="20" step="0.5" value="0"><div class="row-val">-<span id="wloss-out">0.0</span> kg</div></div>
-      <div class="row"><div class="row-label">Extra vermogen (W)</div><input type="range" id="powergain" min="0" max="80" step="5" value="0"><div class="row-val">+<span id="powergain-out">0</span> W</div></div>
-      <div class="row"><div class="row-label">Fiets lichter (kg)</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="row-val">-<span id="bikeloss-out">0.0</span> kg</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Positie & groep</div>
-      <div class="select-row"><label>Rijpositie</label>
-        <select id="aero">
-          <option value="0.408">Tops (CdA 0.408)</option>
-          <option value="0.324" selected>Hoods (CdA 0.324)</option>
-          <option value="0.307">Drops (CdA 0.307)</option>
-          <option value="0.230">Aerobars (CdA 0.230)</option>
-          <option value="0.200">TT-positie (CdA 0.200)</option>
-        </select>
-      </div>
-      <div class="select-row"><label>Groepsrit</label>
-        <select id="draft">
-          <option value="1.00" selected>Solo</option>
-          <option value="0.85">Klein groepje (-15%)</option>
-          <option value="0.72">Groot peloton (-28%)</option>
-          <option value="0.65">Wiel zitten (-35%)</option>
-        </select>
-      </div>
+      <div class="card-title">Scenario instellingen</div>
+      <div style="font-size:12px;color:var(--text-muted);padding:8px 0;">Pas de instellingen aan via het Segment-tabblad onder het geselecteerde segment.</div>
     </div>
     <div class="card">
       <div class="card-title">Weer & conditie</div>
@@ -808,7 +883,7 @@ async function initWeather() {
 
       var url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+
         '&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index,weather_code'+
-        '&hourly=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,weather_code'+
+        '&hourly=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,weather_code,uv_index'+
         '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,precipitation_sum'+
         '&timezone=auto&forecast_days=7';
       var wr = await fetch(url);
@@ -833,17 +908,6 @@ async function initWeather() {
 
 function renderLiveWeather(data) {
   var c = data.current;
-  document.getElementById('lv-temp').textContent = Math.round(c.temperature_2m) + 'C';
-  document.getElementById('lv-feels').textContent = 'Gevoels ' + Math.round(c.apparent_temperature) + 'C';
-  document.getElementById('lv-wind').textContent = Math.round(c.wind_speed_10m) + ' km/u';
-  document.getElementById('lv-winddir').textContent = degToDir(c.wind_direction_10m);
-  document.getElementById('lv-rain').textContent = c.precipitation.toFixed(1) + ' mm';
-  document.getElementById('lv-humid').textContent = 'Vocht ' + c.relative_humidity_2m + '%';
-  document.getElementById('lv-pressure').textContent = Math.round(c.surface_pressure);
-  document.getElementById('lv-apptemp').textContent = Math.round(c.apparent_temperature) + 'C';
-  var uv = c.uv_index || 0;
-  document.getElementById('lv-uv').textContent = uv.toFixed(1);
-  document.getElementById('lv-uvlabel').textContent = uv < 3 ? 'Laag' : uv < 6 ? 'Matig' : 'Hoog';
   var ftpEff = calcFtpEffect(c.temperature_2m);
   var ftp = parseFloat(document.getElementById('pf-ftp').value) || 220;
   var watts = Math.round(ftp * Math.abs(ftpEff) / 100);
@@ -873,6 +937,7 @@ function selectDay(idx) {
   document.getElementById('detail-title').textContent = '24-uurs verloop - ' + dayName(weatherData.daily.time[idx], idx);
   renderHourlyChart(weatherData, idx);
   document.getElementById('detail-card').style.display = 'block';
+  updateSegWeer();
 }
 
 function renderHourlyChart(data, dayIdx) {
@@ -935,12 +1000,22 @@ function updateMomentData(data, dayIdx, hour) {
   var netto = ftpEff + cdaEff + windEffect + rainEffect;
   var ftp = parseFloat(document.getElementById('pf-ftp').value) || 220;
   document.getElementById('selected-time-label').textContent = String(hour).padStart(2,'0') + ':00 - ' + dayName(data.daily.time[dayIdx], dayIdx);
+  var appTemp = data.hourly.apparent_temperature ? (data.hourly.apparent_temperature[s]||temp) : temp;
+  var uvIdx = data.hourly.uv_index ? (data.hourly.uv_index[s]||0) : 0;
+  var uvLabel = uvIdx < 3 ? 'Laag' : uvIdx < 6 ? 'Matig' : uvIdx < 8 ? 'Hoog' : 'Zeer hoog';
+
   document.getElementById('mt-temp').textContent = Math.round(temp) + 'C';
   setMomentEff('mt-temp-eff', ftpEff !== 0 ? 'FTP: '+(ftpEff>0?'+':'')+ftpEff+'%' : 'Optimaal bereik', ftpEff);
+  document.getElementById('mt-feels').textContent = Math.round(appTemp) + 'C';
+  setMomentEff('mt-feels-eff', 'Gevoeld door wind/vocht', appTemp < temp ? -1 : 0);
   document.getElementById('mt-wind').textContent = Math.round(wind) + ' km/u ' + degToDir(windDir);
   setMomentEff('mt-wind-eff', 'Weerstand: '+windEffect.toFixed(1)+'%', windEffect);
   document.getElementById('mt-rain').textContent = rain.toFixed(1) + ' mm';
   setMomentEff('mt-rain-eff', rain > 0.5 ? 'Nat: -1.5%' : 'Droog', rainEffect);
+  document.getElementById('mt-pressure').textContent = Math.round(pressure) + ' hPa';
+  setMomentEff('mt-pressure-eff', pressure < 1000 ? 'Lage druk: dunner lucht' : pressure > 1020 ? 'Hoge druk: dichter lucht' : 'Normaal', pressure < 1000 ? 1 : pressure > 1020 ? -0.5 : 0);
+  document.getElementById('mt-uv').textContent = uvIdx.toFixed(1);
+  setMomentEff('mt-uv-eff', uvLabel, 0);
   document.getElementById('mt-ftp').textContent = (ftpEff>=0?'+':'')+ftpEff+'%';
   setMomentEff('mt-ftp-eff', (ftpEff<0?'-':'+')+Math.round(ftp*Math.abs(ftpEff)/100)+'W', ftpEff);
   document.getElementById('mt-cda').textContent = (cdaEff>=0?'+':'')+cdaEff+'%';
@@ -953,6 +1028,18 @@ function setMomentEff(id, text, val) {
   var el = document.getElementById(id);
   el.textContent = text;
   el.className = 'moment-eff ' + (val > 0.2 ? 'pos' : val < -0.2 ? 'neg' : '');
+}
+
+var segSlider = document.getElementById('seg-time-slider');
+if (segSlider) {
+  segSlider.addEventListener('input', function() {
+    document.getElementById('time-slider').value = this.value;
+    var stl = document.getElementById('selected-time-label');
+    if (stl) stl.textContent = String(this.value).padStart(2,'0')+':00';
+    updateSegWeer();
+    if (weatherData) updateMomentData(weatherData, selectedDay, parseInt(this.value));
+    calcResult();
+  });
 }
 
 document.getElementById('time-slider').addEventListener('input', function() {
@@ -1515,6 +1602,84 @@ function showMainApp() {
   document.querySelectorAll('.panel').forEach(function(p) {
     if (p.id === 'panel-weer') p.classList.add('active');
   });
+}
+
+function toggleAccord(id, btn) {
+  var body = document.getElementById(id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function renderSegGarage() {
+  var el = document.getElementById('seg-garage-list');
+  if (!el) return;
+  if (!bikes.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:6px 0;">Voeg fietsen toe via de Fiets/Kleding tab.</div>'; return; }
+  el.innerHTML = bikes.map(function(b,i) {
+    var active = i===activebikeIdx?' active':'';
+    return '<div class="seg-bike-opt'+active+'" onclick="selectBike('+i+');renderSegGarage();calcResult();">'+
+      '<div style="width:24px;height:24px;border-radius:6px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="'+(active?'#1D9E75':'var(--text-muted)')+'" stroke-width="2"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/></svg>'+
+      '</div>'+
+      '<div><div class="seg-bike-name">'+b.name+'</div><div class="seg-bike-sub">'+b.weight+' kg - CdA '+b.cda+'</div></div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderSegClothing() {
+  function renderGroup(items, containerId) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = items.map(function(item) {
+      return '<button class="clothing-btn'+(item.on?' on':'')+'" onclick="toggleClothing(\'' + item.id + '\');renderSegClothing();">'+
+        item.label+'<div class="clothing-weight">'+(item.weight*1000).toFixed(0)+'g</div></button>';
+    }).join('');
+  }
+  renderGroup(clothingItems.top, 'seg-clothing-top');
+  renderGroup(clothingItems.bottom, 'seg-clothing-bottom');
+  renderGroup(clothingItems.extra, 'seg-clothing-extra');
+  var allItems = clothingItems.top.concat(clothingItems.bottom).concat(clothingItems.extra);
+  var on = allItems.filter(function(i){return i.on;});
+  var sumEl = document.getElementById('acc-kleding-summary');
+  if (sumEl) sumEl.textContent = on.length + ' items aan';
+}
+
+function updateSegWeer() {
+  if (!weatherData) {
+    var locEl = document.getElementById('acc-weer-loc');
+    if (locEl) locEl.textContent = 'Geen weerdata — ga naar de Weer-tab.';
+    return;
+  }
+  var locEl = document.getElementById('acc-weer-loc');
+  if (locEl) locEl.textContent = document.getElementById('loc-name').textContent + ' - ' + dayName(weatherData.daily.time[selectedDay], selectedDay);
+  var hour = parseInt(document.getElementById('seg-time-slider').value);
+  document.getElementById('seg-time-label').textContent = String(hour).padStart(2,'0')+':00';
+  var s = selectedDay*24+hour;
+  var temp = weatherData.hourly.temperature_2m[s]||15;
+  var wind = weatherData.hourly.wind_speed_10m[s]||0;
+  var windDir = weatherData.hourly.wind_direction_10m[s]||0;
+  var rain = weatherData.hourly.precipitation[s]||0;
+  var humid = weatherData.hourly.relative_humidity_2m[s]||60;
+  var pressure = weatherData.hourly.surface_pressure[s]||1013;
+  var cells = document.getElementById('seg-weer-cells');
+  if (cells) {
+    var ftpEff = calcFtpEffect(temp);
+    var cdaEff = calcCdaEffect(temp, pressure, humid);
+    cells.innerHTML = [
+      {label:'Temp', val:Math.round(temp)+'C'},
+      {label:'Wind', val:Math.round(wind)+' km/u '+degToDir(windDir)},
+      {label:'Neerslag', val:rain.toFixed(1)+' mm'},
+      {label:'FTP-effect', val:(ftpEff>=0?'+':'')+ftpEff+'%'},
+      {label:'CdA-effect', val:(cdaEff>=0?'+':'')+cdaEff+'%'},
+      {label:'Vochtigheid', val:humid+'%'}
+    ].map(function(c){
+      return '<div style="background:var(--bg);border-radius:var(--radius-sm);padding:6px 8px;">'+
+        '<div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">'+c.label+'</div>'+
+        '<div style="font-size:12px;font-weight:500;font-family:monospace;">'+c.val+'</div></div>';
+    }).join('');
+    var sumEl = document.getElementById('acc-weer-summary');
+    if (sumEl) sumEl.textContent = Math.round(temp)+'C, wind '+Math.round(wind)+' km/u';
+  }
 }
 
 function toggleProfielPanel() {

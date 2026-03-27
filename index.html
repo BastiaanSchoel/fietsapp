@@ -516,6 +516,11 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
           <div class="mini-weer" id="mini-weer">Weer: geen data</div>
         </div>
 
+        <!-- Instellingen -->
+        <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:0.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);margin-bottom:0.5rem;font-family:'DM Mono',monospace;">Instellingen aanpassen</div>
+        </div>
+
         <!-- Basistijd -->
         <div class="accord">
           <button class="accord-btn open" onclick="toggleAccord('acc-tijd',this)">
@@ -1027,7 +1032,12 @@ async function selectSegment(id){
     document.getElementById('seg-detail').style.display='block';
     document.getElementById('mini-result').style.display='block';
     renderAccGarage();renderAccClothing();updateAccWeer();
-    setTimeout(function(){drawProfile(gpxPoints);},50);
+    setTimeout(function(){
+      drawProfile(gpxPoints);
+      // Scroll segment detail into view
+      var el = document.getElementById('seg-detail');
+      if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    },100);
     calcResult();
   }catch(e){alert('Kon segment niet laden: '+e.message);}
 }

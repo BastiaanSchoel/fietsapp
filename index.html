@@ -227,8 +227,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
 <div class="main">
   <div class="tabs">
     <button class="tab active" onclick="switchTab('weer')">Weer</button>
-    <button class="tab" onclick="switchTab('profiel')">Profiel</button>
-    <button class="tab" onclick="switchTab('fiets')">Fiets</button>
+    <button class="tab" onclick="switchTab('fiets')">Fiets/Kleding</button>
     <button class="tab" onclick="switchTab('segment')">Segment</button>
     <button class="tab" onclick="switchTab('scenario')">Scenario</button>
     <button class="tab" onclick="switchTab('resultaat')">Resultaat</button>
@@ -502,6 +501,35 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--text-muted);fon
         <div class="mytime-val"><span id="mytime-sec-out">00</span> sec</div>
       </div>
       <div class="info-box" id="mytime-info">Jouw PR is automatisch ingevuld.</div>
+    </div>
+
+    <div id="mini-result-card" class="card" style="display:none;">
+      <div class="card-title">Effect op dit segment <span class="badge-new">live</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border);">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Gesimuleerde tijd</div>
+          <div style="font-size:36px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-0.03em;" id="mini-res-time">--</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">t.o.v. jouw PR</div>
+          <div style="font-size:20px;font-weight:600;font-family:'DM Mono',monospace;" id="mini-res-diff">--</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="mini-res-speed">--</div>
+        </div>
+      </div>
+      <div id="mini-factors" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:var(--text-muted);" id="mini-weer-info">
+        Weer: geen weerdata beschikbaar.
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;">
+        <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;">
+          <div style="color:var(--text-muted);margin-bottom:2px;">Bandtype effect</div>
+          <div style="font-weight:600;font-family:'DM Mono',monospace;" id="mini-tire-effect">--</div>
+        </div>
+        <div style="flex:1;background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;">
+          <div style="color:var(--text-muted);margin-bottom:2px;">Spanning (bar) effect</div>
+          <div style="font-weight:600;font-family:'DM Mono',monospace;" id="mini-pressure-effect">--</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -789,14 +817,18 @@ function renderHourlyChart(data, dayIdx) {
   var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   var gc = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   var tc = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
+  var sliderHour = parseInt(document.getElementById('time-slider').value);
+  function makePointRadius(hour) {
+    return Array.from({length:24}, function(_,i){ return i===hour?5:0; });
+  }
   weatherChart = new Chart(canvas, {
     type: 'line',
     data: { labels: labels, datasets: [
-      { label:'Temp', data:temps, borderColor:'#D85A30', backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.4, yAxisID:'y' },
-      { label:'Wind', data:winds, borderColor:'#378ADD', backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.4, yAxisID:'y' },
-      { label:'Neerslag', data:rains, borderColor:'#85B7EB', backgroundColor:'rgba(133,183,235,0.12)', borderWidth:1.5, pointRadius:0, fill:true, yAxisID:'y2' },
-      { label:'FTP-eff', data:ftpEffs, borderColor:'#EF9F27', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, borderDash:[4,3], yAxisID:'y3' },
-      { label:'CdA-eff', data:cdaEffs, borderColor:'#7F77DD', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, borderDash:[2,3], yAxisID:'y3' }
+      { label:'Temp', data:temps, borderColor:'#D85A30', backgroundColor:'transparent', borderWidth:2, pointRadius:makePointRadius(sliderHour), pointBackgroundColor:'#D85A30', tension:0.4, yAxisID:'y' },
+      { label:'Wind', data:winds, borderColor:'#378ADD', backgroundColor:'transparent', borderWidth:2, pointRadius:makePointRadius(sliderHour), pointBackgroundColor:'#378ADD', tension:0.4, yAxisID:'y' },
+      { label:'Neerslag', data:rains, borderColor:'#85B7EB', backgroundColor:'rgba(133,183,235,0.12)', borderWidth:1.5, pointRadius:makePointRadius(sliderHour), pointBackgroundColor:'#85B7EB', fill:true, yAxisID:'y2' },
+      { label:'FTP-eff', data:ftpEffs, borderColor:'#EF9F27', backgroundColor:'transparent', borderWidth:1.5, pointRadius:makePointRadius(sliderHour), pointBackgroundColor:'#EF9F27', borderDash:[4,3], yAxisID:'y3' },
+      { label:'CdA-eff', data:cdaEffs, borderColor:'#7F77DD', backgroundColor:'transparent', borderWidth:1.5, pointRadius:makePointRadius(sliderHour), pointBackgroundColor:'#7F77DD', borderDash:[2,3], yAxisID:'y3' }
     ]},
     options: {
       responsive:true, maintainAspectRatio:true,
@@ -850,7 +882,16 @@ function setMomentEff(id, text, val) {
 }
 
 document.getElementById('time-slider').addEventListener('input', function() {
-  if (weatherData) updateMomentData(weatherData, selectedDay, parseInt(this.value));
+  if (!weatherData) return;
+  var hour = parseInt(this.value);
+  updateMomentData(weatherData, selectedDay, hour);
+  // Update point positions on chart
+  if (weatherChart) {
+    var pts = Array.from({length:24}, function(_,i){ return i===hour?5:0; });
+    weatherChart.data.datasets.forEach(function(ds){ ds.pointRadius = pts; });
+    weatherChart.update('none');
+  }
+  calcResult();
 });
 
 function updateProfiel() {
@@ -1292,12 +1333,73 @@ function calcResult() {
   if (draftF===1.0) adv.push('Wiel zitten spaart 35% luchtweerstand.');
   if (!adv.length) adv.push('Experimenteer met de instellingen voor dit segment.');
   document.getElementById('advice').innerHTML = adv.map(function(a){return '-> '+a;}).join('<br>');
+
+  // Update mini-result card
+  updateMiniResult(myTimeSec, newTimeScaled, diff, totalDist, P, weight, wloss, factors, bike, bikePressureBar, rho, rhoStd, ftpEffect);
+}
+
+function updateMiniResult(myTimeSec, newTimeScaled, diff, totalDist, P, weight, wloss, factors, bike, bikePressureBar, rho, rhoStd, ftpEffect) {
+  var card = document.getElementById('mini-result-card');
+  if (!card) return;
+  card.style.display = 'block';
+
+  document.getElementById('mini-res-time').textContent = fmt(newTimeScaled);
+  document.getElementById('mini-res-speed').textContent = (totalDist/newTimeScaled*3.6).toFixed(1)+' km/u';
+
+  var diffEl = document.getElementById('mini-res-diff');
+  if (Math.abs(diff)<1) { diffEl.textContent='+/- 0s'; diffEl.style.color='var(--text-muted)'; }
+  else { diffEl.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer'); diffEl.style.color=diff>0?'var(--green)':'var(--coral)'; }
+
+  // Top 4 factors
+  var top4 = factors.slice().sort(function(a,b){return Math.abs(b.val)-Math.abs(a.val);}).slice(0,4);
+  document.getElementById('mini-factors').innerHTML = top4.map(function(f){
+    var cls = f.val>1?'var(--green)':f.val<-1?'var(--coral)':'var(--text-muted)';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">'+
+      '<span style="color:var(--text-muted);display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:'+f.color+';flex-shrink:0;display:inline-block;"></span>'+f.name+'</span>'+
+      '<span style="font-weight:600;font-family:'DM Mono',monospace;color:'+cls+'">'+fmtDiff(f.val)+'</span></div>';
+  }).join('');
+
+  // Weather info
+  var weerInfo = 'Weer: geen weerdata beschikbaar.';
+  if (weatherData) {
+    var hour = parseInt(document.getElementById('time-slider').value);
+    var s = selectedDay*24+hour;
+    var temp = weatherData.hourly.temperature_2m[s]||15;
+    var windSpd = weatherData.hourly.wind_speed_10m[s]||0;
+    var windDir = weatherData.hourly.wind_direction_10m[s]||0;
+    var rain = weatherData.hourly.precipitation[s]||0;
+    var ftpEff = calcFtpEffect(temp);
+    var cdaEff = calcCdaEffect(temp, weatherData.hourly.surface_pressure[s]||1013, weatherData.hourly.relative_humidity_2m[s]||60);
+    weerInfo = 'Weer '+String(hour).padStart(2,'0')+':00 - '+Math.round(temp)+'C, wind '+Math.round(windSpd)+' km/u '+degToDir(windDir)+(rain>0?', regen '+rain.toFixed(1)+'mm':'')+
+      ' | FTP: '+(ftpEff>=0?'+':'')+ftpEff+'%, CdA: '+(cdaEff>=0?'+':'')+cdaEff+'%';
+  }
+  document.getElementById('mini-weer-info').textContent = weerInfo;
+
+  // Tire effect
+  if (bike) {
+    var tireNames = {'0.0025':'Race tubeless','0.0032':'GP5000','0.0040':'Standaard clincher','0.0055':'Trainingsband','0.0080':'Gravel','0.0120':'MTB'};
+    var tireName = tireNames[String(bike.tire)] || 'Onbekend';
+    document.getElementById('mini-tire-effect').textContent = tireName + ' (Crr '+bike.tire+')';
+
+    var optimalCrr = 0.0025;
+    var currentCrr = parseFloat(bike.tire);
+    var pressureCrr = (6.5-bikePressureBar)*0.0003;
+    var totalCrr = currentCrr+pressureCrr;
+    var crrDiff = totalCrr - optimalCrr;
+    var crrTimeDiff = crrDiff * myTimeSec * 15;
+    var pressureTimeDiff = pressureCrr * myTimeSec * 15;
+    document.getElementById('mini-pressure-effect').textContent = bikePressureBar+' bar'+
+      (pressureTimeDiff>1?' = +'+(pressureTimeDiff).toFixed(0)+'s t.o.v. optimaal':' = optimaal');
+  } else {
+    document.getElementById('mini-tire-effect').textContent = 'Geen fiets geselecteerd';
+    document.getElementById('mini-pressure-effect').textContent = '--';
+  }
 }
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
-  var tabs=['weer','profiel','fiets','segment','scenario','resultaat'];
+  var tabs=['weer','fiets','segment','scenario','resultaat'];
   var idx=tabs.indexOf(name);
   if (idx>=0) document.querySelectorAll('.tab')[idx].classList.add('active');
   var panel=document.getElementById('panel-'+name);

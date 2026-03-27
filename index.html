@@ -1162,24 +1162,26 @@ async function selectSegment(id, itemEl){
 
     inlineEl.innerHTML = buildInlineDetail(prSec);
 
-    // Fill in data
-    // Fill in data
-    document.getElementById('il-dist').textContent = ((seg.distance||0)/1000).toFixed(2)+' km';
-    document.getElementById('il-grade').textContent = (seg.average_grade||0).toFixed(1)+'%';
-    document.getElementById('il-pr').textContent = prStr+(prDate?' ('+prDate+')':'');
-
-    // Draw profile
+    // Small timeout to ensure DOM is rendered
     setTimeout(function(){
-      var cv = document.getElementById('il-canvas');
-      if(cv) drawProfileOn(cv, gpxPoints);
-    }, 50);
+      // Fill in static data
+      var dEl=document.getElementById('il-dist');if(dEl)dEl.textContent=((seg.distance||0)/1000).toFixed(2)+' km';
+      var gEl=document.getElementById('il-grade');if(gEl)gEl.textContent=(seg.average_grade||0).toFixed(1)+'%';
+      var pEl=document.getElementById('il-pr');if(pEl)pEl.textContent=prStr+(prDate?' ('+prDate+')':'');
 
-    // Wire sliders
-    wireIlSliders();
-    renderIlGarage();
-    renderIlClothing();
-    updateIlWeer();
-    calcResult();
+      // Draw profile
+      var cv=document.getElementById('il-canvas');
+      if(cv) drawProfileOn(cv, gpxPoints);
+
+      // Wire sliders and render sub-components
+      wireIlSliders();
+      renderIlGarage();
+      renderIlClothing();
+      updateIlWeer();
+
+      // Calculate and show result
+      calcResult();
+    }, 50);
 
   }catch(e){inlineEl.innerHTML='<div style="padding:12px;color:var(--coral);font-size:12px;">Kon segment niet laden: '+e.message+'</div>';}
 }
@@ -1301,11 +1303,10 @@ function simSeg(pts,P,mass,CdA,Crr,windMs,draft,rho,ce,de){
 //
 function calcResult(){
   if(!gpxPoints.length){
-    document.getElementById('no-seg-warn').style.display='block';
-    document.getElementById('mini-result').style.display='none';
+    var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='block';
     return;
   }
-  document.getElementById('no-seg-warn').style.display='none';
+  var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='none';
   var myT=parseInt(document.getElementById('mytime-min').value)*60+parseInt(document.getElementById('mytime-sec').value);
   var weight=parseFloat(document.getElementById('pf-weight').value)||75;
   var ftp=parseFloat(document.getElementById('pf-ftp').value)||220;

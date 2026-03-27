@@ -1044,15 +1044,7 @@ function buildInlineDetail(prSec) {
   html += '<div style="border-top:0.5px solid var(--border);padding:0 10px;">';
   html += '<div style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);padding:8px 0 4px;font-family:monospace;">Instellingen</div>';
 
-  // Basistijd
-  var tijdBody = '';
-  tijdBody += '<div class="srow"><div class="srow-lbl">Minuten</div>';
-  tijdBody += '<input type="range" id="mytime-min" min="0" max="120" step="1" value="' + minV + '">';
-  tijdBody += '<div class="srow-val"><span id="mytime-min-out">' + minV + '</span> min</div></div>';
-  tijdBody += '<div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Seconden</div>';
-  tijdBody += '<input type="range" id="mytime-sec" min="0" max="59" step="1" value="' + secV + '">';
-  tijdBody += '<div class="srow-val"><span id="mytime-sec-out">' + secStr + '</span> sec</div></div>';
-  html += buildAccRow('il-acc-tijd', 'Basistijd', tijdBody);
+
 
   // Fiets
   var fietsBody = '<div id="il-garage"></div>';
@@ -1072,11 +1064,13 @@ function buildInlineDetail(prSec) {
   kledingBody += '<div class="clothing-grid" id="il-cloth-extra"></div>';
   html += buildAccRow('il-acc-kleding', 'Kleding', kledingBody);
 
-  // Weer
+  // Weer - 7-daagse voorspelling + tijdslider
   var weerBody = '';
-  weerBody += '<div style="font-size:11px;color:var(--textmu);margin-bottom:6px;" id="il-weer-loc">Geen weerdata.</div>';
+  weerBody += '<div style="font-size:11px;color:var(--textmu);margin-bottom:8px;" id="il-weer-loc">Geen weerdata — open de Weer-tab eerst.</div>';
+  weerBody += '<div id="il-days-scroll" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:8px;scrollbar-width:none;"></div>';
+  weerBody += '<div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Tijdstip</div>';
   weerBody += '<input type="range" id="il-time-slider" min="0" max="23" step="1" value="' + curH + '" style="width:100%;margin-bottom:3px;">';
-  weerBody += '<div style="text-align:center;font-size:11px;font-weight:500;font-family:monospace;margin-bottom:6px;" id="il-time-lbl">' + hStr + '</div>';
+  weerBody += '<div style="text-align:center;font-size:12px;font-weight:500;font-family:monospace;margin-bottom:8px;" id="il-time-lbl">' + hStr + '</div>';
   weerBody += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;" id="il-weer-cells"></div>';
   html += buildAccRow('il-acc-weer', 'Weer en tijdstip', weerBody);
 
@@ -1123,6 +1117,7 @@ function ilToggle(btn) {
 
 
 var currentOpenSegId = null;
+var ilBaseSec = 0;
 
 async function selectSegment(id, itemEl){
   // Toggle: if already open, close it
@@ -1157,6 +1152,7 @@ async function selectSegment(id, itemEl){
     selectedSegment=seg;gpxPoints=seg.points||[];
 
     var prSec = seg.pr&&seg.pr.pr_elapsed_time ? seg.pr.pr_elapsed_time : 0;
+    ilBaseSec = prSec || 1200;
     var prStr = prSec ? fmt(prSec) : 'Geen PR';
     var prDate = seg.pr&&seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
 
@@ -1189,7 +1185,7 @@ async function selectSegment(id, itemEl){
 
 
 function wireIlSliders(){
-  var ids = ['mytime-min','mytime-sec','wloss','bikeloss','powergain','fatigue'];
+  var ids = ['wloss','bikeloss','powergain','fatigue'];
   ids.forEach(function(id){
     var el = document.getElementById(id);
     if (!el) return;
@@ -1253,15 +1249,67 @@ function renderIlClothing(){
 }
 
 function updateIlWeer(){
-  if(!weatherData){var el=document.getElementById('il-weer-loc');if(el)el.textContent='Geen weerdata — open de Weer-tab.';return;}
+  if(!weatherData){
+    var el=document.getElementById('il-weer-loc');
+    if(el)el.textContent='Geen weerdata — open de Weer-tab eerst.';
+    return;
+  }
+  // Location label
+  var locEl=document.getElementById('il-weer-loc');
+  if(locEl)locEl.textContent=document.getElementById('loc-name').textContent;
+
+  // Render day cards
+  var daysEl=document.getElementById('il-days-scroll');
+  if(daysEl){
+    daysEl.innerHTML=weatherData.daily.time.map(function(t,i){
+      var a=i===selectedDay?' border-color:var(--green);background:var(--surface);':'border-color:transparent;';
+      return '<div style="flex-shrink:0;width:58px;background:var(--bg);border-radius:7px;padding:6px 4px;text-align:center;cursor:pointer;border:1.5px solid transparent;'+a+'" onclick="ilSelectDay('+i+')">'+
+        '<div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-weight:500;">'+dayLabel(t,i)+'</div>'+
+        '<div style="font-size:14px;margin-bottom:2px;">'+wIcon(weatherData.daily.weather_code[i])+'</div>'+
+        '<div style="font-size:11px;font-weight:500;">'+Math.round(weatherData.daily.temperature_2m_max[i])+'°/'+Math.round(weatherData.daily.temperature_2m_min[i])+'°</div>'+
+        '<div style="font-size:9px;color:var(--textmu);margin-top:1px;font-family:monospace;">'+Math.round(weatherData.daily.wind_speed_10m_max[i])+'km/u</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Current hour data
   var h=parseInt((document.getElementById('il-time-slider')||{value:new Date().getHours()}).value);
-  var s=selectedDay*24+h;
-  var temp=weatherData.hourly.temperature_2m[s]||15,wind=weatherData.hourly.wind_speed_10m[s]||0,windDir=weatherData.hourly.wind_direction_10m[s]||0,rain=weatherData.hourly.precipitation[s]||0,humid=weatherData.hourly.relative_humidity_2m[s]||60,pressure=weatherData.hourly.surface_pressure[s]||1013;
-  var locEl=document.getElementById('il-weer-loc');if(locEl)locEl.textContent=document.getElementById('loc-name').textContent+' - '+dayLabel(weatherData.daily.time[selectedDay],selectedDay);
+  var idx=selectedDay*24+h;
+  var temp=weatherData.hourly.temperature_2m[idx]||15;
+  var wind=weatherData.hourly.wind_speed_10m[idx]||0;
+  var windDir=weatherData.hourly.wind_direction_10m[idx]||0;
+  var rain=weatherData.hourly.precipitation[idx]||0;
+  var humid=weatherData.hourly.relative_humidity_2m[idx]||60;
+  var pressure=weatherData.hourly.surface_pressure[idx]||1013;
   var fe=calcFtpEff(temp),ce=calcCdaEff(temp,pressure,humid);
-  var ws=document.getElementById('il-weer-sum');if(ws)ws.textContent=Math.round(temp)+'C, '+Math.round(wind)+' km/u';
+
+  // Update summary badge
+  var ws=document.getElementById('il-weer-sum');
+  if(ws)ws.textContent=Math.round(temp)+'C, '+Math.round(wind)+' km/u';
+
+  // Weather cells
   var cells=document.getElementById('il-weer-cells');
-  if(cells)cells.innerHTML=[{l:'Temp',v:Math.round(temp)+'C'},{l:'Wind',v:Math.round(wind)+' km/u'},{l:'Neerslag',v:rain.toFixed(1)+' mm'},{l:'FTP',v:(fe>=0?'+':'')+fe+'%'},{l:'CdA',v:(ce>=0?'+':'')+ce+'%'},{l:'Vocht',v:humid+'%'}].map(function(c){return '<div style="background:var(--surface);border-radius:var(--rs);padding:5px 6px;"><div style="font-size:9px;color:var(--textmu);margin-bottom:1px;">'+c.l+'</div><div style="font-size:10px;font-weight:500;font-family:monospace;">'+c.v+'</div></div>';}).join('');
+  if(cells)cells.innerHTML=[
+    {l:'Temp',v:Math.round(temp)+'C'},
+    {l:'Wind',v:Math.round(wind)+' km/u '+degToDir(windDir)},
+    {l:'Neerslag',v:rain.toFixed(1)+' mm'},
+    {l:'FTP-effect',v:(fe>=0?'+':'')+fe+'%'},
+    {l:'CdA-effect',v:(ce>=0?'+':'')+ce+'%'},
+    {l:'Vochtigheid',v:humid+'%'}
+  ].map(function(c){
+    return '<div style="background:var(--surface);border-radius:var(--rs);padding:5px 6px;">'+
+      '<div style="font-size:9px;color:var(--textmu);margin-bottom:1px;">'+c.l+'</div>'+
+      '<div style="font-size:10px;font-weight:500;font-family:monospace;">'+c.v+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function ilSelectDay(i){
+  selectedDay=i;
+  // Update main weather tab day selection too
+  if(weatherData) renderDays(weatherData);
+  updateIlWeer();
+  calcResult();
 }
 
 function drawProfileOn(cv, pts){
@@ -1307,7 +1355,10 @@ function calcResult(){
     return;
   }
   var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='none';
-  var myT=parseInt(document.getElementById('mytime-min').value)*60+parseInt(document.getElementById('mytime-sec').value);
+  var myT = ilBaseSec;
+  // fallback to mytime inputs if they exist
+  var mmEl=document.getElementById('mytime-min'), msEl=document.getElementById('mytime-sec');
+  if(mmEl && msEl) myT = parseInt(mmEl.value)*60 + parseInt(msEl.value);
   var weight=parseFloat(document.getElementById('pf-weight').value)||75;
   var ftp=parseFloat(document.getElementById('pf-ftp').value)||220;
   var bike=getActiveBike();

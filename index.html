@@ -1106,9 +1106,21 @@ async function loadRides() {
   var el = document.getElementById('rides-list');
   el.innerHTML = '<div class="loading-text">Laden...</div>';
   try {
-    var res = await fetch('/api/strava-activities?token='+accessToken);
-    allRides = await res.json();
-    if (!Array.isArray(allRides)) { el.innerHTML = '<div class="loading-text">Fout bij laden ritten.</div>'; return; }
+    // Get period from selector
+    var periodEl = document.getElementById('rides-period');
+    var months = periodEl ? parseInt(periodEl.value) : 12;
+    var after = Math.floor(Date.now()/1000) - months*30*24*3600;
+    // Fetch multiple pages to get 1 year
+    var all = [];
+    for (var page = 1; page <= 5; page++) {
+      var res = await fetch('/api/strava-activities?token='+accessToken+'&page='+page+'&after='+after);
+      var batch = await res.json();
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      all = all.concat(batch);
+      if (batch.length < 30) break;
+    }
+    allRides = all;
+    if (!allRides.length) { el.innerHTML = '<div class="loading-text">Geen ritten gevonden in deze periode.</div>'; return; }
     renderRidesList(allRides);
   } catch(e) {
     el.innerHTML = '<div class="loading-text">Fout: '+e.message+'</div>';
@@ -1458,6 +1470,7 @@ function ilToggle(btn) {
 
 var currentOpenSegId = null;
 var ilBaseSec = 0;
+var ilKomSec = 0;
 
 async function selectSegment(id, itemEl){
   // Toggle: if already open, close it
@@ -1492,14 +1505,22 @@ async function selectSegment(id, itemEl){
     selectedSegment=seg;gpxPoints=seg.points||[];
 
     var prSec = seg.pr&&seg.pr.pr_elapsed_time ? seg.pr.pr_elapsed_time : 0;
-    // If no PR, estimate time from physics simulation
-    if (!prSec && gpxPoints.length > 1) {
+    // Parse KOM time (format "1:23" or "1:23:45")
+    var komSec = 0;
+    if (seg.kom_time) {
+      var parts = seg.kom_time.split(':').map(Number);
+      if (parts.length === 2) komSec = parts[0]*60 + parts[1];
+      else if (parts.length === 3) komSec = parts[0]*3600 + parts[1]*60 + parts[2];
+    }
+    ilKomSec = komSec;
+    // Use PR first, then KOM, then estimate
+    if (!prSec && !komSec && gpxPoints.length > 1) {
       var estFtp = parseFloat(document.getElementById('pf-ftp').value)||220;
       var estW = parseFloat(document.getElementById('pf-weight').value)||75;
       var estSim = simSeg(gpxPoints, estFtp, estW+9, 0.324, 0.004, 0, 1.0, 1.225, 0.985, 0.995);
       prSec = Math.round(estSim);
     }
-    ilBaseSec = prSec || 1200;
+    ilBaseSec = prSec || komSec || 1200;
 
     // Auto-select bike from garage if it matches the PR bike
     if (seg.pr_bike && seg.pr_bike.gear_id) {
@@ -1514,7 +1535,7 @@ async function selectSegment(id, itemEl){
       }
     }
     var hadPr = seg.pr && seg.pr.pr_elapsed_time;
-    var prStr = hadPr ? fmt(seg.pr.pr_elapsed_time) : (prSec ? 'Schatting: '+fmt(prSec) : 'Geen PR');
+    var prStr = hadPr ? fmt(seg.pr.pr_elapsed_time) : (komSec ? 'KOM: '+fmt(komSec) : (prSec ? 'Schatting: '+fmt(prSec) : 'Geen PR'));
     var prDate = seg.pr&&seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
 
     inlineEl.innerHTML = buildInlineDetail(prSec);
@@ -1726,7 +1747,7 @@ function calcResult(){
     return;
   }
   var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='none';
-  var myT = ilBaseSec || 1200;
+  var myT = ilBaseSec || ilKomSec || 1200;
   var weight=parseFloat(document.getElementById('pf-weight').value)||75;
   var ftp=parseFloat(document.getElementById('pf-ftp').value)||220;
   var bike=getActiveBike();

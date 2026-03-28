@@ -33,7 +33,13 @@ exports.handler = async (event) => {
         total_elevation_gain: s.total_elevation_gain || 0,
         city: s.city || '',
         athlete_pr_effort: s.athlete_pr_effort || null,
-        kom_time: s.xoms ? s.xoms.kom : null
+        kom_time: (function(xoms) {
+          if (!xoms || !xoms.kom) return null;
+          var parts = xoms.kom.split(':').map(Number);
+          if (parts.length === 2) return parts[0]*60 + parts[1];
+          if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+          return parseInt(xoms.kom) || null;
+        })(s.xoms)
       }));
     } else {
       // Fall back to starred segments
@@ -54,7 +60,13 @@ exports.handler = async (event) => {
             total_elevation_gain: s.total_elevation_gain || 0,
             city: s.city || '',
             athlete_pr_effort: s.athlete_pr_effort || null,
-            kom_time: s.xoms ? s.xoms.kom : null
+            kom_time: (function(xoms) {
+          if (!xoms || !xoms.kom) return null;
+          var parts = xoms.kom.split(':').map(Number);
+          if (parts.length === 2) return parts[0]*60 + parts[1];
+          if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+          return parseInt(xoms.kom) || null;
+        })(s.xoms)
           }));
         }
       }

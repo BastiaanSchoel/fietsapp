@@ -1846,8 +1846,14 @@ function switchTab(name){
   if(savedToken&&savedAthlete){accessToken=savedToken;try{athlete=JSON.parse(savedAthlete);}catch(e){}showLoggedIn();return;}
   var params=new URLSearchParams(window.location.search);
   if(params.get('code')){var ok=await handleOAuth();if(ok){showLoggedIn();return;}}
-  if(!STRAVA_CLIENT_ID){document.getElementById('welcome-screen').style.display='block';}
-  else{document.getElementById('welcome-screen').style.display='block';}
+  // Show welcome screen
+  document.getElementById('welcome-screen').style.display='block';
+  // If no Client ID yet, show the input field directly
+  if(!STRAVA_CLIENT_ID){
+    document.getElementById('clientid-screen').style.display='block';
+  } else {
+    document.getElementById('client-id-input').value = STRAVA_CLIENT_ID;
+  }
 })();
 </script>
 </body>

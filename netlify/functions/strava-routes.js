@@ -16,8 +16,20 @@ exports.handler = async (event) => {
       `https://www.strava.com/api/v3/athletes/${aid}/routes?per_page=30`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
-    const data = await res.json();
-    if (!res.ok) return { statusCode: 400, body: JSON.stringify({ error: data.message || 'Fout' }) };
+
+    if (!res.ok) {
+      const err = await res.json();
+      return { statusCode: 400, body: JSON.stringify({ error: err.message || 'Fout' }) };
+    }
+
+    // Get raw text to avoid JS precision loss on large 64-bit IDs
+    const rawText = await res.text();
+
+    // Replace all large numeric IDs with quoted strings before parsing
+    // Match "id": 1234567890123456789 and wrap in quotes
+    const safeText = rawText.replace(/"id"\s*:\s*(\d{10,})/g, '"id": "$1"');
+
+    const data = JSON.parse(safeText);
 
     const routes = data.map(r => ({
       id: String(r.id),

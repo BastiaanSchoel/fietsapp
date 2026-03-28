@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     if (!res.ok) return { statusCode: 400, body: JSON.stringify({ error: data.message || 'Fout' }) };
 
     const routes = data.map(r => ({
-      id: r.id,
+      id: String(r.id),
       name: r.name,
       distance: r.distance,
       elevation_gain: r.elevation_gain,

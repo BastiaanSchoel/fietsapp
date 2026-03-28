@@ -83,6 +83,10 @@ exports.handler = async (event) => {
                 gear_name: act.gear ? act.gear.name : null
               };
             }
+            // Use activity start_date if pr_date is missing
+            if (pr && !pr.pr_date && act.start_date) {
+              pr.pr_date = act.start_date;
+            }
           }
         }
       }

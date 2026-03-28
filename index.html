@@ -368,7 +368,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
     <div class="tabs">
       <button class="tab active" onclick="switchTab('weer')">Weer</button>
       <button class="tab" onclick="switchTab('fiets')">Fiets/Kleding</button>
-      <button class="tab" onclick="switchTab('segment')">Segment</button>
+      <button class="tab" onclick="switchTab('segment')">Strava</button>
       <button class="tab" onclick="switchTab('resultaat')">Resultaat</button>
     </div>
 
@@ -1045,6 +1045,38 @@ async function handleOAuth(){
   try{var r=await fetch('/api/strava-auth?code='+code),d=await r.json();if(d.access_token){accessToken=d.access_token;athlete=d.athlete;sessionStorage.setItem('strava_token',accessToken);sessionStorage.setItem('strava_athlete',JSON.stringify(athlete));return true;}}catch(e){console.error(e);}
   return false;
 }
+async function loadStravaGear() {
+  if (!accessToken || !athlete) return;
+  var stravaGears = athlete.bikes || [];
+  if (!stravaGears.length) return;
+  var added = false;
+  for (var i = 0; i < stravaGears.length; i++) {
+    var sg = stravaGears[i];
+    if (!sg.id) continue;
+    // Check if already in garage
+    var exists = bikes.some(function(b){ return b.gear_id === sg.id; });
+    if (!exists) {
+      var gear = await lookupStravaGear(sg.id);
+      if (gear) {
+        bikes.push({
+          name: gear.name || sg.name || sg.id,
+          type: 'road',
+          weight: gear.weight || 8.5,
+          cda: 0.324,
+          tire: 0.0032,
+          tirePressure: 6.5,
+          gear_id: sg.id
+        });
+        added = true;
+      }
+    }
+  }
+  if (added) {
+    try{localStorage.setItem('bikes_data',JSON.stringify(bikes));}catch(e){}
+    renderGarage();
+  }
+}
+
 function showApp(){
   document.getElementById('welcome-screen').style.display='none';
   document.getElementById('app-screen').style.display='block';
@@ -1061,6 +1093,8 @@ function showLoggedIn(){
   document.getElementById('pf-strava-row').style.display='block';
   updateProfiel();loadSegments();
   switchTab('segment');
+  // Pre-load Strava bikes into garage
+  loadStravaGear();
 }
 function logout(){sessionStorage.clear();window.location.reload();}
 
@@ -1486,6 +1520,63 @@ function ilToggle(btn) {
 var currentOpenSegId = null;
 var ilBaseSec = 0;
 var ilKomSec = 0;
+var stravaGearCache = {};
+
+async function lookupStravaGear(gearId) {
+  if (!gearId) return null;
+  if (stravaGearCache[gearId]) return stravaGearCache[gearId];
+  try {
+    var res = await fetch('/api/strava-gear?token='+accessToken+'&id='+gearId);
+    if (!res.ok) return null;
+    var gear = await res.json();
+    if (gear.error) return null;
+    stravaGearCache[gearId] = gear;
+    return gear;
+  } catch(e) { return null; }
+}
+
+async function matchOrAddGear(gearId) {
+  if (!gearId) return;
+  // Check if already in garage
+  var matchIdx = -1;
+  bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === gearId) matchIdx = i; });
+  if (matchIdx !== -1) {
+    activebikeIdx = matchIdx;
+    try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
+    renderGarage();
+    return;
+  }
+  // Look up gear from Strava
+  var gear = await lookupStravaGear(gearId);
+  if (!gear) return;
+  // Try match by name
+  bikes.forEach(function(b,i){
+    if(b.name && b.name.toLowerCase().indexOf(gear.name.toLowerCase())!==-1) matchIdx = i;
+  });
+  if (matchIdx !== -1) {
+    // Update existing bike with gear_id
+    bikes[matchIdx].gear_id = gearId;
+    activebikeIdx = matchIdx;
+    try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',matchIdx);}catch(e){}
+    renderGarage();
+    return;
+  }
+  // Auto-add to garage
+  var bikeWeight = gear.weight || 8.5;
+  var newBike = {
+    name: gear.name || gearId,
+    type: gear.frame_type <= 2 ? 'road' : gear.frame_type === 3 ? 'tt' : gear.frame_type >= 6 ? 'mtb' : 'gravel',
+    weight: bikeWeight,
+    cda: 0.324,
+    tire: 0.0032,
+    tirePressure: 6.5,
+    gear_id: gearId
+  };
+  bikes.push(newBike);
+  activebikeIdx = bikes.length - 1;
+  try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',activebikeIdx);}catch(e){}
+  renderGarage();
+}
 
 async function selectSegment(id, itemEl){
   // Toggle: if already open, close it
@@ -1539,15 +1630,7 @@ async function selectSegment(id, itemEl){
 
     // Auto-select bike from garage if it matches the PR bike
     if (seg.pr_bike && seg.pr_bike.gear_id) {
-      var matchIdx = -1;
-      bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === seg.pr_bike.gear_id) matchIdx = i; });
-      if (matchIdx === -1 && seg.pr_bike.gear_name) {
-        bikes.forEach(function(b,i){ if(b.name && b.name.toLowerCase().indexOf(seg.pr_bike.gear_name.toLowerCase())!==-1) matchIdx = i; });
-      }
-      if (matchIdx !== -1) {
-        activebikeIdx = matchIdx;
-        try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
-      }
+      matchOrAddGear(seg.pr_bike.gear_id);
     }
     var hadPr = seg.pr && seg.pr.pr_elapsed_time;
     var prStr = hadPr ? fmt(seg.pr.pr_elapsed_time) : (komSec ? 'KOM: '+fmt(komSec) : (prSec ? 'Schatting: '+fmt(prSec) : 'Geen PR'));

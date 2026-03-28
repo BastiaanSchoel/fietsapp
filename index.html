@@ -1767,9 +1767,15 @@ async function selectSegment(id, itemEl, fromRide){
     // Parse KOM time (format "1:23" or "1:23:45")
     var komSec = 0;
     if (seg.kom_time) {
-      var parts = seg.kom_time.split(':').map(Number);
-      if (parts.length === 2) komSec = parts[0]*60 + parts[1];
-      else if (parts.length === 3) komSec = parts[0]*3600 + parts[1]*60 + parts[2];
+      var kt = seg.kom_time.trim();
+      if (kt.indexOf(':') === -1) {
+        // Format: "39s" or "39"
+        komSec = parseInt(kt) || 0;
+      } else {
+        var parts = kt.split(':').map(Number);
+        if (parts.length === 2) komSec = parts[0]*60 + parts[1];
+        else if (parts.length === 3) komSec = parts[0]*3600 + parts[1]*60 + parts[2];
+      }
     }
     ilKomSec = komSec;
     // Use PR first, then KOM, then estimate

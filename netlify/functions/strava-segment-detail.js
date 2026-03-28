@@ -101,6 +101,8 @@ exports.handler = async (event) => {
         maximum_grade: seg.maximum_grade,
         total_elevation_gain: seg.total_elevation_gain,
         city: seg.city,
+        start_latlng: seg.start_latlng || null,
+        end_latlng: seg.end_latlng || null,
         pr,
         pr_bike: prBike,
         kom_time: seg.xoms ? seg.xoms.kom : null,

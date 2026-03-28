@@ -729,6 +729,37 @@ function degToDir(d){return windDirs[Math.round(d/22.5)%16];}
 function calcFtpEff(t){if(t>=15&&t<=25)return 0;if(t<15)return Math.round((15-t)*-0.3*10)/10;return Math.round((t-25)*-0.5*10)/10;}
 function calcCdaEff(t,p,h){var T=t+273.15,P=p*100,Psat=610.78*Math.exp(17.27*t/(t+237.3)),Pv=(h/100)*Psat,rho=(P*0.028964-Pv*0.010948)/(8.314*T);return Math.round((rho-1.225)/1.225*100*10)/10;}
 function calcRho(t,p,h){var T=t+273.15,P=p*100,Psat=610.78*Math.exp(17.27*t/(t+237.3)),Pv=(h/100)*Psat;return (P*0.028964-Pv*0.010948)/(8.314*T);}
+function calcSegmentBearing(pts) {
+  // Calculate average bearing of segment from GPX points
+  if (!pts || pts.length < 2) return null;
+  // Use first and last point for overall direction
+  var start = pts[0];
+  var end = pts[pts.length - 1];
+  var dLat = (end.lat - start.lat) * Math.PI / 180;
+  var dLon = (end.lng - start.lng) * Math.PI / 180;
+  var lat1 = start.lat * Math.PI / 180;
+  var lat2 = end.lat * Math.PI / 180;
+  var x = Math.sin(dLon) * Math.cos(lat2);
+  var y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  var bearing = Math.atan2(x, y) * 180 / Math.PI;
+  return (bearing + 360) % 360; // 0-360 degrees
+}
+
+function calcEffectiveWind(windSpeedMs, windDirDeg, segmentBearingDeg) {
+  // Wind direction: where wind comes FROM (meteorological convention)
+  // Segment bearing: direction of travel
+  // Wind FROM the front = headwind (positive = slower)
+  // Wind FROM behind = tailwind (negative = faster)
+  if (segmentBearingDeg === null) return windSpeedMs; // fallback: assume headwind
+  var windFromDeg = windDirDeg; // direction wind comes from
+  var travelDeg = segmentBearingDeg; // direction rider travels
+  // Angle between wind source and travel direction
+  var angleDiff = (windFromDeg - travelDeg + 360) % 360;
+  // cos(0) = 1 = pure headwind, cos(180) = -1 = pure tailwind
+  var effectiveFactor = Math.cos(angleDiff * Math.PI / 180);
+  return windSpeedMs * effectiveFactor;
+}
+
 function wIcon(c){if(c===0)return'☀';if(c<=2)return'⛅';if(c===3)return'☁';if(c<=48)return'🌫';if(c<=55)return'🌦';if(c<=65)return'🌧';if(c<=75)return'❄';if(c<=82)return'🌦';return'⛈';}
 function dayLabel(s,i){var d=new Date(s),days=['Zo','Ma','Di','Wo','Do','Vr','Za'];if(i===0)return'Vandaag';if(i===1)return'Morgen';return days[d.getDay()];}
 function fmt(s){s=Math.abs(Math.round(s));var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;if(h>0)return h+'u '+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');return m+':'+String(ss).padStart(2,'0');}
@@ -1812,9 +1843,19 @@ function updateIlWeer(){
 
   // Weather cells
   var cells=document.getElementById('il-weer-cells');
+  // Show wind direction effect if segment is loaded
+  var segBearingNow = calcSegmentBearing(gpxPoints);
+  var windMs = wind/3.6;
+  var effWind = calcEffectiveWind(windMs, windDir, segBearingNow);
+  var windLabel = Math.round(wind)+' km/u '+degToDir(windDir);
+  var windEffect = '';
+  if (segBearingNow !== null) {
+    var effKmh = Math.round(Math.abs(effWind*3.6));
+    windEffect = effWind > 0.5 ? ' ('+effKmh+' km/u tegen)' : effWind < -0.5 ? ' ('+effKmh+' km/u mee)' : ' (zijwind)';
+  }
   if(cells)cells.innerHTML=[
     {l:'Temp',v:Math.round(temp)+'C'},
-    {l:'Wind',v:Math.round(wind)+' km/u '+degToDir(windDir)},
+    {l:'Wind',v:windLabel+windEffect},
     {l:'Neerslag',v:rain.toFixed(1)+' mm'},
     {l:'FTP-effect',v:(fe>=0?'+':'')+fe+'%'},
     {l:'CdA-effect',v:(ce>=0?'+':'')+ce+'%'},
@@ -1895,6 +1936,7 @@ function calcResult(){
   var fi=parseInt(document.getElementById('fatigue').value)-1;
   var chain=parseFloat(document.getElementById('chain').value)||0.985;
   var rhoStd=1.225,rho=rhoStd,tempForCalc=15,ftpEffect=1;
+  var weatherWindMs=0, weatherWindDir=0;
   if(weatherData){
     var _tsEl=document.getElementById('il-time-slider')||document.getElementById('acc-time-slider');
     var h=_tsEl?parseInt(_tsEl.value):new Date().getHours();
@@ -1904,7 +1946,12 @@ function calcResult(){
     var pressure=weatherData.hourly.surface_pressure[s]||1013;
     rho=calcRho(tempForCalc,pressure,humid);
     ftpEffect=1+calcFtpEff(tempForCalc)/100;
+    weatherWindMs=(weatherData.hourly.wind_speed_10m[s]||0)/3.6;
+    weatherWindDir=weatherData.hourly.wind_direction_10m[s]||0;
   }
+  // Calculate effective wind on segment based on direction
+  var segBearing = calcSegmentBearing(gpxPoints);
+  var effectiveWindMs = calcEffectiveWind(weatherWindMs, weatherWindDir, segBearing);
   var P0=ftp,P=(P0+powergain)*(1-fatigueLoss[fi])*ftpEffect;
   var finalCrr=bikeCrr+(6.5-bikeBar)*0.0003;
   var newCda=aero+clothing.cda;
@@ -1939,6 +1986,7 @@ function calcResult(){
     {n:'Extra vermogen',col:'#0F6E56',v:c(function(){return simSeg(gpxPoints,P0+powergain,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Rijpositie',col:'#9FE1CB',v:c(function(){return simSeg(gpxPoints,P0,baseM,aero,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Kleding',col:'#378ADD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda+clothing.cda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Wind (richtingseffect)',col:'#D85A30',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,totalWindMs,1,rhoStd,0.985,0.995);})},
     {n:'Luchtdichtheid',col:'#EF9F27',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1,rho,0.985,0.995);})},
     {n:'FTP-effect weer',col:'#BA7517',v:c(function(){return simSeg(gpxPoints,P0*ftpEffect,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Groepsrit',col:'#7F77DD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,draft,rhoStd,0.985,0.995);})},

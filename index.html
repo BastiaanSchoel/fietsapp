@@ -1353,9 +1353,9 @@ function renderRoutesList(routes) {
 
 var currentOpenRouteIdx = null;
 
-function selectRouteByIdx(idx) {
-  var route = allRoutes[idx];
-  if (!route) return;
+async function selectRouteByIdx(idx) {
+  var selectedRoute = allRoutes[idx];
+  if (!selectedRoute) return;
 
   // Toggle close
   if (currentOpenRouteIdx === idx) {
@@ -1382,14 +1382,14 @@ function selectRouteByIdx(idx) {
   inlineEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--textmu);font-family:monospace;">Segmenten laden...</div>';
 
   // Use the route ID string from allRoutes array - avoids JS number precision loss
-  var routeIdStr = String(route.id);
+  var routeIdStr = String(selectedRoute.id);
   try {
     var res = await fetch('/api/strava-route-detail?token='+accessToken+'&id='+routeIdStr);
-    var route = await res.json();
-    if (route.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+route.error+'</div>'; return; }
+    var routeData = await res.json();
+    if (routeData.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+routeData.error+'</div>'; return; }
 
-    var segs = route.segments || [];
-    var isFallback = route.is_starred_fallback || false;
+    var segs = routeData.segments || [];
+    var isFallback = routeData.is_starred_fallback || false;
     if (!segs.length) {
       inlineEl.innerHTML = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;padding:10px;font-size:12px;color:var(--textmu);">Geen segmenten gevonden op deze route. Voeg segmenten toe via de Stersegmenten tab.</div>';
       return;

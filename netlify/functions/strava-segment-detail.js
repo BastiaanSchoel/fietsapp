@@ -94,6 +94,21 @@ exports.handler = async (event) => {
       // bike lookup failed, continue without
     }
 
+    // Try to get KOM from leaderboard
+    let komTime = null;
+    try {
+      const lbRes = await fetch(
+        `https://www.strava.com/api/v3/segments/${id}/leaderboard?per_page=1`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      if (lbRes.ok) {
+        const lb = await lbRes.json();
+        if (lb.entries && lb.entries.length > 0) {
+          komTime = lb.entries[0].elapsed_time; // KOM time in seconds
+        }
+      }
+    } catch(e) {}
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -109,7 +124,7 @@ exports.handler = async (event) => {
         end_latlng: seg.end_latlng || null,
         pr,
         pr_bike: prBike,
-        kom_time: seg.xoms ? seg.xoms.kom : null,
+        kom_time: komTime, // KOM elapsed time in seconds from leaderboard
         points: enriched
       })
     };

@@ -1324,20 +1324,27 @@ function renderRoutesList(routes) {
   el.innerHTML = routes.map(function(r) {
     var dist = ((r.distance||0)/1000).toFixed(1)+' km';
     var elev = Math.round(r.elevation_gain||0)+' m';
-    return '<div class="segment-item" id="route-item-'+r.id+'" onclick="selectRoute('+r.id+',this)">'+
+    var rid = String(r.id);
+    return '<div class="segment-item" id="route-item-'+rid+'" data-route-id="'+rid+'" onclick="selectRouteById(this)">'+
       '<div style="flex:1;">'+
         '<div class="seg-name">'+r.name+'</div>'+
         '<div class="seg-meta">'+dist+' - '+elev+' hoogte</div>'+
       '</div>'+
       '<div style="font-size:11px;color:var(--textmu);">&#9660;</div>'+
     '</div>'+
-    '<div class="seg-inline-detail" id="route-inline-'+r.id+'" style="display:none;"></div>';
+    '<div class="seg-inline-detail" id="route-inline-'+rid+'" style="display:none;"></div>';
   }).join('');
 }
 
 var currentOpenRouteId = null;
 
+function selectRouteById(el) {
+  var id = el.getAttribute('data-route-id');
+  selectRoute(id, el);
+}
+
 async function selectRoute(id, itemEl) {
+  id = String(id);
   if (currentOpenRouteId === id) {
     var prev = document.getElementById('route-inline-'+id);
     if(prev){ prev.style.display='none'; prev.innerHTML=''; }

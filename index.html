@@ -1510,25 +1510,31 @@ function buildInlineDetail(prSec) {
   // Profile canvas
   html += '<div style="padding:8px 10px 0;"><canvas id="il-canvas" style="width:100%;height:60px;display:block;border-radius:4px;"></canvas></div>';
 
-  // Mini result - 3 columns: Gereden / PR / Simulatie
+  // Mini result - 4 columns: Gereden / PR / KOM / Simulatie
   html += '<div style="padding:10px;border-top:0.5px solid var(--border);margin-top:8px;">';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;">';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px;margin-bottom:8px;">';
   // Gereden
-  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:7px 8px;">';
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
   html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gereden</div>';
-  html += '<div style="font-size:18px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-ridden">--</div>';
+  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-ridden">--</div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-ridden-date"></div>';
   html += '</div>';
   // PR
-  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:7px 8px;">';
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
   html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">PR</div>';
-  html += '<div style="font-size:18px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-pr-time">--</div>';
+  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-pr-time">--</div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-pr-date-lbl"></div>';
   html += '</div>';
+  // KOM
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
+  html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">KOM</div>';
+  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--amber);" id="il-kom-time">--</div>';
+  html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-kom-diff"></div>';
+  html += '</div>';
   // Simulatie
-  html += '<div style="background:var(--gl);border-radius:var(--rs);padding:7px 8px;">';
+  html += '<div style="background:var(--gl);border-radius:var(--rs);padding:6px 7px;">';
   html += '<div style="font-size:9px;color:var(--gd);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Simulatie</div>';
-  html += '<div style="font-size:18px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--green);" id="il-time">--</div>';
+  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--green);" id="il-time">--</div>';
   html += '<div style="font-size:9px;color:var(--gd);margin-top:1px;" id="il-diff">--</div>';
   html += '</div>';
   html += '</div>';
@@ -1812,7 +1818,14 @@ async function selectSegment(id, itemEl, fromRide){
     }
     var hadPr = seg.pr && seg.pr.pr_elapsed_time;
     var prStr = hadPr ? fmt(seg.pr.pr_elapsed_time) : (komSec ? 'KOM: '+fmt(komSec) : (prSec ? 'Schatting: '+fmt(prSec) : 'Geen PR'));
-    var prDate = seg.pr&&seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+    var prDate = '';
+    if (seg.pr && seg.pr.pr_date) {
+      var prDateObj = new Date(seg.pr.pr_date);
+      prDate = prDateObj.toLocaleString('nl-NL',{
+        day:'numeric', month:'short', year:'numeric',
+        hour:'2-digit', minute:'2-digit'
+      });
+    }
 
     inlineEl.innerHTML = buildInlineDetail(prSec);
 
@@ -2113,6 +2126,13 @@ function calcResult(){
   // Update inline result
   var ilTime=document.getElementById('il-time');if(ilTime)ilTime.textContent=fmt(newT);
   var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u gem.';
+  // Update KOM diff vs simulation
+  var simKomDiffEl=document.getElementById('il-kom-diff');
+  if(simKomDiffEl && ilKomSec) {
+    var simVsKom = ilKomSec - newT;
+    simKomDiffEl.textContent = simVsKom > 1 ? fmt(simVsKom)+' verschil' : simVsKom < -1 ? 'Sneller dan KOM!' : 'Gelijk aan KOM';
+    simKomDiffEl.style.color = simVsKom < -1 ? 'var(--green)' : 'var(--textmu)';
+  }
   var ilDiff=document.getElementById('il-diff');
   if(ilDiff){
     // Compare to ridden time if available, else PR

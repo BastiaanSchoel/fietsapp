@@ -1070,7 +1070,7 @@ document.getElementById('acc-time-slider').addEventListener('input',function(){
 function loginWithStrava(){
   if(!STRAVA_CLIENT_ID){document.getElementById('clientid-screen').style.display='block';return;}
   var r=encodeURIComponent(window.location.origin+window.location.pathname);
-  window.location.href='https://www.strava.com/oauth/authorize?client_id='+STRAVA_CLIENT_ID+'&response_type=code&redirect_uri='+r+'&scope=read%2Cactivity%3Aread_all%2Cprofile%3Aread_all&approval_prompt=auto';
+  window.location.href='https://www.strava.com/oauth/authorize?client_id='+STRAVA_CLIENT_ID+'&response_type=code&redirect_uri='+r+'&scope=read%2Cread_all%2Cactivity%3Aread_all%2Cprofile%3Aread_all&approval_prompt=auto';
 }
 function saveClientId(){
   var v=document.getElementById('client-id-input').value.trim();

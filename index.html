@@ -1315,60 +1315,76 @@ async function loadRoutes() {
 
 function filterRoutes() {
   var q = document.getElementById('routes-search').value.toLowerCase();
-  renderRoutesList(q ? allRoutes.filter(function(r){return r.name.toLowerCase().indexOf(q)!==-1;}) : allRoutes);
+  if (!q) { renderRoutesList(allRoutes); return; }
+  // Filter but keep original indices by storing them
+  var filtered = allRoutes.map(function(r,i){ return {r:r,i:i}; })
+    .filter(function(x){ return x.r.name.toLowerCase().indexOf(q)!==-1; });
+  var el = document.getElementById('routes-list');
+  if (!filtered.length) { el.innerHTML = '<div class="loading-text">Geen routes gevonden.</div>'; return; }
+  el.innerHTML = filtered.map(function(x) {
+    var r=x.r, idx=x.i;
+    var dist = ((r.distance||0)/1000).toFixed(1)+' km';
+    var elev = Math.round(r.elevation_gain||0)+' m';
+    return '<div class="segment-item" id="route-item-'+idx+'" onclick="selectRouteByIdx('+idx+')">'+
+      '<div style="flex:1;"><div class="seg-name">'+r.name+'</div>'+
+      '<div class="seg-meta">'+dist+' - '+elev+' hoogte</div></div>'+
+      '<div style="font-size:11px;color:var(--textmu);">&#9660;</div>'+
+    '</div>'+
+    '<div class="seg-inline-detail" id="route-inline-'+idx+'" style="display:none;"></div>';
+  }).join('');
 }
 
 function renderRoutesList(routes) {
   var el = document.getElementById('routes-list');
   if (!routes.length) { el.innerHTML = '<div class="loading-text">Geen routes gevonden.</div>'; return; }
-  el.innerHTML = routes.map(function(r) {
+  el.innerHTML = routes.map(function(r, idx) {
     var dist = ((r.distance||0)/1000).toFixed(1)+' km';
     var elev = Math.round(r.elevation_gain||0)+' m';
-    var rid = String(r.id);
-    return '<div class="segment-item" id="route-item-'+rid+'" data-route-id="'+rid+'" onclick="selectRouteById(this)">'+
+    return '<div class="segment-item" id="route-item-'+idx+'" onclick="selectRouteByIdx('+idx+')">'+
       '<div style="flex:1;">'+
         '<div class="seg-name">'+r.name+'</div>'+
         '<div class="seg-meta">'+dist+' - '+elev+' hoogte</div>'+
       '</div>'+
       '<div style="font-size:11px;color:var(--textmu);">&#9660;</div>'+
     '</div>'+
-    '<div class="seg-inline-detail" id="route-inline-'+rid+'" style="display:none;"></div>';
+    '<div class="seg-inline-detail" id="route-inline-'+idx+'" style="display:none;"></div>';
   }).join('');
 }
 
-var currentOpenRouteId = null;
+var currentOpenRouteIdx = null;
 
-function selectRouteById(el) {
-  var id = el.getAttribute('data-route-id');
-  selectRoute(id, el);
-}
+function selectRouteByIdx(idx) {
+  var route = allRoutes[idx];
+  if (!route) return;
 
-async function selectRoute(id, itemEl) {
-  id = String(id);
-  if (currentOpenRouteId === id) {
-    var prev = document.getElementById('route-inline-'+id);
+  // Toggle close
+  if (currentOpenRouteIdx === idx) {
+    var prev = document.getElementById('route-inline-'+idx);
     if(prev){ prev.style.display='none'; prev.innerHTML=''; }
     document.querySelectorAll('#routes-list .segment-item').forEach(function(e){e.classList.remove('active');});
-    currentOpenRouteId = null;
+    currentOpenRouteIdx = null;
     return;
   }
-  if (currentOpenRouteId !== null) {
-    var prevD = document.getElementById('route-inline-'+currentOpenRouteId);
+  // Close previous
+  if (currentOpenRouteIdx !== null) {
+    var prevD = document.getElementById('route-inline-'+currentOpenRouteIdx);
     if(prevD){ prevD.style.display='none'; prevD.innerHTML=''; }
-    var prevI = document.getElementById('route-item-'+currentOpenRouteId);
+    var prevI = document.getElementById('route-item-'+currentOpenRouteIdx);
     if(prevI) prevI.classList.remove('active');
   }
-  currentOpenRouteId = id;
+  currentOpenRouteIdx = idx;
   document.querySelectorAll('#routes-list .segment-item').forEach(function(e){e.classList.remove('active');});
-  var clickedItem = document.getElementById('route-item-'+id);
+  var clickedItem = document.getElementById('route-item-'+idx);
   if(clickedItem) clickedItem.classList.add('active');
-  var inlineEl = document.getElementById('route-inline-'+id);
+  var inlineEl = document.getElementById('route-inline-'+idx);
   if(!inlineEl) return;
   inlineEl.style.display = 'block';
   inlineEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--textmu);font-family:monospace;">Segmenten laden...</div>';
 
+  // Use the route ID string from allRoutes array - avoids JS number precision loss
+  var routeIdStr = String(route.id);
   try {
-    var res = await fetch('/api/strava-route-detail?token='+accessToken+'&id='+id);
+    var res = await fetch('/api/strava-route-detail?token='+accessToken+'&id='+routeIdStr);
     var route = await res.json();
     if (route.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+route.error+'</div>'; return; }
 

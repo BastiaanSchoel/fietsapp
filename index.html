@@ -191,9 +191,9 @@ canvas.seg-canvas{width:100%;height:100%;display:block;}
 .seg-bike-opt:hover{border-color:var(--borderm);}
 .seg-bike-opt.active{border-color:var(--green);background:var(--gl);}
 .seg-inline-detail{border-radius:0 0 var(--rs) var(--rs);overflow:hidden;}
-.seg-src-tab{flex:1;padding:6px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:6px;cursor:pointer;color:var(--textm);border:none;background:none;font-family:inherit;transition:all 0.12s;}
+.seg-src-tab{flex:1;padding:7px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:6px;cursor:pointer;color:var(--textm);border:0.5px solid transparent;background:none;font-family:inherit;transition:all 0.12s;}
 .seg-src-tab:hover{background:var(--surface);}
-.seg-src-tab.active{background:var(--surface);color:var(--green);font-weight:600;}
+.seg-src-tab.active{background:var(--surface);color:var(--green);font-weight:600;border-color:var(--green);}
 .seg-bike-name{font-size:12px;font-weight:500;}
 .seg-bike-sub{font-size:10px;color:var(--textmu);}
 
@@ -486,14 +486,15 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
       </div>
 
       <div id="seg-search-card" class="card" style="display:none;">
-        <!-- Mode toggle -->
-        <div style="display:flex;gap:3px;margin-bottom:0.875rem;background:var(--bg);border-radius:var(--rs);padding:3px;">
-          <button id="mode-starred" onclick="switchSegMode('starred')" style="flex:1;padding:6px;font-size:11px;font-weight:500;border:none;border-radius:6px;cursor:pointer;font-family:inherit;background:var(--green);color:white;">&#9733; Stersegmenten</button>
-          <button id="mode-routes" onclick="switchSegMode('routes')" style="flex:1;padding:6px;font-size:11px;font-weight:500;border:none;border-radius:6px;cursor:pointer;font-family:inherit;background:none;color:var(--textm);">&#9654; Mijn routes</button>
+        <!-- Source tabs -->
+        <div style="display:flex;gap:3px;margin-bottom:1rem;background:var(--bg);border-radius:var(--rs);padding:3px;border:0.5px solid var(--border);">
+          <button class="seg-src-tab active" id="srctab-starred" onclick="switchSegSource('starred')">&#9733; Ster</button>
+          <button class="seg-src-tab" id="srctab-rides" onclick="switchSegSource('rides')">Ritten</button>
+          <button class="seg-src-tab" id="srctab-routes" onclick="switchSegSource('routes')">Routes</button>
         </div>
 
-        <!-- Starred segments -->
-        <div id="view-starred">
+        <!-- Stersegmenten -->
+        <div id="src-starred">
           <div class="search-wrap">
             <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam..." oninput="filterSegments()">
             <button class="search-btn" onclick="loadSegments()">&#8635;</button>
@@ -501,19 +502,22 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
           <div id="segment-list" class="segment-list"><div class="loading-text">Laden...</div></div>
         </div>
 
+        <!-- Ritten -->
+        <div id="src-rides" style="display:none;">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="rides-search" placeholder="Zoek rit op naam..." oninput="filterRides()">
+            <button class="search-btn" onclick="loadRides()">&#8635;</button>
+          </div>
+          <div id="rides-list" class="segment-list"><div class="loading-text">Klik &#8635; om ritten te laden.</div></div>
+        </div>
+
         <!-- Routes -->
-        <div id="view-routes" style="display:none;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-            <div id="routes-back" style="display:none;">
-              <button onclick="showRouteList()" style="background:none;border:none;font-size:12px;color:var(--green);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;">&#8592; Alle routes</button>
-            </div>
-            <button class="search-btn" style="margin-left:auto;" onclick="loadRoutes()">&#8635;</button>
+        <div id="src-routes" style="display:none;">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="routes-search" placeholder="Zoek route op naam..." oninput="filterRoutes()">
+            <button class="search-btn" onclick="loadRoutes()">&#8635;</button>
           </div>
-          <div id="route-list"><div class="loading-text">Laden...</div></div>
-          <div id="route-segment-list" style="display:none;">
-            <div style="font-size:11px;color:var(--textmu);margin-bottom:8px;" id="route-seg-title"></div>
-            <div id="route-segments" class="segment-list"></div>
-          </div>
+          <div id="routes-list" class="segment-list"><div class="loading-text">Klik &#8635; om routes te laden.</div></div>
         </div>
       </div>
 
@@ -1041,23 +1045,7 @@ function logout(){sessionStorage.clear();window.location.reload();}
 //
 var segMode = 'starred';
 
-function switchSegMode(mode) {
-  segMode = mode;
-  var btnS = document.getElementById('mode-starred');
-  var btnR = document.getElementById('mode-routes');
-  var viewS = document.getElementById('view-starred');
-  var viewR = document.getElementById('view-routes');
-  if (mode === 'starred') {
-    btnS.style.background = 'var(--green)'; btnS.style.color = 'white';
-    btnR.style.background = 'none'; btnR.style.color = 'var(--textm)';
-    viewS.style.display = 'block'; viewR.style.display = 'none';
-  } else {
-    btnR.style.background = 'var(--green)'; btnR.style.color = 'white';
-    btnS.style.background = 'none'; btnS.style.color = 'var(--textm)';
-    viewS.style.display = 'none'; viewR.style.display = 'block';
-    loadRoutes();
-  }
-}
+
 
 
 function showRouteList() {
@@ -1086,6 +1074,9 @@ function switchSegSource(src) {
   document.getElementById('src-starred').style.display = src==='starred' ? 'block' : 'none';
   document.getElementById('src-rides').style.display = src==='rides' ? 'block' : 'none';
   document.getElementById('src-routes').style.display = src==='routes' ? 'block' : 'none';
+  // Auto-load on first switch
+  if(src==='rides' && allRides.length===0) loadRides();
+  if(src==='routes' && allRoutes.length===0) loadRoutes();
 }
 
 // RITTEN
@@ -1211,8 +1202,16 @@ async function loadRoutes() {
   el.innerHTML = '<div class="loading-text">Laden...</div>';
   try {
     var res = await fetch('/api/strava-routes?token='+accessToken);
-    allRoutes = await res.json();
-    if (!Array.isArray(allRoutes)) { el.innerHTML = '<div class="loading-text">Geen routes gevonden.</div>'; return; }
+    var data = await res.json();
+    if (data.error) {
+      el.innerHTML = '<div class="loading-text">Fout: '+data.error+'<br><small>Routes vereisen mogelijk hernieuwde Strava-toestemming.</small></div>';
+      return;
+    }
+    allRoutes = Array.isArray(data) ? data : [];
+    if (!allRoutes.length) {
+      el.innerHTML = '<div class="loading-text">Geen routes gevonden. Maak routes aan in Strava.</div>';
+      return;
+    }
     renderRoutesList(allRoutes);
   } catch(e) {
     el.innerHTML = '<div class="loading-text">Fout: '+e.message+'</div>';

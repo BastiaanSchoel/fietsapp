@@ -1710,6 +1710,13 @@ function selectSegmentFromRide(id, riddenSec, itemEl) {
   selectSegment(id, itemEl, true);
 }
 
+function selectSegmentFromRideEl(el) {
+  var id = el.getAttribute('data-seg-id');
+  var ridden = parseInt(el.getAttribute('data-ridden')) || 0;
+  ilRiddenSec = ridden;
+  selectSegment(id, el, true);
+}
+
 async function selectSegment(id, itemEl, fromRide){
   if (!fromRide) ilRiddenSec = 0;
   // Toggle: if already open, close it

@@ -503,11 +503,21 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
 
         <!-- Ritten -->
         <div id="src-rides">
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:7px;align-items:flex-end;">
+            <div>
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Vanaf</div>
+              <input type="date" id="rides-from" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Tot en met</div>
+              <input type="date" id="rides-to" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
+            </div>
+            <button class="search-btn" onclick="loadRides()" style="height:30px;">&#8635;</button>
+          </div>
           <div class="search-wrap">
             <input type="text" class="search-input" id="rides-search" placeholder="Zoek rit op naam..." oninput="filterRides()">
-            <button class="search-btn" onclick="loadRides()">&#8635;</button>
           </div>
-          <div id="rides-list" class="segment-list"><div class="loading-text">Klik &#8635; om ritten te laden.</div></div>
+          <div id="rides-list" class="segment-list"><div class="loading-text">Laden...</div></div>
         </div>
 
         <!-- Routes -->

@@ -1189,12 +1189,15 @@ async function selectRide(id, itemEl) {
         try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
         renderGarage();
       } else if (act.gear_name) {
-        // Bike not in garage yet - show notification in inline
-        var note = document.createElement('div');
-        note.style.cssText = 'background:#FFF3CD;border-radius:var(--rs);padding:8px 10px;font-size:11px;color:#7A5000;margin-bottom:8px;';
-        note.innerHTML = 'Fiets uit Strava: <strong>' + act.gear_name + '</strong> — staat niet in je garage. ' +
-          '<button onclick="addStravaGear('' + act.gear_id + '','' + act.gear_name.replace(/'/g,'') + '')" ' +
-          'style="background:var(--green);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;margin-left:4px;">Toevoegen</button>';
+        var note = document.createElement("div");
+        note.style.cssText = "background:#FFF3CD;border-radius:var(--rs);padding:8px 10px;font-size:11px;color:#7A5000;margin-bottom:8px;";
+        var noteText = document.createTextNode("Fiets \"" + act.gear_name + "\" staat niet in je garage. ");
+        var noteBtn = document.createElement("button");
+        noteBtn.style.cssText = "background:var(--green);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;";
+        noteBtn.textContent = "Toevoegen aan garage";
+        noteBtn.addEventListener("click", (function(gid, gname){ return function(){ addStravaGear(gid, gname); note.remove(); }; })(act.gear_id, act.gear_name));
+        note.appendChild(noteText);
+        note.appendChild(noteBtn);
         inlineEl.insertBefore(note, inlineEl.firstChild);
       }
     }

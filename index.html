@@ -1326,7 +1326,7 @@ async function selectRide(id, itemEl) {
       else if (seg.pr_rank === 2) prBadge = '<span style="font-size:9px;background:#C0C0C0;color:#444;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">2e</span>';
       else if (seg.pr_rank === 3) prBadge = '<span style="font-size:9px;background:#CD7F32;color:#fff;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">3e</span>';
       var gc = Math.abs(seg.average_grade)>3 ? 'var(--coral)' : 'var(--green)';
-      html += '<div class="segment-item" id="seg-item-'+seg.id+'" onclick="selectSegment('+seg.id+',this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;">';
+      html += '<div class="segment-item" id="seg-item-'+seg.id+'" onclick="selectSegmentFromRide('+seg.id+','+seg.elapsed_time+',this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;">';
       html += '<div style="flex:1;"><div class="seg-name">'+seg.name+prBadge+'</div>';
       html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - Gereden: '+fmt(seg.elapsed_time)+'</div></div>';
       html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+seg.average_grade.toFixed(1)+'%</div></div>';
@@ -1500,15 +1500,29 @@ function buildInlineDetail(prSec) {
   // Profile canvas
   html += '<div style="padding:8px 10px 0;"><canvas id="il-canvas" style="width:100%;height:60px;display:block;border-radius:4px;"></canvas></div>';
 
-  // Mini result
+  // Mini result - 3 columns: Gereden / PR / Simulatie
   html += '<div style="padding:10px;border-top:0.5px solid var(--border);margin-top:8px;">';
-  html += '<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;">';
-  html += '<div><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gesimuleerde tijd</div>';
-  html += '<div style="font-size:26px;font-weight:600;font-family:monospace;letter-spacing:-0.03em;line-height:1;" id="il-time">--</div></div>';
-  html += '<div style="text-align:right;"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">t.o.v. PR</div>';
-  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;" id="il-diff">--</div>';
-  html += '<div style="font-size:10px;color:var(--textmu);margin-top:1px;" id="il-speed">--</div></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;">';
+  // Gereden
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:7px 8px;">';
+  html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gereden</div>';
+  html += '<div style="font-size:18px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-ridden">--</div>';
+  html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-ridden-date"></div>';
   html += '</div>';
+  // PR
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:7px 8px;">';
+  html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">PR</div>';
+  html += '<div style="font-size:18px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-pr-time">--</div>';
+  html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-pr-date-lbl"></div>';
+  html += '</div>';
+  // Simulatie
+  html += '<div style="background:var(--gl);border-radius:var(--rs);padding:7px 8px;">';
+  html += '<div style="font-size:9px;color:var(--gd);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Simulatie</div>';
+  html += '<div style="font-size:18px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--green);" id="il-time">--</div>';
+  html += '<div style="font-size:9px;color:var(--gd);margin-top:1px;" id="il-diff">--</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '<div style="font-size:9px;color:var(--textmu);margin-bottom:4px;" id="il-speed"></div>';
   html += '<div id="il-factors" style="margin-bottom:6px;"></div>';
   html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 8px;font-size:10px;color:var(--textmu);line-height:1.5;" id="il-weer">Weer laden...</div>';
   html += '</div>';
@@ -1584,6 +1598,7 @@ function ilToggle(btn) {
 var currentOpenSegId = null;
 var ilBaseSec = 0;
 var ilKomSec = 0;
+var ilRiddenSec = 0; // Time from ride segment effort
 var stravaGearCache = {};
 var prWeatherData = null; // Historical weather at time of PR
 
@@ -1675,7 +1690,13 @@ async function matchOrAddGear(gearId) {
   renderGarage();
 }
 
+function selectSegmentFromRide(id, riddenSec, itemEl) {
+  ilRiddenSec = riddenSec || 0;
+  selectSegment(id, itemEl);
+}
+
 async function selectSegment(id, itemEl){
+  ilRiddenSec = 0; // reset unless called from ride
   // Toggle: if already open, close it
   if(currentOpenSegId === id){
     var prev = document.getElementById('seg-inline-'+id);
@@ -1772,6 +1793,16 @@ async function selectSegment(id, itemEl){
       var dEl=document.getElementById('il-dist');if(dEl)dEl.textContent=((seg.distance||0)/1000).toFixed(2)+' km';
       var gEl=document.getElementById('il-grade');if(gEl)gEl.textContent=(seg.average_grade||0).toFixed(1)+'%';
       var pEl=document.getElementById('il-pr');if(pEl)pEl.textContent=prStr+(prDate?' ('+prDate+')':'');
+      // Fill 3-column time display
+      var prTimeEl=document.getElementById('il-pr-time');
+      var prDateEl=document.getElementById('il-pr-date-lbl');
+      var riddenEl=document.getElementById('il-ridden');
+      var riddenDateEl=document.getElementById('il-ridden-date');
+      if(prTimeEl) prTimeEl.textContent = ilBaseSec ? fmt(ilBaseSec) : '--';
+      if(prDateEl) prDateEl.textContent = prDate || '';
+      // Gereden = same as PR unless set from ride context
+      if(riddenEl) riddenEl.textContent = ilRiddenSec ? fmt(ilRiddenSec) : (ilBaseSec ? fmt(ilBaseSec) : '--');
+      if(riddenDateEl) riddenDateEl.textContent = ilRiddenSec ? 'deze rit' : (prDate ? 'PR datum' : '');
 
       // Draw profile
       var cv=document.getElementById('il-canvas');
@@ -2038,9 +2069,18 @@ function calcResult(){
   var newT=newSim*scale,diff=myT-newT,td=gpxPoints[gpxPoints.length-1].dist;
   // Update inline result
   var ilTime=document.getElementById('il-time');if(ilTime)ilTime.textContent=fmt(newT);
-  var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u';
+  var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u gem.';
   var ilDiff=document.getElementById('il-diff');
-  if(ilDiff){if(Math.abs(diff)<1){ilDiff.textContent='+/- 0s';ilDiff.style.color='var(--textmu)';}else{ilDiff.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');ilDiff.style.color=diff>1?'var(--green)':'var(--coral)';}}
+  if(ilDiff){
+    // Compare to ridden time if available, else PR
+    var baseForDiff = ilRiddenSec || ilBaseSec;
+    var diffFromBase = baseForDiff - newT;
+    if(Math.abs(diffFromBase)<1){ilDiff.textContent='+/- 0s';ilDiff.style.color='var(--textmu)';}
+    else{ilDiff.textContent=(diffFromBase>0?'-':'+')+fmt(Math.abs(diffFromBase))+(diffFromBase>0?' sneller':' langzamer');ilDiff.style.color=diffFromBase>0?'var(--green)':'var(--coral)';}
+  }
+  // Update ridden column if from ride
+  var riddenEl2=document.getElementById('il-ridden');
+  if(riddenEl2 && ilRiddenSec) riddenEl2.textContent=fmt(ilRiddenSec);
   // Also update old mini-result if present
   var mt=document.getElementById('mini-time');if(mt)mt.textContent=fmt(newT);
   var ms2=document.getElementById('mini-speed');if(ms2)ms2.textContent=(td/newT*3.6).toFixed(1)+' km/u';

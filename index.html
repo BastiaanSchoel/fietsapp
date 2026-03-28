@@ -1,115 +1,2138 @@
-exports.handler = async (event) => {
-  const { token, id } = event.queryStringParameters || {};
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watts-up</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#1D9E75;--gl:#E1F5EE;--gd:#0F6E56;--gdp:#085041;
+  --coral:#D85A30;--amber:#EF9F27;--blue:#378ADD;--purple:#7F77DD;--bluel:#85B7EB;
+  --bg:#F7F6F2;--surface:#fff;
+  --border:rgba(0,0,0,0.08);--borderm:rgba(0,0,0,0.14);
+  --text:#1A1A18;--textm:#5A5A54;--textmu:#9A9A90;
+  --r:12px;--rs:8px;--strava:#FC4C02;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--gdp);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:7px;color:white;font-size:15px;font-weight:600;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:0.1em;text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:6px;}
+.strava-btn{display:flex;align-items:center;gap:5px;background:var(--strava);color:white;border:none;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.profiel-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);color:white;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;}
+.athlete-bar{display:flex;align-items:center;gap:7px;color:white;}
+.athlete-avatar{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);object-fit:cover;}
+.athlete-name{font-size:12px;font-weight:500;}
+.logout-btn{background:rgba(255,255,255,0.15);border:none;color:white;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-family:inherit;margin-left:3px;}
 
-  if (!token || !id) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Token of segment ID ontbreekt' })
-    };
+/* Profiel panel */
+.profiel-panel{display:none;position:fixed;top:52px;right:0;width:300px;max-height:calc(100vh - 52px);overflow-y:auto;background:var(--surface);border-left:0.5px solid var(--borderm);border-bottom:0.5px solid var(--borderm);z-index:200;padding:1rem;box-shadow:-4px 4px 16px rgba(0,0,0,0.1);}
+.profiel-panel.open{display:block;}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:0.75rem;}
+.pf-field-label{font-size:10px;color:var(--textmu);margin-bottom:3px;}
+.pf-input-wrap{position:relative;}
+.pf-input{width:100%;padding:7px 26px 7px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;}
+.pf-input:focus{border-color:var(--green);}
+.pf-unit{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--textmu);pointer-events:none;}
+.pf-src{font-size:10px;color:var(--gd);margin-top:2px;}
+.pf-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:0.75rem;}
+.pf-metric{background:var(--bg);border-radius:var(--rs);padding:7px 9px;}
+.pf-metric-l{font-size:10px;color:var(--textmu);margin-bottom:1px;}
+.pf-metric-v{font-size:14px;font-weight:500;}
+.pf-advice{background:var(--gl);border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--gdp);line-height:1.5;}
+
+/* Main */
+.main{max-width:960px;margin:0 auto;padding:1.25rem 1.25rem 4rem;}
+.tabs{display:flex;gap:3px;margin-bottom:1.25rem;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:4px;}
+.tab{flex:1;padding:8px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:var(--rs);cursor:pointer;color:var(--textm);border:none;background:none;font-family:inherit;transition:all 0.12s;}
+.tab:hover{background:var(--bg);}
+.tab.active{background:var(--green);color:white;}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-bottom:0.875rem;}
+.card-title{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);margin-bottom:0.875rem;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:space-between;}
+.badge{font-size:9px;background:var(--gl);color:var(--gd);padding:2px 5px;border-radius:3px;font-weight:600;}
+
+/* Welcome */
+.welcome-wrap{max-width:380px;margin:3rem auto;}
+.welcome-hero{text-align:center;margin-bottom:1.5rem;}
+.welcome-logo-box{width:64px;height:64px;background:var(--gdp);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.welcome-title{font-size:22px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;}
+.welcome-sub{font-size:13px;color:var(--textmu);line-height:1.6;}
+.welcome-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.welcome-features{padding:1.1rem;border-bottom:0.5px solid var(--border);}
+.welcome-feature{display:flex;align-items:center;gap:9px;font-size:12px;margin-bottom:10px;}
+.welcome-feature:last-child{margin-bottom:0;}
+.welcome-feat-icon{width:26px;height:26px;border-radius:7px;background:var(--gl);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.welcome-feat-title{font-weight:500;color:var(--text);}
+.welcome-feat-sub{font-size:11px;color:var(--textmu);}
+.welcome-action{padding:1.1rem;}
+.connect-btn{width:100%;padding:12px;background:var(--strava);color:white;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;}
+.skip-btn{width:100%;padding:7px;background:none;border:none;font-size:11px;color:var(--textmu);cursor:pointer;font-family:inherit;text-decoration:underline;margin-top:6px;}
+.clientid-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-top:0.75rem;}
+.clientid-input{width:100%;padding:8px 11px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:14px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;margin-bottom:7px;}
+.clientid-submit{width:100%;padding:9px;background:var(--strava);color:white;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;}
+
+/* Weather */
+.loc-bar{display:flex;align-items:center;gap:7px;padding:6px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:0.75rem;}
+.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.loc-name{font-size:12px;font-weight:500;flex:1;}
+.loc-time{font-size:10px;color:var(--textmu);font-family:'DM Mono',monospace;}
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:0.75rem;}
+.live-cell{background:var(--bg);border-radius:var(--rs);padding:7px 9px;}
+.live-lbl{font-size:10px;color:var(--textmu);margin-bottom:1px;}
+.live-val{font-size:14px;font-weight:500;}
+.live-sub{font-size:10px;color:var(--textmu);margin-top:1px;}
+.ftp-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:var(--rs);margin-bottom:0.75rem;font-size:11px;}
+.ftp-bar.neg{background:#FFF3CD;color:#7A5000;}
+.ftp-bar.pos{background:var(--gl);color:var(--gdp);}
+.ftp-bar.neu{background:var(--bg);color:var(--textmu);}
+.days-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;margin-bottom:0.75rem;scrollbar-width:none;}
+.days-scroll::-webkit-scrollbar{display:none;}
+.day-card{flex-shrink:0;width:60px;background:var(--bg);border-radius:8px;padding:7px 5px;text-align:center;cursor:pointer;border:1.5px solid transparent;transition:all 0.12s;}
+.day-card:hover{border-color:var(--borderm);}
+.day-card.active{background:var(--surface);border-color:var(--green);}
+.day-name{font-size:10px;color:var(--textmu);margin-bottom:2px;font-weight:500;}
+.day-card.active .day-name{color:var(--gd);font-weight:600;}
+.day-icon{font-size:15px;margin-bottom:2px;height:20px;display:flex;align-items:center;justify-content:center;}
+.day-temp{font-size:11px;font-weight:500;}
+.day-wind{font-size:9px;color:var(--textmu);margin-top:1px;font-family:'DM Mono',monospace;}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--textmu);}
+.leg-line{width:12px;height:2px;border-radius:1px;}
+.time-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--textmu);margin-bottom:4px;font-family:'DM Mono',monospace;}
+.sel-time{text-align:center;font-size:12px;font-weight:500;margin-top:5px;font-family:'DM Mono',monospace;}
+.moment-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:0.75rem;}
+.moment-cell{background:var(--bg);border-radius:var(--rs);padding:7px 9px;}
+.moment-lbl{font-size:10px;color:var(--textmu);margin-bottom:1px;}
+.moment-val{font-size:13px;font-weight:500;}
+.moment-eff{font-size:10px;margin-top:1px;font-family:'DM Mono',monospace;}
+.moment-eff.neg{color:var(--coral);}
+.moment-eff.pos{color:var(--green);}
+
+/* Garage */
+.bike-card{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--bg);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:all 0.12s;}
+.bike-card:hover{border-color:var(--borderm);}
+.bike-card.active{border-color:var(--green);background:var(--gl);}
+.bike-icon{width:28px;height:28px;border-radius:7px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bike-name{font-size:12px;font-weight:500;}
+.bike-sub{font-size:10px;color:var(--textmu);}
+.active-badge{margin-left:auto;font-size:10px;background:var(--gl);color:var(--gd);padding:2px 7px;border-radius:9px;font-weight:500;flex-shrink:0;}
+.add-bike-btn{width:100%;padding:8px;background:none;border:0.5px dashed var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--textmu);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:3px;}
+.add-bike-btn:hover{border-color:var(--green);color:var(--green);}
+.bike-form{background:var(--bg);border-radius:var(--rs);padding:11px;margin-top:7px;display:none;}
+.bike-form.open{display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
+.form-lbl{font-size:10px;color:var(--textmu);margin-bottom:3px;}
+.form-input{width:100%;padding:6px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:12px;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;}
+.form-select{width:100%;padding:6px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:12px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;}
+.save-bike-btn{background:var(--green);color:white;border:none;border-radius:var(--rs);padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+
+/* Clothing */
+.clothing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.clothing-btn{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 5px;font-size:11px;color:var(--textmu);cursor:pointer;font-family:inherit;text-align:center;transition:all 0.12s;line-height:1.3;}
+.clothing-btn:hover{border-color:var(--borderm);}
+.clothing-btn.on{border-color:var(--green);background:var(--gl);color:var(--gd);font-weight:500;}
+.clothing-weight{font-size:9px;color:var(--textmu);margin-top:1px;}
+.clothing-btn.on .clothing-weight{color:var(--gd);}
+
+/* Segment */
+.search-wrap{display:flex;gap:6px;margin-bottom:0.875rem;}
+.search-input{flex:1;padding:8px 11px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;}
+.search-input:focus{border-color:var(--green);}
+.search-btn{background:var(--green);color:white;border:none;border-radius:var(--rs);padding:8px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+.segment-list{display:flex;flex-direction:column;gap:5px;}
+.segment-item{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--bg);border-radius:var(--rs);cursor:pointer;border:0.5px solid transparent;transition:all 0.12s;}
+.segment-item:hover,.segment-item.active{border-color:var(--green);background:var(--gl);}
+.seg-name{font-size:13px;font-weight:500;}
+.seg-meta{font-size:10px;color:var(--textmu);margin-top:1px;font-family:'DM Mono',monospace;}
+.seg-right{text-align:right;flex-shrink:0;}
+.seg-grade{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;}
+.seg-grade.climb{color:var(--coral);}
+.seg-grade.flat{color:var(--green);}
+.seg-pr-small{font-size:10px;color:var(--textmu);margin-top:1px;}
+.loading-text{font-size:12px;color:var(--textmu);text-align:center;padding:1.25rem;font-family:'DM Mono',monospace;}
+.seg-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:0.875rem;}
+.stat{background:var(--bg);border-radius:var(--rs);padding:8px 10px;}
+.stat-lbl{font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;}
+.stat-val{font-size:14px;font-weight:600;}
+.profile-wrap{width:100%;height:75px;border-radius:var(--rs);overflow:hidden;margin-bottom:0.875rem;}
+canvas.seg-canvas{width:100%;height:100%;display:block;}
+
+/* Accordion */
+.accord{border-top:0.5px solid var(--border);}
+.accord-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 0;background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text);}
+.accord-summary{font-size:10px;color:var(--textmu);font-weight:400;margin-left:6px;}
+.accord-arrow{font-size:10px;color:var(--textmu);transition:transform 0.18s;}
+.accord-btn.open .accord-arrow{transform:rotate(180deg);}
+.accord-body{display:none;padding-bottom:10px;}
+.accord-body.open{display:block;}
+
+/* Mini result */
+.mini-result{background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:0.875rem;}
+.mini-time{font-size:32px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-0.03em;line-height:1;}
+.mini-diff{font-size:15px;font-weight:600;font-family:'DM Mono',monospace;margin-top:3px;}
+.mini-diff.win{color:var(--green);}
+.mini-diff.loss{color:var(--coral);}
+.mini-diff.neu{color:var(--textmu);}
+.mini-factor{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;}
+.mini-factor-name{color:var(--textm);display:flex;align-items:center;gap:5px;}
+.mini-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.mini-factor-val{font-weight:600;font-family:'DM Mono',monospace;}
+.mini-factor-val.pos{color:var(--green);}
+.mini-factor-val.neg{color:var(--coral);}
+.mini-factor-val.neu{color:var(--textmu);}
+.mini-weer{background:var(--surface);border-radius:var(--rs);padding:6px 9px;font-size:10px;color:var(--textmu);margin-top:6px;line-height:1.5;}
+
+/* Segment garage select */
+.seg-bike-opt{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--surface);border-radius:var(--rs);margin-bottom:4px;cursor:pointer;border:1px solid var(--border);transition:all 0.12s;}
+.seg-bike-opt:hover{border-color:var(--borderm);}
+.seg-bike-opt.active{border-color:var(--green);background:var(--gl);}
+.seg-inline-detail{border-radius:0 0 var(--rs) var(--rs);overflow:hidden;}
+.seg-src-tab{flex:1;padding:7px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:6px;cursor:pointer;color:var(--textm);border:0.5px solid transparent;background:none;font-family:inherit;transition:all 0.12s;}
+.seg-src-tab:hover{background:var(--surface);}
+.seg-src-tab.active{background:var(--surface);color:var(--green);font-weight:600;border-color:var(--green);}
+.seg-bike-name{font-size:12px;font-weight:500;}
+.seg-bike-sub{font-size:10px;color:var(--textmu);}
+
+/* Slider rows */
+.srow{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.srow:last-child{margin-bottom:0;}
+.srow-lbl{font-size:12px;color:var(--text);width:120px;flex-shrink:0;}
+.srow input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--borderm);border-radius:2px;outline:none;cursor:pointer;}
+.srow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--green);cursor:pointer;border:2.5px solid white;box-shadow:0 0 0 1px var(--green);}
+.srow-val{font-size:12px;font-weight:500;width:64px;text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;}
+.sel-row{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.sel-row:last-child{margin-bottom:0;}
+.sel-row label{font-size:12px;color:var(--text);width:100px;flex-shrink:0;}
+.sel-row select{flex:1;font-size:12px;padding:6px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);background:var(--surface);color:var(--text);font-family:inherit;cursor:pointer;outline:none;}
+
+/* Resultaat */
+.res-big{text-align:center;padding:1.25rem 0 1rem;border-bottom:0.5px solid var(--border);margin-bottom:1rem;}
+.res-lbl{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);margin-bottom:5px;}
+.res-time{font-size:56px;font-weight:600;letter-spacing:-0.04em;line-height:1;font-family:'DM Mono',monospace;}
+.res-diff{font-size:18px;font-weight:500;margin-top:5px;}
+.res-diff.win{color:var(--green);}
+.res-diff.loss{color:var(--coral);}
+.res-diff.neu{color:var(--textmu);}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:0.875rem;}
+.metric{background:var(--bg);border-radius:var(--rs);padding:10px;}
+.metric-lbl{font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:'DM Mono',monospace;}
+.metric-val{font-size:16px;font-weight:600;}
+.pr-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.pr-row:last-child{border-bottom:none;}
+.pr-badge{font-size:10px;padding:2px 7px;border-radius:9px;font-weight:600;font-family:'DM Mono',monospace;margin-right:7px;}
+.pr-silver{background:#E8E8E0;color:#444441;}
+.pr-bronze{background:#F5C4B3;color:#712B13;}
+.pr-name{color:var(--textm);}
+.pr-time{font-weight:600;font-family:'DM Mono',monospace;}
+.bd-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.bd-row:last-child{border-bottom:none;}
+.bd-name{color:var(--textm);display:flex;align-items:center;gap:6px;}
+.bd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.bd-val{font-weight:600;font-family:'DM Mono',monospace;}
+.bd-val.pos{color:var(--green);}
+.bd-val.neg{color:var(--coral);}
+.bd-val.neu{color:var(--textmu);}
+.bar-wrap{height:6px;background:var(--bg);border-radius:3px;margin:10px 0 5px;overflow:hidden;display:flex;gap:2px;}
+.bar-seg{height:6px;border-radius:2px;}
+.hint{font-size:11px;color:var(--textmu);font-family:'DM Mono',monospace;}
+.warn-box{background:#FFF3CD;border-radius:var(--rs);padding:8px 11px;font-size:11px;color:#7A5000;margin-bottom:0.875rem;line-height:1.5;display:none;}
+.info-box{background:var(--gl);border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--gdp);margin-top:0.75rem;line-height:1.5;}
+footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-family:'DM Mono',monospace;}
+@media(max-width:640px){.res-time{font-size:44px;}.seg-stats{grid-template-columns:repeat(2,1fr);}.live-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+      <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
+    </svg>
+    <div><div>Watts-up</div><div class="logo-sub">Segment Simulator</div></div>
+  </div>
+  <div class="hdr-right">
+    <button class="profiel-btn" onclick="toggleProfiel()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profiel
+    </button>
+    <div id="hdr-auth">
+      <button class="strava-btn" onclick="loginWithStrava()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        Strava
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Profiel panel -->
+<div class="profiel-panel" id="profiel-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+    <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);font-family:'DM Mono',monospace;">Profiel</div>
+    <button onclick="toggleProfiel()" style="background:none;border:none;cursor:pointer;color:var(--textmu);font-size:16px;line-height:1;padding:0;">&#215;</button>
+  </div>
+  <div id="pf-strava-row" style="display:none;margin-bottom:0.75rem;">
+    <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--bg);border-radius:var(--rs);">
+      <img id="pf-avatar" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+      <div id="pf-naam" style="font-size:12px;font-weight:500;flex:1;"></div>
+      <div style="font-size:10px;color:var(--gd);">Strava</div>
+    </div>
+  </div>
+  <div class="pf-grid">
+    <div>
+      <div class="pf-field-label">Gewicht (kg)</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()"><span class="pf-unit">kg</span></div>
+      <div class="pf-src" id="pf-weight-src"></div>
+    </div>
+    <div>
+      <div class="pf-field-label">Lengte (cm)</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()"><span class="pf-unit">cm</span></div>
+    </div>
+    <div>
+      <div class="pf-field-label">FTP (W)</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()"><span class="pf-unit">W</span></div>
+      <div class="pf-src" id="pf-ftp-src"></div>
+    </div>
+    <div>
+      <div class="pf-field-label">Leeftijd</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()"><span class="pf-unit">jr</span></div>
+    </div>
+  </div>
+  <div class="pf-metrics">
+    <div class="pf-metric"><div class="pf-metric-l">W/kg</div><div class="pf-metric-v" id="pf-wkg">--</div></div>
+    <div class="pf-metric"><div class="pf-metric-l">BMI</div><div class="pf-metric-v" id="pf-bmi">--</div></div>
+    <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
+    <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
+  </div>
+  <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
+</div>
+
+<div class="main">
+
+  <!-- WELKOMST -->
+  <div id="welcome-screen" style="display:none;">
+    <div class="welcome-wrap">
+      <div class="welcome-hero">
+        <div class="welcome-logo-box">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+            <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
+          </svg>
+        </div>
+        <div class="welcome-title">Watts-up</div>
+        <div class="welcome-sub">Simuleer je Strava-segmenten en ontdek hoeveel sneller je kunt worden</div>
+      </div>
+      <div class="welcome-card">
+        <div class="welcome-features">
+          <div class="welcome-feature">
+            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></div>
+            <div><div class="welcome-feat-title">Live weer</div><div class="welcome-feat-sub">Op basis van jouw locatie, 7-daagse voorspelling</div></div>
+          </div>
+          <div class="welcome-feature">
+            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div><div class="welcome-feat-title">Segmenten uit Strava</div><div class="welcome-feat-sub">PR, KOM-verschil, direct simuleren</div></div>
+          </div>
+          <div class="welcome-feature">
+            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <div><div class="welcome-feat-title">Wat als? simulaties</div><div class="welcome-feat-sub">Gewicht, aero, materiaal, conditie</div></div>
+          </div>
+        </div>
+        <div class="welcome-action">
+          <button class="connect-btn" onclick="loginWithStrava()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Verbinden met Strava
+          </button>
+          <button class="skip-btn" onclick="skipToApp()">Doorgaan zonder Strava</button>
+        </div>
+      </div>
+      <div id="clientid-screen" style="display:none;">
+        <div class="clientid-wrap">
+          <div style="font-size:12px;font-weight:500;margin-bottom:5px;">Strava Client ID</div>
+          <div style="font-size:11px;color:var(--textmu);margin-bottom:9px;">Ga naar <a href="https://www.strava.com/settings/api" target="_blank" style="color:var(--green);">strava.com/settings/api</a></div>
+          <input type="text" id="client-id-input" class="clientid-input" placeholder="bijv. 123456" oninput="this.style.borderColor=this.value.length>2?'var(--green)':'var(--borderm)'">
+          <button class="clientid-submit" onclick="saveClientId()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Inloggen met Strava
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen" style="display:none;">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('segment')">Strava</button>
+      <button class="tab" onclick="switchTab('fiets')">Fiets/Kleding</button>
+      <button class="tab" onclick="switchTab('weer')">Weer</button>
+    </div>
+
+    <!-- WEER -->
+    <div id="panel-weer" class="panel">
+      <div class="card">
+        <div class="card-title">Live weer <span class="badge">auto</span></div>
+        <div id="weer-loading" class="loading-text">Locatie ophalen...</div>
+        <div id="weer-error" style="display:none;background:#FFF3CD;border-radius:var(--rs);padding:9px;font-size:11px;color:#7A5000;"></div>
+        <div id="weer-live" style="display:none;">
+          <div class="loc-bar">
+            <div class="loc-dot"></div>
+            <div class="loc-name" id="loc-name">--</div>
+            <div class="loc-time" id="loc-time">--</div>
+          </div>
+          <div class="live-grid">
+            <div class="live-cell"><div class="live-lbl">Temperatuur</div><div class="live-val" id="lv-temp">--</div><div class="live-sub" id="lv-feels">--</div></div>
+            <div class="live-cell"><div class="live-lbl">Wind</div><div class="live-val" id="lv-wind">--</div><div class="live-sub" id="lv-winddir">--</div></div>
+            <div class="live-cell"><div class="live-lbl">Neerslag</div><div class="live-val" id="lv-rain">--</div><div class="live-sub" id="lv-humid">--</div></div>
+            <div class="live-cell"><div class="live-lbl">Luchtdruk</div><div class="live-val" id="lv-pressure">--</div><div class="live-sub">hPa</div></div>
+            <div class="live-cell"><div class="live-lbl">Gevoelstemp.</div><div class="live-val" id="lv-apptemp">--</div><div class="live-sub">gevoeld</div></div>
+            <div class="live-cell"><div class="live-lbl">UV-index</div><div class="live-val" id="lv-uv">--</div><div class="live-sub" id="lv-uvlbl">--</div></div>
+          </div>
+          <div class="ftp-bar neu" id="ftp-bar">
+            <span id="ftp-bar-txt">FTP-effect berekenen...</span>
+            <span id="ftp-bar-val" style="font-weight:600;font-family:'DM Mono',monospace;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="forecast-card" style="display:none;">
+        <div class="card-title">7-daagse voorspelling <span style="font-size:10px;font-weight:400;color:var(--textmu);">klik voor detail</span></div>
+        <div class="days-scroll" id="days-scroll"></div>
+      </div>
+      <div class="card" id="detail-card" style="display:none;">
+        <div class="card-title"><span id="detail-title">24-uurs verloop</span><span style="font-size:10px;font-weight:400;color:var(--textmu);">sleep slider</span></div>
+        <div style="position:relative;width:100%;"><canvas id="weather-chart" height="130"></canvas></div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-line" style="background:var(--coral)"></div>Temp</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--blue)"></div>Wind</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--bluel)"></div>Neerslag</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--amber)"></div>FTP%</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--purple)"></div>CdA%</div>
+        </div>
+        <div style="margin-top:0.75rem;">
+          <div class="time-labels"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+          <input type="range" id="time-slider" min="0" max="23" step="1" value="10" style="width:100%;">
+          <div class="sel-time" id="sel-time-lbl">10:00</div>
+        </div>
+        <div class="moment-grid">
+          <div class="moment-cell"><div class="moment-lbl">Temperatuur</div><div class="moment-val" id="mt-temp">--</div><div class="moment-eff" id="mt-temp-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">Wind</div><div class="moment-val" id="mt-wind">--</div><div class="moment-eff" id="mt-wind-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">Neerslag</div><div class="moment-val" id="mt-rain">--</div><div class="moment-eff" id="mt-rain-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">FTP-effect</div><div class="moment-val" id="mt-ftp">--</div><div class="moment-eff" id="mt-ftp-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">CdA-effect</div><div class="moment-val" id="mt-cda">--</div><div class="moment-eff" id="mt-cda-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">Netto effect</div><div class="moment-val" id="mt-netto">--</div><div class="moment-eff" id="mt-netto-eff"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIETS/KLEDING -->
+    <div id="panel-fiets" class="panel">
+      <div class="card">
+        <div class="card-title">Mijn garage</div>
+        <div id="garage-list"></div>
+        <button class="add-bike-btn" onclick="toggleBikeForm()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Fiets toevoegen
+        </button>
+        <div class="bike-form" id="bike-form">
+          <div class="form-row">
+            <div><div class="form-lbl">Naam</div><input type="text" class="form-input" id="bf-name" placeholder="bijv. Canyon Ultimate"></div>
+            <div><div class="form-lbl">Type</div><select class="form-select" id="bf-type"><option value="road">Racefiets</option><option value="tt">Tijdritfiets</option><option value="gravel">Gravel</option><option value="mtb">MTB</option><option value="climb">Klimfiets</option></select></div>
+          </div>
+          <div class="form-row">
+            <div><div class="form-lbl">Gewicht (kg)</div><input type="number" class="form-input" id="bf-weight" value="8.5" step="0.1" min="4" max="20"></div>
+            <div><div class="form-lbl">CdA</div><select class="form-select" id="bf-cda"><option value="0.200">TT (0.200)</option><option value="0.230">Aerobars (0.230)</option><option value="0.307" selected>Drops (0.307)</option><option value="0.324">Hoods (0.324)</option><option value="0.350">Gravel (0.350)</option><option value="0.408">Tops (0.408)</option></select></div>
+          </div>
+          <div class="form-row">
+            <div><div class="form-lbl">Bandtype</div><select class="form-select" id="bf-tire"><option value="0.0025">Race tubeless</option><option value="0.0032" selected>GP5000</option><option value="0.0040">Standaard</option><option value="0.0055">Training</option><option value="0.0080">Gravel</option><option value="0.0120">MTB</option></select></div>
+            <div><div class="form-lbl">Spanning (bar)</div><input type="number" class="form-input" id="bf-pressure" value="6.5" step="0.5" min="1" max="9"></div>
+          </div>
+          <div class="form-row">
+          <div><div class="form-lbl">Strava Gear ID (optioneel)</div><input type="text" class="form-input" id="bf-gearid" placeholder="bijv. b1234567" style="font-size:11px;"></div>
+          <div style="display:flex;align-items:flex-end;"><button class="save-bike-btn" onclick="saveBike()">Opslaan</button></div>
+        </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Kleding & uitrusting</div>
+        <div style="font-size:11px;color:var(--textmu);margin-bottom:0.75rem;">Klik aan wat je draagt</div>
+        <div style="font-size:10px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace;">Bovenkant</div>
+        <div class="clothing-grid" id="clothing-top" style="margin-bottom:0.75rem;"></div>
+        <div style="font-size:10px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace;">Onderkant & schoenen</div>
+        <div class="clothing-grid" id="clothing-bottom" style="margin-bottom:0.75rem;"></div>
+        <div style="font-size:10px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace;">Extra's</div>
+        <div class="clothing-grid" id="clothing-extra"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:0.5px solid var(--border);font-size:11px;">
+          <span style="color:var(--textmu);">Gewicht</span><span style="font-weight:600;font-family:'DM Mono',monospace;" id="clothing-weight">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:11px;">
+          <span style="color:var(--textmu);">CdA-effect</span><span style="font-weight:600;font-family:'DM Mono',monospace;" id="clothing-cda">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEGMENT -->
+    <div id="panel-segment" class="panel active">
+      <div id="login-prompt" style="text-align:center;padding:2rem 1rem;border:1.5px dashed var(--borderm);border-radius:var(--r);margin-bottom:0.875rem;">
+        <div style="font-size:15px;font-weight:500;margin-bottom:6px;">Verbind met Strava</div>
+        <div style="font-size:12px;color:var(--textmu);margin-bottom:1rem;">Log in om je gestemde segmenten te laden</div>
+        <button class="connect-btn" style="display:inline-flex;width:auto;padding:10px 18px;" onclick="loginWithStrava()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+          Inloggen met Strava
+        </button>
+      </div>
+
+      <div id="seg-search-card" class="card" style="display:none;">
+        <!-- Source tabs -->
+        <div style="display:flex;gap:3px;margin-bottom:1rem;background:var(--bg);border-radius:var(--rs);padding:3px;border:0.5px solid var(--border);">
+          <button class="seg-src-tab active" id="srctab-rides" onclick="switchSegSource('rides')">Ritten</button>
+          <button class="seg-src-tab" id="srctab-routes" onclick="switchSegSource('routes')">Routes</button>
+          <button class="seg-src-tab" id="srctab-starred" onclick="switchSegSource('starred')">&#9733; Stersegmenten</button>
+        </div>
+
+        <!-- Stersegmenten -->
+        <div id="src-starred" style="display:none;">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam..." oninput="filterSegments()">
+            <button class="search-btn" onclick="loadSegments()">&#8635;</button>
+          </div>
+          <div id="segment-list" class="segment-list"><div class="loading-text">Laden...</div></div>
+        </div>
+
+        <!-- Ritten -->
+        <div id="src-rides">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="rides-search" placeholder="Zoek rit op naam..." oninput="filterRides()">
+            <button class="search-btn" onclick="loadRides()">&#8635;</button>
+          </div>
+          <div id="rides-list" class="segment-list"><div class="loading-text">Klik &#8635; om ritten te laden.</div></div>
+        </div>
+
+        <!-- Routes -->
+        <div id="src-routes" style="display:none;">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="routes-search" placeholder="Zoek route op naam..." oninput="filterRoutes()">
+            <button class="search-btn" onclick="loadRoutes()">&#8635;</button>
+          </div>
+          <div id="routes-list" class="segment-list"><div class="loading-text">Klik &#8635; om routes te laden.</div></div>
+        </div>
+      </div>
+
+      <div id="seg-detail" class="card" style="display:none;">
+        <div class="card-title" id="seg-title">Segment</div>
+        <div class="seg-stats">
+          <div class="stat"><div class="stat-lbl">Afstand</div><div class="stat-val" id="seg-dist">--</div></div>
+          <div class="stat"><div class="stat-lbl">Hoogte</div><div class="stat-val" id="seg-elev">--</div></div>
+          <div class="stat"><div class="stat-lbl">Helling</div><div class="stat-val" id="seg-grade">--</div></div>
+          <div class="stat"><div class="stat-lbl">Max helling</div><div class="stat-val" id="seg-maxgrade">--</div></div>
+          <div class="stat"><div class="stat-lbl">Jouw PR</div><div class="stat-val" id="seg-pr">--</div></div>
+          <div class="stat"><div class="stat-lbl">PR datum</div><div class="stat-val" id="seg-prdate" style="font-size:11px;">--</div></div>
+        </div>
+        <div class="profile-wrap"><canvas class="seg-canvas" id="profile-canvas"></canvas></div>
+
+        <!-- Mini resultaat -->
+        <div class="mini-result" id="mini-result" style="display:none;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:0.5rem;">
+            <div>
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">Gesimuleerde tijd</div>
+              <div class="mini-time" id="mini-time">--</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">t.o.v. PR</div>
+              <div class="mini-diff neu" id="mini-diff">--</div>
+              <div style="font-size:10px;color:var(--textmu);margin-top:1px;" id="mini-speed">--</div>
+            </div>
+          </div>
+          <div id="mini-factors" style="margin-bottom:5px;"></div>
+          <div class="mini-weer" id="mini-weer">Weer: geen data</div>
+        </div>
+
+        <!-- Instellingen -->
+        <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:0.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);margin-bottom:0.5rem;font-family:'DM Mono',monospace;">Instellingen aanpassen</div>
+        </div>
+
+
+
+        <!-- Fiets -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-fiets',this)">
+            <span>Fiets <span class="accord-summary" id="acc-fiets-sum"></span></span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-fiets">
+            <div id="acc-garage-list"></div>
+            <div style="display:flex;gap:5px;margin-top:5px;">
+              <div style="flex:1;background:var(--surface);border-radius:var(--rs);padding:6px 8px;font-size:10px;">
+                <div style="color:var(--textmu);margin-bottom:1px;">Band</div>
+                <div style="font-weight:600;font-family:'DM Mono',monospace;" id="acc-tire">--</div>
+              </div>
+              <div style="flex:1;background:var(--surface);border-radius:var(--rs);padding:6px 8px;font-size:10px;">
+                <div style="color:var(--textmu);margin-bottom:1px;">Spanning</div>
+                <div style="font-weight:600;font-family:'DM Mono',monospace;" id="acc-pressure">--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kleding -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-kleding',this)">
+            <span>Kleding <span class="accord-summary" id="acc-kleding-sum"></span></span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-kleding">
+            <div style="font-size:10px;color:var(--textmu);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;">Bovenkant</div>
+            <div class="clothing-grid" id="acc-clothing-top" style="margin-bottom:8px;"></div>
+            <div style="font-size:10px;color:var(--textmu);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;">Onderkant</div>
+            <div class="clothing-grid" id="acc-clothing-bottom" style="margin-bottom:8px;"></div>
+            <div style="font-size:10px;color:var(--textmu);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;">Extra's</div>
+            <div class="clothing-grid" id="acc-clothing-extra"></div>
+          </div>
+        </div>
+
+        <!-- Weer -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-weer',this)">
+            <span>Weer & tijdstip <span class="accord-summary" id="acc-weer-sum"></span></span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-weer">
+            <div style="font-size:11px;color:var(--textmu);margin-bottom:7px;" id="acc-weer-loc">Geen weerdata — open de Weer-tab eerst.</div>
+            <input type="range" id="acc-time-slider" min="0" max="23" step="1" value="10" style="width:100%;margin-bottom:3px;">
+            <div style="text-align:center;font-size:11px;font-weight:500;font-family:'DM Mono',monospace;margin-bottom:7px;" id="acc-time-lbl">10:00</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;" id="acc-weer-cells"></div>
+          </div>
+        </div>
+
+        <!-- Wat als -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-watals',this)">
+            <span>Wat als?</span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-watals">
+            <div class="srow"><div class="srow-lbl">Gewicht (+/-)</div><input type="range" id="wloss" min="-5" max="5" step="0.5" value="0"><div class="srow-val"><span id="wloss-out">0.0</span> kg</div></div>
+            <div class="srow"><div class="srow-lbl">Extra vermogen</div><input type="range" id="powergain" min="0" max="80" step="5" value="0"><div class="srow-val">+<span id="powergain-out">0</span> W</div></div>
+            <div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Fiets lichter</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="srow-val">-<span id="bikeloss-out">0.0</span> kg</div></div>
+          </div>
+        </div>
+
+        <!-- Positie & groep -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-positie',this)">
+            <span>Positie & groep</span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-positie">
+            <div class="sel-row"><label>Rijpositie</label><select id="aero" onchange="calcResult()"><option value="0.408">Tops (0.408)</option><option value="0.324" selected>Hoods (0.324)</option><option value="0.307">Drops (0.307)</option><option value="0.230">Aerobars (0.230)</option><option value="0.200">TT (0.200)</option></select></div>
+            <div class="sel-row" style="margin-bottom:0;"><label>Groepsrit</label><select id="draft" onchange="calcResult()"><option value="1.00" selected>Solo</option><option value="0.85">Klein groepje</option><option value="0.72">Groot peloton</option><option value="0.65">Wiel zitten</option></select></div>
+          </div>
+        </div>
+
+        <!-- Vermoeidheid -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-cond',this)">
+            <span>Conditie</span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-cond">
+            <div class="sel-row"><label>Ketting</label><select id="chain" onchange="calcResult()"><option value="0.985" selected>Schoon (98.5%)</option><option value="0.975">Licht vuil</option><option value="0.960">Vuil (96%)</option><option value="0.990">Gewaxte (99%)</option></select></div>
+            <div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Vermoeidheid</div><input type="range" id="fatigue" min="1" max="5" step="1" value="1"><div class="srow-val">dag <span id="fatigue-out">1</span></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RESULTAAT -->
+    <div id="panel-resultaat" class="panel">
+      <div class="warn-box" id="no-seg-warn">Selecteer eerst een segment.</div>
+      <div class="card">
+        <div class="card-title">Gesimuleerde tijd</div>
+        <div class="res-big">
+          <div class="res-lbl">Nieuwe tijd</div>
+          <div class="res-time" id="res-time">--</div>
+          <div class="res-diff neu" id="res-diff">--</div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-lbl">Jouw PR</div><div class="metric-val" id="res-pr">--</div></div>
+          <div class="metric"><div class="metric-lbl">Gem. snelheid</div><div class="metric-val" id="res-speed">--</div></div>
+          <div class="metric"><div class="metric-lbl">Verschil PR</div><div class="metric-val" id="res-prdiff">--</div></div>
+          <div class="metric"><div class="metric-val" id="res-wkg" style="font-size:14px;">--</div><div class="metric-lbl">W/kg</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Uitsplitsing</div>
+        <div id="breakdown-list"></div>
+        <div class="bar-wrap" id="bar-wrap"></div>
+        <div class="hint" id="hint"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Advies</div>
+        <div id="advice" style="font-size:12px;color:var(--textm);line-height:1.8;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>Watts-up &mdash; berekeningen gebaseerd op fysische modellen</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+//
+var accessToken = null;
+var athlete = null;
+var allSegments = [];
+var selectedSegment = null;
+var gpxPoints = [];
+var weatherData = null;
+var weatherChart = null;
+var selectedDay = 0;
+var STRAVA_CLIENT_ID = localStorage.getItem('strava_client_id') || '';
+var bikes = [];
+var activebikeIdx = 0;
+var fatigueLoss = [0,0.02,0.04,0.07,0.12];
+var clothingItems = {
+  top:[
+    {id:'shirt',label:'Fietsshirt',weight:0.18,cda:0.002,on:true},
+    {id:'base',label:'Ondershirt',weight:0.10,cda:0.001,on:false},
+    {id:'windjack',label:'Windjasje',weight:0.22,cda:0.008,on:false},
+    {id:'regenjas',label:'Regenjasje',weight:0.35,cda:0.015,on:false},
+    {id:'armw',label:'Armwarmers',weight:0.08,cda:0.001,on:false},
+    {id:'gloves',label:'Handschoenen',weight:0.06,cda:0.001,on:false}
+  ],
+  bottom:[
+    {id:'broek',label:'Fietsbroek',weight:0.22,cda:0.002,on:true},
+    {id:'bib',label:'Bibshort',weight:0.24,cda:0.002,on:false},
+    {id:'legw',label:'Beenwarmers',weight:0.12,cda:0.002,on:false},
+    {id:'shoes',label:'Fietsschoenen',weight:0.52,cda:0.003,on:true},
+    {id:'socks',label:'Sokken',weight:0.06,cda:0.000,on:true},
+    {id:'overshoes',label:'Overschoenen',weight:0.14,cda:-0.004,on:false}
+  ],
+  extra:[
+    {id:'aerohelm',label:'Aero helm',weight:0.26,cda:-0.005,on:true},
+    {id:'normhelm',label:'Gewone helm',weight:0.28,cda:0.005,on:false},
+    {id:'bidon1',label:'1 bidon',weight:0.52,cda:0.000,on:true},
+    {id:'bidon2',label:'2 bidons',weight:1.04,cda:0.000,on:false},
+    {id:'tas',label:'Fietstasje',weight:0.45,cda:0.008,on:false},
+    {id:'aerogloves',label:'Aero handsch.',weight:0.08,cda:-0.003,on:false}
+  ]
+};
+
+//
+var windDirs=['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
+function degToDir(d){return windDirs[Math.round(d/22.5)%16];}
+function calcFtpEff(t){if(t>=15&&t<=25)return 0;if(t<15)return Math.round((15-t)*-0.3*10)/10;return Math.round((t-25)*-0.5*10)/10;}
+function calcCdaEff(t,p,h){var T=t+273.15,P=p*100,Psat=610.78*Math.exp(17.27*t/(t+237.3)),Pv=(h/100)*Psat,rho=(P*0.028964-Pv*0.010948)/(8.314*T);return Math.round((rho-1.225)/1.225*100*10)/10;}
+function calcRho(t,p,h){var T=t+273.15,P=p*100,Psat=610.78*Math.exp(17.27*t/(t+237.3)),Pv=(h/100)*Psat;return (P*0.028964-Pv*0.010948)/(8.314*T);}
+function calcSegmentBearing(pts) {
+  // Calculate average bearing of segment from GPX points
+  if (!pts || pts.length < 2) return null;
+  // Use first and last point for overall direction
+  var start = pts[0];
+  var end = pts[pts.length - 1];
+  var dLat = (end.lat - start.lat) * Math.PI / 180;
+  var dLon = (end.lng - start.lng) * Math.PI / 180;
+  var lat1 = start.lat * Math.PI / 180;
+  var lat2 = end.lat * Math.PI / 180;
+  var x = Math.sin(dLon) * Math.cos(lat2);
+  var y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  var bearing = Math.atan2(x, y) * 180 / Math.PI;
+  return (bearing + 360) % 360; // 0-360 degrees
+}
+
+function calcEffectiveWind(windSpeedMs, windDirDeg, segmentBearingDeg) {
+  // Wind direction: where wind comes FROM (meteorological convention)
+  // Segment bearing: direction of travel
+  // Wind FROM the front = headwind (positive = slower)
+  // Wind FROM behind = tailwind (negative = faster)
+  if (segmentBearingDeg === null) return windSpeedMs; // fallback: assume headwind
+  var windFromDeg = windDirDeg; // direction wind comes from
+  var travelDeg = segmentBearingDeg; // direction rider travels
+  // Angle between wind source and travel direction
+  var angleDiff = (windFromDeg - travelDeg + 360) % 360;
+  // cos(0) = 1 = pure headwind, cos(180) = -1 = pure tailwind
+  var effectiveFactor = Math.cos(angleDiff * Math.PI / 180);
+  return windSpeedMs * effectiveFactor;
+}
+
+function wIcon(c){if(c===0)return'☀';if(c<=2)return'⛅';if(c===3)return'☁';if(c<=48)return'🌫';if(c<=55)return'🌦';if(c<=65)return'🌧';if(c<=75)return'❄';if(c<=82)return'🌦';return'⛈';}
+function dayLabel(s,i){var d=new Date(s),days=['Zo','Ma','Di','Wo','Do','Vr','Za'];if(i===0)return'Vandaag';if(i===1)return'Morgen';return days[d.getDay()];}
+function fmt(s){s=Math.abs(Math.round(s));var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;if(h>0)return h+'u '+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');return m+':'+String(ss).padStart(2,'0');}
+function fmtD(s){if(Math.abs(s)<1)return'+/- 0s';var a=Math.abs(Math.round(s)),m=Math.floor(a/60),ss=a%60,str=m>0?m+'m '+String(ss).padStart(2,'0')+'s':ss+'s';return(s>0?'-':'+')+str;}
+function setEff(id,txt,val){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='moment-eff '+(val>0.2?'pos':val<-0.2?'neg':'');}
+
+//
+function toggleProfiel(){document.getElementById('profiel-panel').classList.toggle('open');}
+document.addEventListener('click',function(e){
+  var p=document.getElementById('profiel-panel'),b=document.querySelector('.profiel-btn');
+  if(p&&p.classList.contains('open')&&!p.contains(e.target)&&b&&!b.contains(e.target))p.classList.remove('open');
+});
+function updateProfiel(){
+  var w=parseFloat(document.getElementById('pf-weight').value)||75;
+  var h=parseFloat(document.getElementById('pf-height').value)||175;
+  var f=parseFloat(document.getElementById('pf-ftp').value)||220;
+  var bw=getActiveBike()?parseFloat(getActiveBike().weight):9;
+  var wkg=(f/w).toFixed(2),bmi=(w/Math.pow(h/100,2)).toFixed(1),tot=(w+bw).toFixed(1),wkgt=(f/(w+bw)).toFixed(2);
+  document.getElementById('pf-wkg').textContent=wkg+' W/kg';
+  document.getElementById('pf-bmi').textContent=bmi;
+  document.getElementById('pf-total').textContent=tot+' kg';
+  document.getElementById('pf-wkgt').textContent=wkgt+' W/kg';
+  var adv=parseFloat(wkg)<2.5?'Beginnersniveau.':parseFloat(wkg)<3.5?'Recreatief niveau.':parseFloat(wkg)<4.5?'Gevorderd.':parseFloat(wkg)<5.5?'Semi-pro.':'Pro niveau.';
+  document.getElementById('pf-advice').textContent=adv;
+  try{localStorage.setItem('profiel_data',JSON.stringify({weight:w,height:h,ftp:f,age:parseInt(document.getElementById('pf-age').value)||35}));}catch(e){}
+  calcResult();
+}
+function loadProfiel(){
+  try{var p=JSON.parse(localStorage.getItem('profiel_data')||'null');if(p){if(p.weight){document.getElementById('pf-weight').value=p.weight;}if(p.height){document.getElementById('pf-height').value=p.height;}if(p.ftp){document.getElementById('pf-ftp').value=p.ftp;}if(p.age){document.getElementById('pf-age').value=p.age;}}}catch(e){}
+  updateProfiel();
+}
+
+//
+function getActiveBike(){return bikes.length?bikes[Math.min(activebikeIdx,bikes.length-1)]:null;}
+function addStravaGear(gearId, gearName) {
+  // Add bike from Strava with default values, user can edit later
+  var bike = {
+    name: gearName,
+    type: 'road',
+    weight: 8.5,
+    cda: 0.324,
+    tire: 0.0032,
+    tirePressure: 6.5,
+    gear_id: gearId
+  };
+  bikes.push(bike);
+  activebikeIdx = bikes.length - 1;
+  try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',activebikeIdx);}catch(e){}
+  renderGarage();
+  calcResult();
+  // Remove the notification
+  var notes = document.querySelectorAll('[style*="FFF3CD"]');
+  notes.forEach(function(n){ if(n.textContent.indexOf(gearName)!==-1) n.remove(); });
+  alert(gearName + ' toegevoegd aan je garage! Pas het gewicht en CdA aan via Fiets/Kleding.');
+}
+
+function renderGarage(){
+  var html=!bikes.length?'<div class="loading-text">Nog geen fietsen.</div>':bikes.map(function(b,i){
+    var a=i===activebikeIdx?' active':'';
+    return '<div class="bike-card'+a+'" onclick="selectBike('+i+')" style="position:relative;">'+
+      '<div class="bike-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+(a?'#1D9E75':'var(--textmu)')+'" stroke-width="2"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/></svg></div>'+
+      '<div style="flex:1;"><div class="bike-name">'+b.name+'</div><div class="bike-sub">'+b.weight+' kg - '+b.cda+' CdA - '+b.tirePressure+' bar</div></div>'+
+      '<button onclick="event.stopPropagation();editBike('+i+')" style="background:none;border:0.5px solid var(--borderm);border-radius:5px;padding:3px 8px;font-size:10px;color:var(--textmu);cursor:pointer;font-family:inherit;flex-shrink:0;">Wijzig</button>'+
+      (a?'<div class="active-badge" style="margin-left:5px;">actief</div>':'')+
+      '</div>';
+  }).join('');
+  var el=document.getElementById('garage-list');if(el)el.innerHTML=html;
+  renderAccGarage();
+  updateProfiel();
+}
+function renderAccGarage(){
+  var el=document.getElementById('acc-garage-list');if(!el)return;
+  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:4px 0;">Voeg fietsen toe via Fiets/Kleding tab.</div>';return;}
+  el.innerHTML='';
+  bikes.forEach(function(b,i){
+    var div=document.createElement('div');
+    div.className='seg-bike-opt'+(i===activebikeIdx?' active':'');
+    div.innerHTML='<div style="width:22px;height:22px;border-radius:6px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="'+(i===activebikeIdx?'#1D9E75':'var(--textmu)')+'" stroke-width="2"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/></svg>'+
+      '</div>'+
+      '<div><div class="seg-bike-name">'+b.name+'</div><div class="seg-bike-sub">'+b.weight+' kg</div></div>';
+    div.addEventListener('click',(function(idx){return function(){selectBikeAcc(idx);};})(i));
+    el.appendChild(div);
+  });
+  var bike=getActiveBike();
+  var tireEl=document.getElementById('acc-tire');
+  var presEl=document.getElementById('acc-pressure');
+  if(bike){
+    var tireNames={'0.0025':'Race tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};
+    if(tireEl)tireEl.textContent=(tireNames[String(bike.tire)]||'Onbekend')+' ('+bike.tire+')';
+    if(presEl)presEl.textContent=bike.tirePressure+' bar';
   }
+  var sumEl=document.getElementById('acc-fiets-sum');
+  if(sumEl&&getActiveBike())sumEl.textContent=getActiveBike().name;
+}
+function selectBike(i){activebikeIdx=i;try{localStorage.setItem('active_bike',i);}catch(e){}renderGarage();calcResult();}
+function selectBikeAcc(i){activebikeIdx=i;try{localStorage.setItem('active_bike',i);}catch(e){}renderGarage();renderIlGarage();calcResult();}
+function toggleBikeForm(){document.getElementById('bike-form').classList.toggle('open');}
+var editingBikeIdx = -1;
+
+function editBike(i){
+  editingBikeIdx = i;
+  var b = bikes[i];
+  document.getElementById('bf-name').value = b.name;
+  document.getElementById('bf-type').value = b.type || 'road';
+  document.getElementById('bf-weight').value = b.weight;
+  document.getElementById('bf-cda').value = b.cda;
+  document.getElementById('bf-tire').value = b.tire;
+  document.getElementById('bf-pressure').value = b.tirePressure;
+  var gearInput = document.getElementById('bf-gearid');
+  if(gearInput) gearInput.value = b.gear_id || '';
+  // Update button label
+  var saveBtn = document.querySelector('.save-bike-btn');
+  if(saveBtn) saveBtn.textContent = 'Bijwerken';
+  var form = document.getElementById('bike-form');
+  if(form && !form.classList.contains('open')) form.classList.add('open');
+  // Scroll to form
+  if(form) form.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function saveBike(){
+  var n=document.getElementById('bf-name').value.trim();if(!n){alert('Vul een naam in.');return;}
+  var gearIdInput = document.getElementById('bf-gearid');
+  var b={name:n,type:document.getElementById('bf-type').value,weight:parseFloat(document.getElementById('bf-weight').value),cda:parseFloat(document.getElementById('bf-cda').value),tire:parseFloat(document.getElementById('bf-tire').value),tirePressure:parseFloat(document.getElementById('bf-pressure').value),gear_id:gearIdInput?gearIdInput.value.trim():''};
+  if(editingBikeIdx >= 0){
+    bikes[editingBikeIdx] = b;
+    editingBikeIdx = -1;
+    var saveBtn = document.querySelector('.save-bike-btn');
+    if(saveBtn) saveBtn.textContent = 'Opslaan';
+  } else {
+    bikes.push(b);
+    activebikeIdx=bikes.length-1;
+  }
+  try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',activebikeIdx);}catch(e){}
+  document.getElementById('bike-form').classList.remove('open');
+  document.getElementById('bf-name').value='';
+  renderGarage();
+  calcResult();
+}
+function loadBikes(){
+  try{var b=JSON.parse(localStorage.getItem('bikes_data')||'null');if(b&&b.length)bikes=b;var ai=localStorage.getItem('active_bike');if(ai!==null)activebikeIdx=parseInt(ai);}catch(e){}
+  renderGarage();
+}
+
+//
+function allClothingItems(){return clothingItems.top.concat(clothingItems.bottom).concat(clothingItems.extra);}
+function getClothingTotals(){var w=0,c=0;allClothingItems().forEach(function(i){if(i.on){w+=i.weight;c+=i.cda;}});return{weight:w,cda:c};}
+function renderClothingGroup(items,containerId){
+  var el=document.getElementById(containerId);if(!el)return;
+  el.innerHTML=items.map(function(item){
+    return '<button class="clothing-btn'+(item.on?' on':'')+'" onclick="toggleClothingItem(\''+item.id+'\')">'+item.label+'<div class="clothing-weight">'+(item.weight*1000).toFixed(0)+'g</div></button>';
+  }).join('');
+}
+function renderClothing(){
+  renderClothingGroup(clothingItems.top,'clothing-top');
+  renderClothingGroup(clothingItems.bottom,'clothing-bottom');
+  renderClothingGroup(clothingItems.extra,'clothing-extra');
+  var t=getClothingTotals();
+  var cw=document.getElementById('clothing-weight');if(cw)cw.textContent=t.weight.toFixed(2)+' kg';
+  var cc=document.getElementById('clothing-cda');if(cc)cc.textContent=(t.cda>=0?'+':'')+t.cda.toFixed(3)+' m2';
+  renderAccClothing();
+}
+function renderAccClothing(){
+  renderClothingGroup(clothingItems.top,'acc-clothing-top');
+  renderClothingGroup(clothingItems.bottom,'acc-clothing-bottom');
+  renderClothingGroup(clothingItems.extra,'acc-clothing-extra');
+  var on=allClothingItems().filter(function(i){return i.on;});
+  var s=document.getElementById('acc-kleding-sum');if(s)s.textContent=on.length+' items';
+}
+function toggleClothingItem(id){
+  allClothingItems().forEach(function(i){if(i.id===id)i.on=!i.on;});
+  renderClothing();renderIlClothing();calcResult();
+}
+
+//
+function toggleAccord(id,btn){
+  document.getElementById(id).classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+//
+async function initWeather(){
+  if(!navigator.geolocation){showWeerError('Geolocatie niet beschikbaar.');return;}
+  navigator.geolocation.getCurrentPosition(async function(pos){
+    var lat=pos.coords.latitude,lon=pos.coords.longitude,place='Jouw locatie';
+    try{
+      var gr=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json&accept-language=nl');
+      var gd=await gr.json();
+      place=gd.address.city||gd.address.town||gd.address.village||'Jouw locatie';
+    }catch(e){}
+    try{
+      document.getElementById('loc-name').textContent=place;
+      updateClock();setInterval(updateClock,30000);
+      var url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index,weather_code&hourly=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,precipitation_sum&timezone=auto&forecast_days=7';
+      var wr=await fetch(url);weatherData=await wr.json();
+      document.getElementById('weer-loading').style.display='none';
+      document.getElementById('weer-live').style.display='block';
+      document.getElementById('forecast-card').style.display='block';
+      renderLiveWeer(weatherData);renderDays(weatherData);selectDay(0);
+      updateAccWeer();
+    }catch(e){showWeerError('Kon weerdata niet laden: '+e.message);}
+  },function(){showWeerError('Locatietoestemming geweigerd.');},{timeout:10000});
+}
+function showWeerError(msg){document.getElementById('weer-loading').style.display='none';var el=document.getElementById('weer-error');el.style.display='block';el.textContent=msg;}
+function updateClock(){var n=new Date(),el=document.getElementById('loc-time');if(el)el.textContent=n.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+function renderLiveWeer(d){
+  var c=d.current;
+  document.getElementById('lv-temp').textContent=Math.round(c.temperature_2m)+'C';
+  document.getElementById('lv-feels').textContent='Gevoels '+Math.round(c.apparent_temperature)+'C';
+  document.getElementById('lv-wind').textContent=Math.round(c.wind_speed_10m)+' km/u';
+  document.getElementById('lv-winddir').textContent=degToDir(c.wind_direction_10m);
+  document.getElementById('lv-rain').textContent=c.precipitation.toFixed(1)+' mm';
+  document.getElementById('lv-humid').textContent='Vocht '+c.relative_humidity_2m+'%';
+  document.getElementById('lv-pressure').textContent=Math.round(c.surface_pressure);
+  document.getElementById('lv-apptemp').textContent=Math.round(c.apparent_temperature)+'C';
+  var uv=c.uv_index||0;document.getElementById('lv-uv').textContent=uv.toFixed(1);
+  document.getElementById('lv-uvlbl').textContent=uv<3?'Laag':uv<6?'Matig':'Hoog';
+  var fe=calcFtpEff(c.temperature_2m),ftp=parseFloat(document.getElementById('pf-ftp').value)||220;
+  var bar=document.getElementById('ftp-bar');
+  document.getElementById('ftp-bar-txt').textContent='FTP-effect bij '+Math.round(c.temperature_2m)+'C';
+  document.getElementById('ftp-bar-val').textContent=(fe>=0?'+':'')+fe+'% ('+(fe<0?'-':'+')+Math.round(ftp*Math.abs(fe)/100)+'W)';
+  bar.className='ftp-bar '+(fe<-1?'neg':fe>0?'pos':'neu');
+}
+function renderDays(d){
+  document.getElementById('days-scroll').innerHTML=d.daily.time.map(function(t,i){
+    var a=i===selectedDay?' active':'';
+    return '<div class="day-card'+a+'" onclick="selectDay('+i+')">'+
+      '<div class="day-name">'+dayLabel(t,i)+'</div>'+
+      '<div class="day-icon">'+wIcon(d.daily.weather_code[i])+'</div>'+
+      '<div class="day-temp">'+Math.round(d.daily.temperature_2m_max[i])+'°/'+Math.round(d.daily.temperature_2m_min[i])+'°</div>'+
+      '<div class="day-wind">'+Math.round(d.daily.wind_speed_10m_max[i])+'km/u</div>'+
+      '</div>';
+  }).join('');
+}
+function selectDay(i){selectedDay=i;renderDays(weatherData);document.getElementById('detail-title').textContent='24-uurs - '+dayLabel(weatherData.daily.time[i],i);renderHourlyChart(weatherData,i);document.getElementById('detail-card').style.display='block';updateAccWeer();calcResult();}
+function renderHourlyChart(d,di){
+  var s=di*24,temps=d.hourly.temperature_2m.slice(s,s+24),winds=d.hourly.wind_speed_10m.slice(s,s+24),rains=d.hourly.precipitation.slice(s,s+24),humids=d.hourly.relative_humidity_2m.slice(s,s+24),pressures=d.hourly.surface_pressure.slice(s,s+24);
+  var ftpEffs=temps.map(function(t){return calcFtpEff(t);});
+  var cdaEffs=temps.map(function(t,i){return calcCdaEff(t,pressures[i]||1013,humids[i]||60);});
+  var labels=Array.from({length:24},function(_,h){return String(h).padStart(2,'0')+':00';});
+  var cv=document.getElementById('weather-chart');
+  if(weatherChart){weatherChart.destroy();weatherChart=null;}
+  var isDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var gc=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)',tc=isDark?'rgba(255,255,255,0.45)':'rgba(0,0,0,0.4)';
+  var sh=parseInt(document.getElementById('time-slider').value);
+  var pts=Array.from({length:24},function(_,i){return i===sh?5:0;});
+  weatherChart=new Chart(cv,{type:'line',data:{labels:labels,datasets:[
+    {label:'Temp',data:temps,borderColor:'#D85A30',backgroundColor:'transparent',borderWidth:2,pointRadius:pts,pointBackgroundColor:'#D85A30',tension:0.4,yAxisID:'y'},
+    {label:'Wind',data:winds,borderColor:'#378ADD',backgroundColor:'transparent',borderWidth:2,pointRadius:pts,pointBackgroundColor:'#378ADD',tension:0.4,yAxisID:'y'},
+    {label:'Neerslag',data:rains,borderColor:'#85B7EB',backgroundColor:'rgba(133,183,235,0.1)',borderWidth:1.5,pointRadius:pts,pointBackgroundColor:'#85B7EB',fill:true,yAxisID:'y2'},
+    {label:'FTP-eff',data:ftpEffs,borderColor:'#EF9F27',backgroundColor:'transparent',borderWidth:1.5,pointRadius:pts,pointBackgroundColor:'#EF9F27',borderDash:[4,3],yAxisID:'y3'},
+    {label:'CdA-eff',data:cdaEffs,borderColor:'#7F77DD',backgroundColor:'transparent',borderWidth:1.5,pointRadius:pts,pointBackgroundColor:'#7F77DD',borderDash:[2,3],yAxisID:'y3'}
+  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,maxTicksLimit:8,font:{size:9}}},y:{position:'left',grid:{color:gc},ticks:{color:tc,font:{size:9}}},y2:{position:'right',grid:{display:false},ticks:{color:'#85B7EB',font:{size:9}}},y3:{position:'right',grid:{display:false},ticks:{color:'#EF9F27',font:{size:9}},offset:true}}}});
+  updateMomentData(d,di,sh);
+}
+function updateMomentData(d,di,h){
+  var s=di*24+h,temp=d.hourly.temperature_2m[s]||15,wind=d.hourly.wind_speed_10m[s]||0,windDir=d.hourly.wind_direction_10m[s]||0,rain=d.hourly.precipitation[s]||0,humid=d.hourly.relative_humidity_2m[s]||60,pressure=d.hourly.surface_pressure[s]||1013;
+  var fe=calcFtpEff(temp),ce=calcCdaEff(temp,pressure,humid),we=-(wind*0.8),re=rain>0.5?-1.5:0,netto=fe+ce+we+re;
+  var ftp=parseFloat(document.getElementById('pf-ftp').value)||220;
+  document.getElementById('sel-time-lbl').textContent=String(h).padStart(2,'0')+':00 - '+dayLabel(d.daily.time[di],di);
+  document.getElementById('mt-temp').textContent=Math.round(temp)+'C';setEff('mt-temp-eff',fe!==0?'FTP: '+(fe>0?'+':'')+fe+'%':'Optimaal',fe);
+  document.getElementById('mt-wind').textContent=Math.round(wind)+' km/u '+degToDir(windDir);setEff('mt-wind-eff','Weerstand: '+we.toFixed(1)+'%',we);
+  document.getElementById('mt-rain').textContent=rain.toFixed(1)+' mm';setEff('mt-rain-eff',rain>0.5?'Nat: -1.5%':'Droog',re);
+  document.getElementById('mt-ftp').textContent=(fe>=0?'+':'')+fe+'%';setEff('mt-ftp-eff',(fe<0?'-':'+')+Math.round(ftp*Math.abs(fe)/100)+'W',fe);
+  document.getElementById('mt-cda').textContent=(ce>=0?'+':'')+ce+'%';setEff('mt-cda-eff',ce<0?'Dunner':'Dikker',-ce);
+  document.getElementById('mt-netto').textContent=(netto>=0?'+':'')+netto.toFixed(1)+'%';setEff('mt-netto-eff','Totaal',netto);
+}
+function updateAccWeer(){
+  if(!weatherData)return;
+  var h=parseInt(document.getElementById('acc-time-slider').value);
+  var s=selectedDay*24+h;
+  var temp=weatherData.hourly.temperature_2m[s]||15,wind=weatherData.hourly.wind_speed_10m[s]||0,windDir=weatherData.hourly.wind_direction_10m[s]||0,rain=weatherData.hourly.precipitation[s]||0,humid=weatherData.hourly.relative_humidity_2m[s]||60,pressure=weatherData.hourly.surface_pressure[s]||1013;
+  var locEl=document.getElementById('acc-weer-loc');
+  if(locEl)locEl.textContent=document.getElementById('loc-name').textContent+' - '+dayLabel(weatherData.daily.time[selectedDay],selectedDay);
+  var lblEl=document.getElementById('acc-time-lbl');if(lblEl)lblEl.textContent=String(h).padStart(2,'0')+':00';
+  var sumEl=document.getElementById('acc-weer-sum');if(sumEl)sumEl.textContent=Math.round(temp)+'C, '+Math.round(wind)+' km/u';
+  var fe=calcFtpEff(temp),ce=calcCdaEff(temp,pressure,humid);
+  var cells=document.getElementById('acc-weer-cells');
+  if(cells)cells.innerHTML=[{l:'Temp',v:Math.round(temp)+'C'},{l:'Wind',v:Math.round(wind)+' km/u '+degToDir(windDir)},{l:'Neerslag',v:rain.toFixed(1)+' mm'},{l:'FTP-effect',v:(fe>=0?'+':'')+fe+'%'},{l:'CdA-effect',v:(ce>=0?'+':'')+ce+'%'},{l:'Vochtigheid',v:humid+'%'}].map(function(c){return '<div style="background:var(--surface);border-radius:var(--rs);padding:5px 7px;"><div style="font-size:10px;color:var(--textmu);margin-bottom:1px;">'+c.l+'</div><div style="font-size:11px;font-weight:500;font-family:\'DM Mono\',monospace;">'+c.v+'</div></div>';}).join('');
+}
+document.getElementById('time-slider').addEventListener('input',function(){
+  var h=parseInt(this.value);
+  var stl=document.getElementById('sel-time-lbl');if(stl)stl.textContent=String(h).padStart(2,'0')+':00 - '+dayLabel(weatherData?weatherData.daily.time[selectedDay]:'',selectedDay);
+  if(weatherData){updateMomentData(weatherData,selectedDay,h);}
+  if(weatherChart){var pts=Array.from({length:24},function(_,i){return i===h?5:0;});weatherChart.data.datasets.forEach(function(ds){ds.pointRadius=pts;});weatherChart.update('none');}
+  calcResult();
+});
+document.getElementById('acc-time-slider').addEventListener('input',function(){
+  var h=parseInt(this.value);
+  document.getElementById('time-slider').value=h;
+  updateAccWeer();
+  if(weatherData){updateMomentData(weatherData,selectedDay,h);}
+  if(weatherChart){var pts=Array.from({length:24},function(_,i){return i===h?5:0;});weatherChart.data.datasets.forEach(function(ds){ds.pointRadius=pts;});weatherChart.update('none');}
+  calcResult();
+});
+
+//
+function loginWithStrava(){
+  if(!STRAVA_CLIENT_ID){document.getElementById('clientid-screen').style.display='block';return;}
+  var r=encodeURIComponent(window.location.origin+window.location.pathname);
+  window.location.href='https://www.strava.com/oauth/authorize?client_id='+STRAVA_CLIENT_ID+'&response_type=code&redirect_uri='+r+'&scope=read%2Cactivity%3Aread_all%2Cprofile%3Aread_all&approval_prompt=auto';
+}
+function saveClientId(){
+  var v=document.getElementById('client-id-input').value.trim();
+  if(!v||isNaN(v)){alert('Vul een geldig Client ID in.');return;}
+  STRAVA_CLIENT_ID=v;localStorage.setItem('strava_client_id',v);
+  loginWithStrava();
+}
+function skipToApp(){showApp();}
+async function handleOAuth(){
+  var p=new URLSearchParams(window.location.search),code=p.get('code');if(!code)return false;
+  window.history.replaceState({},document.title,window.location.pathname);
+  try{var r=await fetch('/api/strava-auth?code='+code),d=await r.json();if(d.access_token){accessToken=d.access_token;athlete=d.athlete;sessionStorage.setItem('strava_token',accessToken);sessionStorage.setItem('strava_athlete',JSON.stringify(athlete));return true;}}catch(e){console.error(e);}
+  return false;
+}
+async function loadStravaGear() {
+  if (!accessToken || !athlete) return;
+  var stravaGears = athlete.bikes || [];
+  if (!stravaGears.length) return;
+  var added = false;
+  for (var i = 0; i < stravaGears.length; i++) {
+    var sg = stravaGears[i];
+    if (!sg.id) continue;
+    // Check if already in garage
+    var exists = bikes.some(function(b){ return b.gear_id === sg.id; });
+    if (!exists) {
+      var gear = await lookupStravaGear(sg.id);
+      if (gear) {
+        bikes.push({
+          name: gear.name || sg.name || sg.id,
+          type: 'road',
+          weight: gear.weight || 8.5,
+          cda: 0.324,
+          tire: 0.0032,
+          tirePressure: 6.5,
+          gear_id: sg.id
+        });
+        added = true;
+      }
+    }
+  }
+  if (added) {
+    try{localStorage.setItem('bikes_data',JSON.stringify(bikes));}catch(e){}
+    renderGarage();
+  }
+}
+
+function showApp(){
+  document.getElementById('welcome-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+}
+function showLoggedIn(){
+  showApp();
+  document.getElementById('hdr-auth').innerHTML='<div class="athlete-bar"><img class="athlete-avatar" src="'+(athlete.profile||'')+'" alt=""><span class="athlete-name">'+(athlete.firstname||'')+' '+(athlete.lastname||'')+'</span><button class="logout-btn" onclick="logout()">Uit</button></div>';
+  document.getElementById('login-prompt').style.display='none';
+  document.getElementById('seg-search-card').style.display='block';
+  if(athlete.weight&&athlete.weight>0){document.getElementById('pf-weight').value=athlete.weight;document.getElementById('pf-weight-src').textContent='uit Strava';}
+  if(athlete.ftp&&athlete.ftp>0){document.getElementById('pf-ftp').value=athlete.ftp;document.getElementById('pf-ftp-src').textContent='uit Strava';}
+  if(athlete.profile)document.getElementById('pf-avatar').src=athlete.profile;
+  if(athlete.firstname)document.getElementById('pf-naam').textContent=athlete.firstname+' '+(athlete.lastname||'');
+  document.getElementById('pf-strava-row').style.display='block';
+  updateProfiel();loadSegments();
+  switchTab('segment');
+  // Pre-load Strava bikes into garage
+  loadStravaGear();
+  // Auto-load rides (default tab)
+  setTimeout(function(){ initRideDates(); loadRides(); }, 200);
+}
+function logout(){sessionStorage.clear();window.location.reload();}
+
+//
+var segMode = 'starred';
+
+
+
+
+function showRouteList() {
+  document.getElementById('route-list').style.display = 'block';
+  document.getElementById('route-segment-list').style.display = 'none';
+  document.getElementById('routes-back').style.display = 'none';
+}
+
+async function loadSegments(){
+  document.getElementById('segment-list').innerHTML='<div class="loading-text">Laden...</div>';
+  try{var r=await fetch('/api/strava-segments?token='+accessToken);allSegments=await r.json();renderSegmentList(allSegments);}
+  catch(e){document.getElementById('segment-list').innerHTML='<div class="loading-text">Fout. Probeer opnieuw.</div>';}
+}
+function filterSegments(){var q=document.getElementById('seg-search').value.toLowerCase();renderSegmentList(q?allSegments.filter(function(s){return s.name.toLowerCase().indexOf(q)!==-1;}):allSegments);}
+
+// Source tab switching
+var currentSegSource = 'rides';
+var allRides = [];
+var allRoutes = [];
+
+function switchSegSource(src) {
+  currentSegSource = src;
+  document.querySelectorAll('.seg-src-tab').forEach(function(t){t.classList.remove('active');});
+  var tab = document.getElementById('srctab-'+src);
+  if(tab) tab.classList.add('active');
+  document.getElementById('src-starred').style.display = src==='starred' ? 'block' : 'none';
+  document.getElementById('src-rides').style.display = src==='rides' ? 'block' : 'none';
+  document.getElementById('src-routes').style.display = src==='routes' ? 'block' : 'none';
+  // Auto-load on first switch
+  if(src==='rides' && allRides.length===0) { initRideDates(); loadRides(); }
+  if(src==='routes' && allRoutes.length===0) loadRoutes();
+}
+
+// RITTEN
+function initRideDates() {
+  var fromEl = document.getElementById('rides-from');
+  var toEl = document.getElementById('rides-to');
+  if (!fromEl || !toEl) return;
+  if (fromEl.value && toEl.value) return; // already set
+  var now = new Date();
+  var oneYearAgo = new Date(now);
+  oneYearAgo.setFullYear(now.getFullYear() - 1);
+  toEl.value = now.toISOString().split('T')[0];
+  fromEl.value = oneYearAgo.toISOString().split('T')[0];
+}
+
+async function loadRides() {
+  var el = document.getElementById('rides-list');
+  if (!el) return;
+  initRideDates();
+  el.innerHTML = '<div class="loading-text">Laden...</div>';
+  try {
+    var fromEl = document.getElementById('rides-from');
+    var toEl = document.getElementById('rides-to');
+    var after = fromEl && fromEl.value ? Math.floor(new Date(fromEl.value).getTime()/1000) : Math.floor(Date.now()/1000) - 365*24*3600;
+    var before = toEl && toEl.value ? Math.floor(new Date(toEl.value).getTime()/1000) + 86400 : Math.floor(Date.now()/1000);
+    var all = [];
+    for (var page = 1; page <= 10; page++) {
+      var url = '/api/strava-activities?token='+accessToken+'&page='+page+'&after='+after+'&before='+before;
+      var res = await fetch(url);
+      var batch = await res.json();
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      all = all.concat(batch);
+      if (batch.length < 30) break;
+    }
+    allRides = all;
+    if (!allRides.length) {
+      el.innerHTML = '<div class="loading-text">Geen ritten gevonden in deze periode.</div>';
+      return;
+    }
+    renderRidesList(allRides);
+  } catch(e) {
+    el.innerHTML = '<div class="loading-text">Fout: '+e.message+'</div>';
+  }
+}
+
+function filterRides() {
+  var q = document.getElementById('rides-search').value.toLowerCase();
+  renderRidesList(q ? allRides.filter(function(r){return r.name.toLowerCase().indexOf(q)!==-1;}) : allRides);
+}
+
+function renderRidesList(rides) {
+  var el = document.getElementById('rides-list');
+  if (!rides || !rides.length) { el.innerHTML = '<div class="loading-text">Geen ritten gevonden.</div>'; return; }
+  // Only show real cycling activities (exclude virtual/indoor)
+  var cycling = rides.filter(function(r){ return r.type === 'Ride' || r.type === 'GravelRide' || r.type === 'MountainBikeRide' || r.type === 'EBikeRide'; });
+  if (!cycling.length) { el.innerHTML = '<div class="loading-text">Geen buitenritten gevonden in deze periode. Probeer een langere periode.</div>'; return; }
+  el.innerHTML = cycling.map(function(r) {
+    var date = new Date(r.start_date).toLocaleDateString('nl-NL', {day:'numeric', month:'short', year:'numeric'});
+    var dist = ((r.distance||0)/1000).toFixed(1)+' km';
+    var dur = fmt(r.moving_time||0);
+    var gear = r.gear_name || '';
+    if (!gear && r.gear_id) {
+      bikes.forEach(function(b){ if(b.gear_id === r.gear_id) gear = b.name; });
+    }
+    if (!gear && r.gear_id) gear = r.gear_id;
+    if (!gear) gear = 'Fiets onbekend';
+    return '<div class="segment-item" id="ride-item-'+r.id+'" onclick="selectRide('+r.id+',this)">'+
+      '<div style="flex:1;">'+
+        '<div class="seg-name">'+r.name+'</div>'+
+        '<div class="seg-meta">'+date+' - '+dist+' - '+dur+'</div>'+
+        '<div class="seg-meta" style="color:var(--green);">'+gear+'</div>'+
+      '</div>'+
+      '<div class="seg-right">'+
+        '<div style="font-size:11px;color:var(--textmu);">'+Math.round(r.total_elevation_gain||0)+' m</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="seg-inline-detail" id="ride-inline-'+r.id+'" style="display:none;"></div>';
+  }).join('');
+}
+
+var currentOpenRideId = null;
+
+async function selectRide(id, itemEl) {
+  if (currentOpenRideId === id) {
+    var prev = document.getElementById('ride-inline-'+id);
+    if(prev){ prev.style.display='none'; prev.innerHTML=''; }
+    document.querySelectorAll('#rides-list .segment-item').forEach(function(e){e.classList.remove('active');});
+    currentOpenRideId = null;
+    return;
+  }
+  if (currentOpenRideId !== null) {
+    var prevD = document.getElementById('ride-inline-'+currentOpenRideId);
+    if(prevD){ prevD.style.display='none'; prevD.innerHTML=''; }
+    var prevI = document.getElementById('ride-item-'+currentOpenRideId);
+    if(prevI) prevI.classList.remove('active');
+  }
+  currentOpenRideId = id;
+  document.querySelectorAll('#rides-list .segment-item').forEach(function(e){e.classList.remove('active');});
+  var clickedItem = document.getElementById('ride-item-'+id);
+  if(clickedItem) clickedItem.classList.add('active');
+  var inlineEl = document.getElementById('ride-inline-'+id);
+  if(!inlineEl) return;
+  inlineEl.style.display = 'block';
+  inlineEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--textmu);font-family:monospace;">Segmenten laden...</div>';
 
   try {
-    // Get segment details
-    const segRes = await fetch(`https://www.strava.com/api/v3/segments/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const seg = await segRes.json();
-    if (!segRes.ok) {
-      return { statusCode: 400, body: JSON.stringify({ error: seg.message || 'Segment niet gevonden' }) };
-    }
+    var res = await fetch('/api/strava-activity-detail?token='+accessToken+'&id='+id);
+    var act = await res.json();
+    if (act.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+act.error+'</div>'; return; }
 
-    // Get segment streams (GPS + altitude data)
-    const streamRes = await fetch(
-      `https://www.strava.com/api/v3/segments/${id}/streams?keys=latlng,altitude,distance&key_by_type=true`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
-    const streams = await streamRes.json();
-    if (!streamRes.ok) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Kon segmentdata niet ophalen' }) };
-    }
-
-    // Build point array
-    const latlng = streams.latlng?.data || [];
-    const altitude = streams.altitude?.data || [];
-    const distance = streams.distance?.data || [];
-
-    const points = latlng.map((ll, i) => ({
-      lat: ll[0], lng: ll[1],
-      ele: altitude[i] || 0,
-      dist: distance[i] || 0
-    }));
-
-    const enriched = points.map((p, i) => {
-      if (i === 0) return { ...p, grade: 0 };
-      const dDist = p.dist - points[i-1].dist;
-      const dEle = p.ele - points[i-1].ele;
-      const grade = dDist > 0 ? (dEle / dDist) * 100 : 0;
-      return { ...p, grade: Math.max(-30, Math.min(30, grade)) };
-    });
-
-    // Get PR info
-    let pr = null;
-    if (seg.athlete_segment_stats) {
-      pr = {
-        pr_elapsed_time: seg.athlete_segment_stats.pr_elapsed_time,
-        pr_date: seg.athlete_segment_stats.pr_activity_date || null,
-        effort_count: seg.athlete_segment_stats.effort_count
-      };
-    }
-
-    // Get PR effort to find the bike used
-    let prBike = null;
-    try {
-      const effortsRes = await fetch(
-        `https://www.strava.com/api/v3/segments/${id}/all_efforts?per_page=1`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      if (effortsRes.ok) {
-        const efforts = await effortsRes.json();
-        if (efforts.length > 0 && efforts[0].activity && efforts[0].activity.gear_id) {
-          prBike = { gear_id: efforts[0].activity.gear_id };
-        }
-        // Also try to get activity detail for full gear info
-        if (efforts.length > 0 && efforts[0].activity_id) {
-          const actRes = await fetch(
-            `https://www.strava.com/api/v3/activities/${efforts[0].activity_id}`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          );
-          if (actRes.ok) {
-            const act = await actRes.json();
-            if (act.gear_id) {
-              prBike = {
-                gear_id: act.gear_id,
-                gear_name: act.gear ? act.gear.name : null
-              };
-            }
-          }
-        }
+    // Auto-select or add bike from Strava activity
+    if (act.gear_id) {
+      var matchIdx = -1;
+      // Match by stored gear_id (most reliable)
+      bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === act.gear_id) matchIdx = i; });
+      // Match by name if gear_name available
+      if (matchIdx === -1 && act.gear_name) {
+        bikes.forEach(function(b,i){ if(b.name && b.name.toLowerCase().indexOf(act.gear_name.toLowerCase())!==-1) matchIdx = i; });
       }
-    } catch(e) {
-      // bike lookup failed, continue without
+      if (matchIdx !== -1) {
+        activebikeIdx = matchIdx;
+        try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
+        renderGarage();
+      } else if (act.gear_name) {
+        var note = document.createElement("div");
+        note.style.cssText = "background:#FFF3CD;border-radius:var(--rs);padding:8px 10px;font-size:11px;color:#7A5000;margin-bottom:8px;";
+        var noteText = document.createTextNode("Fiets \"" + act.gear_name + "\" staat niet in je garage. ");
+        var noteBtn = document.createElement("button");
+        noteBtn.style.cssText = "background:var(--green);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;";
+        noteBtn.textContent = "Toevoegen aan garage";
+        noteBtn.addEventListener("click", (function(gid, gname){ return function(){ addStravaGear(gid, gname); note.remove(); }; })(act.gear_id, act.gear_name));
+        note.appendChild(noteText);
+        note.appendChild(noteBtn);
+        inlineEl.insertBefore(note, inlineEl.firstChild);
+      }
     }
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: seg.id,
-        name: seg.name,
-        distance: seg.distance,
-        average_grade: seg.average_grade,
-        maximum_grade: seg.maximum_grade,
-        total_elevation_gain: seg.total_elevation_gain,
-        city: seg.city,
-        start_latlng: seg.start_latlng || null,
-        end_latlng: seg.end_latlng || null,
-        pr,
-        pr_bike: prBike,
-        kom_time: seg.xoms ? seg.xoms.kom : null,
-        points: enriched
-      })
-    };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'Serverfout: ' + err.message }) };
+    var segs = act.segments || [];
+    if (!segs.length) {
+      inlineEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--textmu);">Geen segmenten in deze rit.</div>';
+      return;
+    }
+
+    var gearLabel = act.gear_name || '';
+    if (!gearLabel && act.gear_id) {
+      bikes.forEach(function(b){ if(b.gear_id === act.gear_id) gearLabel = b.name; });
+    }
+    if (!gearLabel && act.gear_id) gearLabel = act.gear_id;
+    if (!gearLabel) gearLabel = 'Fiets onbekend';
+    var html = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
+    html += '<div style="padding:8px 10px;background:var(--gl);border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div style="font-size:11px;font-weight:500;color:var(--gdp);">'+segs.length+' segmenten</div>';
+    html += '<div style="font-size:10px;color:var(--gd);">'+gearLabel+'</div>';
+    html += '</div>';
+    html += '<div style="padding:4px 0;">';
+    segs.forEach(function(seg) {
+      var prBadge = '';
+      if (seg.pr_rank === 1) prBadge = '<span style="font-size:9px;background:#FFD700;color:#7A5000;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">PR</span>';
+      else if (seg.pr_rank === 2) prBadge = '<span style="font-size:9px;background:#C0C0C0;color:#444;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">2e</span>';
+      else if (seg.pr_rank === 3) prBadge = '<span style="font-size:9px;background:#CD7F32;color:#fff;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">3e</span>';
+      var gc = Math.abs(seg.average_grade)>3 ? 'var(--coral)' : 'var(--green)';
+      html += '<div class="segment-item" id="seg-item-'+seg.id+'" onclick="selectSegment('+seg.id+',this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;">';
+      html += '<div style="flex:1;"><div class="seg-name">'+seg.name+prBadge+'</div>';
+      html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - Gereden: '+fmt(seg.elapsed_time)+'</div></div>';
+      html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+seg.average_grade.toFixed(1)+'%</div></div>';
+      html += '</div>';
+      html += '<div class="seg-inline-detail" id="seg-inline-'+seg.id+'" style="display:none;"></div>';
+    });
+    html += '</div></div>';
+    inlineEl.innerHTML = html;
+  } catch(e) {
+    inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
   }
-};
+}
+
+// ROUTES
+async function loadRoutes() {
+  var el = document.getElementById('routes-list');
+  el.innerHTML = '<div class="loading-text">Laden...</div>';
+  try {
+    var res = await fetch('/api/strava-routes?token='+accessToken);
+    var data = await res.json();
+    if (data.error) {
+      el.innerHTML = '<div class="loading-text">Fout: '+data.error+'<br><small>Routes vereisen mogelijk hernieuwde Strava-toestemming.</small></div>';
+      return;
+    }
+    allRoutes = Array.isArray(data) ? data : [];
+    if (!allRoutes.length) {
+      el.innerHTML = '<div class="loading-text">Geen routes gevonden. Maak routes aan in Strava.</div>';
+      return;
+    }
+    renderRoutesList(allRoutes);
+  } catch(e) {
+    el.innerHTML = '<div class="loading-text">Fout: '+e.message+'</div>';
+  }
+}
+
+function filterRoutes() {
+  var q = document.getElementById('routes-search').value.toLowerCase();
+  if (!q) { renderRoutesList(allRoutes); return; }
+  // Filter but keep original indices by storing them
+  var filtered = allRoutes.map(function(r,i){ return {r:r,i:i}; })
+    .filter(function(x){ return x.r.name.toLowerCase().indexOf(q)!==-1; });
+  var el = document.getElementById('routes-list');
+  if (!filtered.length) { el.innerHTML = '<div class="loading-text">Geen routes gevonden.</div>'; return; }
+  el.innerHTML = filtered.map(function(x) {
+    var r=x.r, idx=x.i;
+    var dist = ((r.distance||0)/1000).toFixed(1)+' km';
+    var elev = Math.round(r.elevation_gain||0)+' m';
+    return '<div class="segment-item" id="route-item-'+idx+'" onclick="selectRouteByIdx('+idx+')">'+
+      '<div style="flex:1;"><div class="seg-name">'+r.name+'</div>'+
+      '<div class="seg-meta">'+dist+' - '+elev+' hoogte</div></div>'+
+      '<div style="font-size:11px;color:var(--textmu);">&#9660;</div>'+
+    '</div>'+
+    '<div class="seg-inline-detail" id="route-inline-'+idx+'" style="display:none;"></div>';
+  }).join('');
+}
+
+function renderRoutesList(routes) {
+  var el = document.getElementById('routes-list');
+  if (!routes.length) { el.innerHTML = '<div class="loading-text">Geen routes gevonden.</div>'; return; }
+  el.innerHTML = routes.map(function(r, idx) {
+    var dist = ((r.distance||0)/1000).toFixed(1)+' km';
+    var elev = Math.round(r.elevation_gain||0)+' m';
+    return '<div class="segment-item" id="route-item-'+idx+'" onclick="selectRouteByIdx('+idx+')">'+
+      '<div style="flex:1;">'+
+        '<div class="seg-name">'+r.name+'</div>'+
+        '<div class="seg-meta">'+dist+' - '+elev+' hoogte</div>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--textmu);">&#9660;</div>'+
+    '</div>'+
+    '<div class="seg-inline-detail" id="route-inline-'+idx+'" style="display:none;"></div>';
+  }).join('');
+}
+
+var currentOpenRouteIdx = null;
+
+async function selectRouteByIdx(idx) {
+  var selectedRoute = allRoutes[idx];
+  if (!selectedRoute) return;
+
+  // Toggle close
+  if (currentOpenRouteIdx === idx) {
+    var prev = document.getElementById('route-inline-'+idx);
+    if(prev){ prev.style.display='none'; prev.innerHTML=''; }
+    document.querySelectorAll('#routes-list .segment-item').forEach(function(e){e.classList.remove('active');});
+    currentOpenRouteIdx = null;
+    return;
+  }
+  // Close previous
+  if (currentOpenRouteIdx !== null) {
+    var prevD = document.getElementById('route-inline-'+currentOpenRouteIdx);
+    if(prevD){ prevD.style.display='none'; prevD.innerHTML=''; }
+    var prevI = document.getElementById('route-item-'+currentOpenRouteIdx);
+    if(prevI) prevI.classList.remove('active');
+  }
+  currentOpenRouteIdx = idx;
+  document.querySelectorAll('#routes-list .segment-item').forEach(function(e){e.classList.remove('active');});
+  var clickedItem = document.getElementById('route-item-'+idx);
+  if(clickedItem) clickedItem.classList.add('active');
+  var inlineEl = document.getElementById('route-inline-'+idx);
+  if(!inlineEl) return;
+  inlineEl.style.display = 'block';
+  inlineEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--textmu);font-family:monospace;">Segmenten laden...</div>';
+
+  // Use the route ID string from allRoutes array - avoids JS number precision loss
+  var routeIdStr = String(selectedRoute.id);
+  try {
+    var res = await fetch('/api/strava-route-detail?token='+accessToken+'&id='+routeIdStr);
+    var routeData = await res.json();
+    if (routeData.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+routeData.error+'</div>'; return; }
+
+    var segs = routeData.segments || [];
+    var isFallback = routeData.is_starred_fallback || false;
+    if (!segs.length) {
+      inlineEl.innerHTML = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;padding:10px;font-size:12px;color:var(--textmu);">Geen segmenten gevonden op deze route. Voeg segmenten toe via de Stersegmenten tab.</div>';
+      return;
+    }
+
+    var headerLabel = isFallback
+      ? segs.length+' stersegmenten (route-segmenten niet beschikbaar)'
+      : segs.length+' segmenten op deze route';
+
+    var html = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
+    html += '<div style="padding:7px 10px;background:var(--gl);border-bottom:0.5px solid var(--border);font-size:11px;font-weight:500;color:var(--gdp);">'+headerLabel+'</div>';
+    html += '<div style="padding:4px 0;">';
+    segs.forEach(function(seg) {
+      var pr = seg.athlete_pr_effort ? fmt(seg.athlete_pr_effort.elapsed_time) : 'Geen PR';
+      var gc = Math.abs(seg.average_grade||0)>3 ? 'var(--coral)' : 'var(--green)';
+      html += '<div class="segment-item" id="seg-item-'+seg.id+'" onclick="selectSegment('+seg.id+',this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;">';
+      html += '<div style="flex:1;"><div class="seg-name">'+seg.name+'</div>';
+      html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - PR: '+pr+'</div></div>';
+      html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+(seg.average_grade||0).toFixed(1)+'%</div></div>';
+      html += '</div>';
+      html += '<div class="seg-inline-detail" id="seg-inline-'+seg.id+'" style="display:none;"></div>';
+    });
+    html += '</div></div>';
+    inlineEl.innerHTML = html;
+  } catch(e) {
+    inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
+  }
+}
+function renderSegmentList(segs){
+  if(!segs.length){document.getElementById('segment-list').innerHTML='<div class="loading-text">Geen segmenten. Ster segmenten in Strava.</div>';return;}
+  var html = segs.map(function(s){
+    var gc=Math.abs(s.average_grade)>3?'climb':'flat';
+    var pr=s.athlete_pr_effort?'PR: '+fmt(s.athlete_pr_effort.elapsed_time):'Geen PR';
+    return '<div class="segment-item" id="seg-item-'+s.id+'" onclick="selectSegment('+s.id+',this)">'+
+      '<div><div class="seg-name">'+s.name+'</div><div class="seg-meta">'+((s.distance||0)/1000).toFixed(1)+' km - '+(s.city||'')+'</div></div>'+
+      '<div class="seg-right"><div class="seg-grade '+gc+'">'+(s.average_grade>0?'+':'')+(s.average_grade||0).toFixed(1)+'%</div>'+
+      '<div class="seg-pr-small">'+pr+'</div></div></div>'+
+      '<div class="seg-inline-detail" id="seg-inline-'+s.id+'" style="display:none;"></div>';
+  }).join('');
+  document.getElementById('segment-list').innerHTML = html;
+}
+function buildInlineDetail(prSec) {
+  var minV = Math.floor(prSec/60);
+  var secV = prSec % 60;
+  var curH = new Date().getHours();
+  var hStr = String(curH).padStart(2,'0') + ':00';
+  var secStr = String(secV).padStart(2,'0');
+
+  var html = '';
+  html += '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
+
+  // Stats row
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);">';
+  html += '<div style="padding:8px 10px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Afstand</div><div style="font-size:13px;font-weight:600;" id="il-dist">--</div></div>';
+  html += '<div style="padding:8px 10px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Helling</div><div style="font-size:13px;font-weight:600;" id="il-grade">--</div></div>';
+  html += '<div style="padding:8px 10px;border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">PR</div><div style="font-size:13px;font-weight:600;" id="il-pr">--</div></div>';
+  html += '</div>';
+
+  // Profile canvas
+  html += '<div style="padding:8px 10px 0;"><canvas id="il-canvas" style="width:100%;height:60px;display:block;border-radius:4px;"></canvas></div>';
+
+  // Mini result
+  html += '<div style="padding:10px;border-top:0.5px solid var(--border);margin-top:8px;">';
+  html += '<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;">';
+  html += '<div><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gesimuleerde tijd</div>';
+  html += '<div style="font-size:26px;font-weight:600;font-family:monospace;letter-spacing:-0.03em;line-height:1;" id="il-time">--</div></div>';
+  html += '<div style="text-align:right;"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">t.o.v. PR</div>';
+  html += '<div style="font-size:15px;font-weight:600;font-family:monospace;" id="il-diff">--</div>';
+  html += '<div style="font-size:10px;color:var(--textmu);margin-top:1px;" id="il-speed">--</div></div>';
+  html += '</div>';
+  html += '<div id="il-factors" style="margin-bottom:6px;"></div>';
+  html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 8px;font-size:10px;color:var(--textmu);line-height:1.5;" id="il-weer">Weer laden...</div>';
+  html += '</div>';
+
+  // Accordions section
+  html += '<div style="border-top:0.5px solid var(--border);padding:0 10px;">';
+  html += '<div style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);padding:8px 0 4px;font-family:monospace;">Instellingen</div>';
+
+
+
+  // Fiets
+  var fietsBody = '<div id="il-garage"></div>';
+  fietsBody += '<div style="display:flex;gap:5px;margin-top:5px;">';
+  fietsBody += '<div style="flex:1;background:var(--bg);border-radius:var(--rs);padding:5px 7px;font-size:10px;"><div style="color:var(--textmu);margin-bottom:1px;">Band</div><div style="font-weight:600;font-family:monospace;" id="il-tire">--</div></div>';
+  fietsBody += '<div style="flex:1;background:var(--bg);border-radius:var(--rs);padding:5px 7px;font-size:10px;"><div style="color:var(--textmu);margin-bottom:1px;">Spanning</div><div style="font-weight:600;font-family:monospace;" id="il-bar">--</div></div>';
+  fietsBody += '</div>';
+  html += buildAccRow('il-acc-fiets', 'Fiets', fietsBody);
+
+  // Kleding
+  var kledingBody = '';
+  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Bovenkant</div>';
+  kledingBody += '<div class="clothing-grid" id="il-cloth-top" style="margin-bottom:7px;"></div>';
+  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Onderkant</div>';
+  kledingBody += '<div class="clothing-grid" id="il-cloth-bottom" style="margin-bottom:7px;"></div>';
+  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Extras</div>';
+  kledingBody += '<div class="clothing-grid" id="il-cloth-extra"></div>';
+  html += buildAccRow('il-acc-kleding', 'Kleding', kledingBody);
+
+  // Weer - 7-daagse voorspelling + tijdslider
+  var weerBody = '';
+  weerBody += '<div style="font-size:11px;color:var(--textmu);margin-bottom:8px;" id="il-weer-loc">Geen weerdata — open de Weer-tab eerst.</div>';
+  weerBody += '<div id="il-days-scroll" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:8px;scrollbar-width:none;"></div>';
+  weerBody += '<div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Tijdstip</div>';
+  weerBody += '<input type="range" id="il-time-slider" min="0" max="23" step="1" value="' + curH + '" style="width:100%;margin-bottom:3px;">';
+  weerBody += '<div style="text-align:center;font-size:12px;font-weight:500;font-family:monospace;margin-bottom:8px;" id="il-time-lbl">' + hStr + '</div>';
+  weerBody += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;" id="il-weer-cells"></div>';
+  html += buildAccRow('il-acc-weer', 'Weer en tijdstip', weerBody);
+
+  // Wat als
+  var watalsBody = '';
+  watalsBody += '<div class="srow"><div class="srow-lbl">Gewicht (+/-)</div><input type="range" id="wloss" min="-5" max="5" step="0.5" value="0"><div class="srow-val"><span id="wloss-out">0.0</span> kg</div></div>';
+  watalsBody += '<div class="srow"><div class="srow-lbl">Extra vermogen</div><input type="range" id="powergain" min="0" max="80" step="5" value="0"><div class="srow-val">+<span id="powergain-out">0</span> W</div></div>';
+  watalsBody += '<div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Fiets lichter</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="srow-val">-<span id="bikeloss-out">0.0</span> kg</div></div>';
+  html += buildAccRow('il-acc-watals', 'Wat als?', watalsBody);
+
+
+
+
+
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function buildAccRow(id, label, body) {
+  return '<div style="border-top:0.5px solid var(--border);">' +
+    '<button class="accord-btn" data-target="' + id + '" onclick="ilToggle(this)">' +
+      '<span>' + label + '</span><span class="accord-arrow">&#9660;</span>' +
+    '</button>' +
+    '<div class="accord-body" id="' + id + '">' + body + '</div>' +
+  '</div>';
+}
+
+function ilToggle(btn) {
+  var id = btn.getAttribute('data-target');
+  var body = document.getElementById(id);
+  if (!body) return;
+  body.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+
+var currentOpenSegId = null;
+var ilBaseSec = 0;
+var ilKomSec = 0;
+var stravaGearCache = {};
+var prWeatherData = null; // Historical weather at time of PR
+
+async function fetchHistoricalWeather(lat, lon, dateStr) {
+  // dateStr format: "2024-03-15T10:23:00Z"
+  if (!lat || !lon || !dateStr) return null;
+  try {
+    var date = new Date(dateStr);
+    var dateOnly = date.toISOString().split('T')[0];
+    var hour = date.getUTCHours();
+    var url = 'https://archive-api.open-meteo.com/v1/archive?' +
+      'latitude=' + lat + '&longitude=' + lon +
+      '&start_date=' + dateOnly + '&end_date=' + dateOnly +
+      '&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure' +
+      '&timezone=UTC';
+    var res = await fetch(url);
+    if (!res.ok) return null;
+    var data = await res.json();
+    if (!data.hourly) return null;
+    // Return conditions at the hour of the PR
+    return {
+      temp: data.hourly.temperature_2m[hour] || 15,
+      windSpeed: data.hourly.wind_speed_10m[hour] || 0,
+      windDir: data.hourly.wind_direction_10m[hour] || 0,
+      humidity: data.hourly.relative_humidity_2m[hour] || 60,
+      pressure: data.hourly.surface_pressure[hour] || 1013,
+      date: dateOnly,
+      hour: hour
+    };
+  } catch(e) {
+    console.warn('Historische weerdata niet beschikbaar:', e.message);
+    return null;
+  }
+}
+
+async function lookupStravaGear(gearId) {
+  if (!gearId) return null;
+  if (stravaGearCache[gearId]) return stravaGearCache[gearId];
+  try {
+    var res = await fetch('/api/strava-gear?token='+accessToken+'&id='+gearId);
+    if (!res.ok) return null;
+    var gear = await res.json();
+    if (gear.error) return null;
+    stravaGearCache[gearId] = gear;
+    return gear;
+  } catch(e) { return null; }
+}
+
+async function matchOrAddGear(gearId) {
+  if (!gearId) return;
+  // Check if already in garage
+  var matchIdx = -1;
+  bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === gearId) matchIdx = i; });
+  if (matchIdx !== -1) {
+    activebikeIdx = matchIdx;
+    try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
+    renderGarage();
+    return;
+  }
+  // Look up gear from Strava
+  var gear = await lookupStravaGear(gearId);
+  if (!gear) return;
+  // Try match by name
+  bikes.forEach(function(b,i){
+    if(b.name && b.name.toLowerCase().indexOf(gear.name.toLowerCase())!==-1) matchIdx = i;
+  });
+  if (matchIdx !== -1) {
+    // Update existing bike with gear_id
+    bikes[matchIdx].gear_id = gearId;
+    activebikeIdx = matchIdx;
+    try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',matchIdx);}catch(e){}
+    renderGarage();
+    return;
+  }
+  // Auto-add to garage
+  var bikeWeight = gear.weight || 8.5;
+  var newBike = {
+    name: gear.name || gearId,
+    type: gear.frame_type <= 2 ? 'road' : gear.frame_type === 3 ? 'tt' : gear.frame_type >= 6 ? 'mtb' : 'gravel',
+    weight: bikeWeight,
+    cda: 0.324,
+    tire: 0.0032,
+    tirePressure: 6.5,
+    gear_id: gearId
+  };
+  bikes.push(newBike);
+  activebikeIdx = bikes.length - 1;
+  try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',activebikeIdx);}catch(e){}
+  renderGarage();
+}
+
+async function selectSegment(id, itemEl){
+  // Toggle: if already open, close it
+  if(currentOpenSegId === id){
+    var prev = document.getElementById('seg-inline-'+id);
+    if(prev){ prev.style.display='none'; prev.innerHTML=''; }
+    document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
+    currentOpenSegId = null;
+    selectedSegment = null; gpxPoints = [];
+    return;
+  }
+  // Close any previously open detail and CLEAR its HTML to remove duplicate IDs
+  if(currentOpenSegId !== null){
+    var prevDetail = document.getElementById('seg-inline-'+currentOpenSegId);
+    if(prevDetail){ prevDetail.style.display='none'; prevDetail.innerHTML=''; }
+    var prevItem = document.getElementById('seg-item-'+currentOpenSegId);
+    if(prevItem) prevItem.classList.remove('active');
+  }
+  currentOpenSegId = id;
+  document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
+  var clickedItem = document.getElementById('seg-item-'+id);
+  if(clickedItem) clickedItem.classList.add('active');
+  var inlineEl = document.getElementById('seg-inline-'+id);
+  if(!inlineEl) return;
+  inlineEl.style.display='block';
+  inlineEl.innerHTML='<div style="padding:12px;text-align:center;font-size:12px;color:var(--textmu);font-family:monospace;">Laden...</div>';
+
+  try{
+    var res=await fetch('/api/strava-segment-detail?token='+accessToken+'&id='+id);
+    var seg=await res.json();
+    if(seg.error){inlineEl.innerHTML='<div style="padding:12px;color:var(--coral);font-size:12px;">Fout: '+seg.error+'</div>';return;}
+    selectedSegment=seg;gpxPoints=seg.points||[];
+
+    var prSec = seg.pr&&seg.pr.pr_elapsed_time ? seg.pr.pr_elapsed_time : 0;
+    // Parse KOM time (format "1:23" or "1:23:45")
+    var komSec = 0;
+    if (seg.kom_time) {
+      var parts = seg.kom_time.split(':').map(Number);
+      if (parts.length === 2) komSec = parts[0]*60 + parts[1];
+      else if (parts.length === 3) komSec = parts[0]*3600 + parts[1]*60 + parts[2];
+    }
+    ilKomSec = komSec;
+    // Use PR first, then KOM, then estimate
+    if (!prSec && !komSec && gpxPoints.length > 1) {
+      var estFtp = parseFloat(document.getElementById('pf-ftp').value)||220;
+      var estW = parseFloat(document.getElementById('pf-weight').value)||75;
+      var estSim = simSeg(gpxPoints, estFtp, estW+9, 0.324, 0.004, 0, 1.0, 1.225, 0.985, 0.995);
+      prSec = Math.round(estSim);
+    }
+    ilBaseSec = prSec || komSec || 1200;
+    prWeatherData = null; // reset
+
+    // Auto-select bike from garage if it matches the PR bike
+    if (seg.pr_bike && seg.pr_bike.gear_id) {
+      matchOrAddGear(seg.pr_bike.gear_id);
+    }
+
+    // Fetch historical weather for PR date if available
+    if (seg.pr && seg.pr.pr_date && seg.start_latlng) {
+      var lat = seg.start_latlng[0];
+      var lon = seg.start_latlng[1];
+      fetchHistoricalWeather(lat, lon, seg.pr.pr_date).then(function(hw) {
+        prWeatherData = hw;
+        if (hw) {
+          var prWeerEl = document.getElementById('il-pr-weather');
+          if (prWeerEl) {
+            var fe = calcFtpEff(hw.temp);
+            var ce = calcCdaEff(hw.temp, hw.pressure, hw.humidity);
+            var segBear = calcSegmentBearing(gpxPoints);
+            var effW = calcEffectiveWind(hw.windSpeed/3.6, hw.windDir, segBear);
+            var windLbl = Math.round(hw.windSpeed) + ' km/u ' + degToDir(hw.windDir);
+            var effLbl = effW > 0.5 ? ' (' + Math.round(Math.abs(effW*3.6)) + ' km/u tegen)' :
+                         effW < -0.5 ? ' (' + Math.round(Math.abs(effW*3.6)) + ' km/u mee)' : ' (zijwind)';
+            prWeerEl.innerHTML =
+              '<div style="font-size:10px;font-weight:600;color:var(--gd);margin-bottom:4px;">Weer tijdens PR (' + hw.date + ' ' + String(hw.hour).padStart(2,'0') + ':00)</div>' +
+              '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">' +
+              ['Temp:' + Math.round(hw.temp) + 'C', 'Wind:' + windLbl + effLbl, 'FTP:' + (fe>=0?'+':'') + fe + '%'].map(function(t) {
+                return '<div style="background:var(--surface);border-radius:var(--rs);padding:5px 6px;font-size:10px;font-family:monospace;">' + t + '</div>';
+              }).join('') +
+              '</div>';
+            prWeerEl.style.display = 'block';
+          }
+          calcResult();
+        }
+      });
+    }
+    var hadPr = seg.pr && seg.pr.pr_elapsed_time;
+    var prStr = hadPr ? fmt(seg.pr.pr_elapsed_time) : (komSec ? 'KOM: '+fmt(komSec) : (prSec ? 'Schatting: '+fmt(prSec) : 'Geen PR'));
+    var prDate = seg.pr&&seg.pr.pr_date ? new Date(seg.pr.pr_date).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+
+    inlineEl.innerHTML = buildInlineDetail(prSec);
+
+    // Wait for DOM to render before filling data
+    setTimeout(function(){
+      // Fill in static data
+      var dEl=document.getElementById('il-dist');if(dEl)dEl.textContent=((seg.distance||0)/1000).toFixed(2)+' km';
+      var gEl=document.getElementById('il-grade');if(gEl)gEl.textContent=(seg.average_grade||0).toFixed(1)+'%';
+      var pEl=document.getElementById('il-pr');if(pEl)pEl.textContent=prStr+(prDate?' ('+prDate+')':'');
+
+      // Draw profile
+      var cv=document.getElementById('il-canvas');
+      if(cv) drawProfileOn(cv, gpxPoints);
+
+      // Wire sliders and render sub-components
+      wireIlSliders();
+      renderIlGarage();
+      renderIlClothing();
+      updateIlWeer();
+
+      // First calculation
+      calcResult();
+
+      // Second call after a bit more time to catch any late renders
+      setTimeout(function(){ calcResult(); }, 200);
+    }, 100);
+
+  }catch(e){inlineEl.innerHTML='<div style="padding:12px;color:var(--coral);font-size:12px;">Kon segment niet laden: '+e.message+'</div>';}
+}
+
+
+
+function wireIlSliders(){
+  var ids = ['wloss','bikeloss','powergain','fatigue'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.oninput = function(){
+      var out = document.getElementById(id+'-out');
+      if (out) {
+        var v = parseFloat(el.value);
+        if (id === 'wloss') out.textContent = (v > 0 ? '+' : '') + v.toFixed(1);
+        else if (id === 'mytime-sec') out.textContent = String(el.value).padStart(2,'0');
+        else out.textContent = el.value;
+      }
+      calcResult();
+    };
+  });
+  var its = document.getElementById('il-time-slider');
+  if (its) {
+    its.oninput = function(){
+      var h = parseInt(this.value);
+      var tl = document.getElementById('il-time-lbl');
+      if (tl) tl.textContent = String(h).padStart(2,'0') + ':00';
+      var ms = document.getElementById('time-slider');
+      if (ms) ms.value = h;
+      var ats = document.getElementById('acc-time-slider');
+      if (ats) ats.value = h;
+      updateIlWeer();
+      calcResult();
+    };
+  }
+}
+
+
+function renderIlGarage(){
+  var el=document.getElementById('il-garage');if(!el)return;
+  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:3px 0;">Voeg fietsen toe via Fiets/Kleding tab.</div>';return;}
+  el.innerHTML=bikes.map(function(b,i){
+    var a=i===activebikeIdx?' active':'';
+    return '<div class="seg-bike-opt'+a+'" onclick="selectBikeAcc('+i+')">'+
+      '<div style="width:20px;height:20px;border-radius:5px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="'+(a?'#1D9E75':'var(--textmu)')+'" stroke-width="2"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/></svg>'+
+      '</div>'+
+      '<div><div class="seg-bike-name">'+b.name+'</div><div class="seg-bike-sub">'+b.weight+' kg</div></div>'+
+      '</div>';
+  }).join('');
+  var bike=getActiveBike();
+  var tireNames={'0.0025':'Tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};
+  var te=document.getElementById('il-tire');var be=document.getElementById('il-bar');
+  if(bike){if(te)te.textContent=tireNames[String(bike.tire)]||'Onbekend';if(be)be.textContent=bike.tirePressure+' bar';}
+  var fs=document.getElementById('il-fiets-sum');if(fs&&bike)fs.textContent=bike.name;
+}
+
+function renderIlClothing(){
+  function rg(items,cid){
+    var el=document.getElementById(cid);if(!el)return;
+    el.innerHTML="";
+    items.forEach(function(item){
+      var btn=document.createElement("button");
+      btn.className="clothing-btn"+(item.on?" on":"");
+      btn.innerHTML=item.label+"<div class=\"clothing-weight\">"+(item.weight*1000).toFixed(0)+"g</div>";
+      btn.addEventListener("click",function(){toggleClothingItem(item.id);});
+      el.appendChild(btn);
+    });
+  }
+  rg(clothingItems.top,"il-cloth-top");
+  rg(clothingItems.bottom,"il-cloth-bottom");
+  rg(clothingItems.extra,"il-cloth-extra");
+  var on=allClothingItems().filter(function(i){return i.on;});
+  var s=document.getElementById("il-kleding-sum");if(s)s.textContent=on.length+" items";
+}
+
+function updateIlWeer(){
+  if(!weatherData){
+    var el=document.getElementById('il-weer-loc');
+    if(el)el.textContent='Geen weerdata — open de Weer-tab eerst.';
+    return;
+  }
+  // Location label
+  var locEl=document.getElementById('il-weer-loc');
+  if(locEl)locEl.textContent=document.getElementById('loc-name').textContent;
+
+  // Render day cards
+  var daysEl=document.getElementById('il-days-scroll');
+  if(daysEl){
+    daysEl.innerHTML=weatherData.daily.time.map(function(t,i){
+      var a=i===selectedDay?' border-color:var(--green);background:var(--surface);':'border-color:transparent;';
+      return '<div style="flex-shrink:0;width:58px;background:var(--bg);border-radius:7px;padding:6px 4px;text-align:center;cursor:pointer;border:1.5px solid transparent;'+a+'" onclick="ilSelectDay('+i+')">'+
+        '<div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-weight:500;">'+dayLabel(t,i)+'</div>'+
+        '<div style="font-size:14px;margin-bottom:2px;">'+wIcon(weatherData.daily.weather_code[i])+'</div>'+
+        '<div style="font-size:11px;font-weight:500;">'+Math.round(weatherData.daily.temperature_2m_max[i])+'°/'+Math.round(weatherData.daily.temperature_2m_min[i])+'°</div>'+
+        '<div style="font-size:9px;color:var(--textmu);margin-top:1px;font-family:monospace;">'+Math.round(weatherData.daily.wind_speed_10m_max[i])+'km/u</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Current hour data
+  var h=parseInt((document.getElementById('il-time-slider')||{value:new Date().getHours()}).value);
+  var idx=selectedDay*24+h;
+  var temp=weatherData.hourly.temperature_2m[idx]||15;
+  var wind=weatherData.hourly.wind_speed_10m[idx]||0;
+  var windDir=weatherData.hourly.wind_direction_10m[idx]||0;
+  var rain=weatherData.hourly.precipitation[idx]||0;
+  var humid=weatherData.hourly.relative_humidity_2m[idx]||60;
+  var pressure=weatherData.hourly.surface_pressure[idx]||1013;
+  var fe=calcFtpEff(temp),ce=calcCdaEff(temp,pressure,humid);
+
+  // Update summary badge
+  var ws=document.getElementById('il-weer-sum');
+  if(ws)ws.textContent=Math.round(temp)+'C, '+Math.round(wind)+' km/u';
+
+  // Weather cells
+  var cells=document.getElementById('il-weer-cells');
+  // Show wind direction effect if segment is loaded
+  var segBearingNow = calcSegmentBearing(gpxPoints);
+  var windMs = wind/3.6;
+  var effWind = calcEffectiveWind(windMs, windDir, segBearingNow);
+  var windLabel = Math.round(wind)+' km/u '+degToDir(windDir);
+  var windEffect = '';
+  if (segBearingNow !== null) {
+    var effKmh = Math.round(Math.abs(effWind*3.6));
+    windEffect = effWind > 0.5 ? ' ('+effKmh+' km/u tegen)' : effWind < -0.5 ? ' ('+effKmh+' km/u mee)' : ' (zijwind)';
+  }
+  if(cells)cells.innerHTML=[
+    {l:'Temp',v:Math.round(temp)+'C'},
+    {l:'Wind',v:windLabel+windEffect},
+    {l:'Neerslag',v:rain.toFixed(1)+' mm'},
+    {l:'FTP-effect',v:(fe>=0?'+':'')+fe+'%'},
+    {l:'CdA-effect',v:(ce>=0?'+':'')+ce+'%'},
+    {l:'Vochtigheid',v:humid+'%'}
+  ].map(function(c){
+    return '<div style="background:var(--surface);border-radius:var(--rs);padding:5px 6px;">'+
+      '<div style="font-size:9px;color:var(--textmu);margin-bottom:1px;">'+c.l+'</div>'+
+      '<div style="font-size:10px;font-weight:500;font-family:monospace;">'+c.v+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function ilSelectDay(i){
+  selectedDay=i;
+  // Update main weather tab day selection too
+  if(weatherData) renderDays(weatherData);
+  updateIlWeer();
+  calcResult();
+}
+
+function drawProfileOn(cv, pts){
+  var W=cv.offsetWidth||300,H=60;cv.width=W;cv.height=H;
+  var ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
+  if(!pts||pts.length<2)return;
+  var eles=pts.map(function(p){return p.ele;}),minE=Math.min.apply(null,eles),maxE=Math.max.apply(null,eles),range=maxE-minE||1,td=pts[pts.length-1].dist,pad=4;
+  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.lineTo(W-pad,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();ctx.fillStyle='#E1F5EE';ctx.fill();
+  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
+}
+
+//
+function drawProfile(pts){
+  var cv=document.getElementById('profile-canvas');if(!cv)return;
+  var W=cv.offsetWidth||700,H=75;cv.width=W;cv.height=H;
+  var ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
+  if(!pts||pts.length<2)return;
+  var eles=pts.map(function(p){return p.ele;}),minE=Math.min.apply(null,eles),maxE=Math.max.apply(null,eles),range=maxE-minE||1,td=pts[pts.length-1].dist,pad=5;
+  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-3);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.lineTo(W-pad,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();ctx.fillStyle='#E1F5EE';ctx.fill();
+  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-3);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
+}
+
+//
+function simSeg(pts,P,mass,CdA,Crr,windMs,draft,rho,ce,de){
+  if(!pts||pts.length<2)return 3600;
+  var g=9.81,eff=ce*de,t=0;
+  for(var i=1;i<pts.length;i++){
+    var d=pts[i].dist-pts[i-1].dist;if(d<0.1)continue;
+    var gr=(pts[i].grade||0)/100,lo=0.1,hi=30;
+    for(var j=0;j<60;j++){var mid=(lo+hi)/2,Va=mid+windMs,Fa=0.5*CdA*draft*rho*Va*Va,Fr=Crr*mass*g,Fg=mass*g*Math.sin(Math.atan(gr));if((Fa+Fr+Fg)*mid/eff<P)lo=mid;else hi=mid;}
+    t+=d/((lo+hi)/2);
+  }return t;
+}
+
+//
+function calcResult(){
+  if(!gpxPoints.length){
+    var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='block';
+    return;
+  }
+  var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='none';
+  var myT = ilBaseSec || ilKomSec || 1200;
+  var weight=parseFloat(document.getElementById('pf-weight').value)||75;
+  var ftp=parseFloat(document.getElementById('pf-ftp').value)||220;
+  var bike=getActiveBike();
+  var bikeW=bike?parseFloat(bike.weight):9;
+  var bikeCda=bike?parseFloat(bike.cda):0.324;
+  var bikeCrr=bike?parseFloat(bike.tire):0.0032;
+  var bikeBar=bike?parseFloat(bike.tirePressure):6.5;
+  var clothing=getClothingTotals();
+  var wloss=parseFloat(document.getElementById('wloss').value)||0;
+  var bikeloss=parseFloat(document.getElementById('bikeloss').value)||0;
+  var powergain=parseFloat(document.getElementById('powergain').value)||0;
+  var aero=parseFloat(document.getElementById('aero').value)||0.324;
+  var draft=parseFloat(document.getElementById('draft').value)||1.0;
+  var fi=parseInt(document.getElementById('fatigue').value)-1;
+  var chain=parseFloat(document.getElementById('chain').value)||0.985;
+  // Base conditions: use PR weather if available, else standard
+  var rhoStd = 1.225;
+  var baseTemp = 15, baseWindMs = 0, baseWindDir = 0;
+  if (prWeatherData) {
+    rhoStd = calcRho(prWeatherData.temp, prWeatherData.pressure, prWeatherData.humidity);
+    baseTemp = prWeatherData.temp;
+    baseWindMs = calcEffectiveWind(prWeatherData.windSpeed/3.6, prWeatherData.windDir, calcSegmentBearing(gpxPoints));
+  }
+  var rho=rhoStd,tempForCalc=baseTemp,ftpEffect=1;
+  var weatherWindMs=0, weatherWindDir=0;
+  if(weatherData){
+    var _tsEl=document.getElementById('il-time-slider')||document.getElementById('acc-time-slider');
+    var h=_tsEl?parseInt(_tsEl.value):new Date().getHours();
+    var s=selectedDay*24+h;
+    tempForCalc=weatherData.hourly.temperature_2m[s]||15;
+    var humid=weatherData.hourly.relative_humidity_2m[s]||60;
+    var pressure=weatherData.hourly.surface_pressure[s]||1013;
+    rho=calcRho(tempForCalc,pressure,humid);
+    ftpEffect=1+calcFtpEff(tempForCalc)/100;
+    weatherWindMs=(weatherData.hourly.wind_speed_10m[s]||0)/3.6;
+    weatherWindDir=weatherData.hourly.wind_direction_10m[s]||0;
+  }
+  // Calculate effective wind on segment based on direction
+  var segBearing = calcSegmentBearing(gpxPoints);
+  var effectiveWindMs = calcEffectiveWind(weatherWindMs, weatherWindDir, segBearing);
+  var P0=ftp,P=(P0+powergain)*(1-fatigueLoss[fi])*ftpEffect;
+  var finalCrr=bikeCrr+(6.5-bikeBar)*0.0003;
+  var newCda=aero+clothing.cda;
+  var baseM=weight+bikeW,newM=(weight-wloss)+(bikeW-bikeloss);
+  var baseSim=simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);
+  var scale=myT/baseSim;
+  // Add totalWindMs = weather wind (direction-aware) + manual wind
+  var manualWindEl=document.getElementById('wind');
+  var manualWindMs=(manualWindEl?parseFloat(manualWindEl.value)||0:0)/3.6;
+  var totalWindMs=effectiveWindMs+manualWindMs;
+  var newSim=simSeg(gpxPoints,P,newM,newCda,finalCrr,totalWindMs,draft,rho,chain,0.995);
+  var newT=newSim*scale,diff=myT-newT,td=gpxPoints[gpxPoints.length-1].dist;
+  // Update inline result
+  var ilTime=document.getElementById('il-time');if(ilTime)ilTime.textContent=fmt(newT);
+  var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u';
+  var ilDiff=document.getElementById('il-diff');
+  if(ilDiff){if(Math.abs(diff)<1){ilDiff.textContent='+/- 0s';ilDiff.style.color='var(--textmu)';}else{ilDiff.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');ilDiff.style.color=diff>1?'var(--green)':'var(--coral)';}}
+  // Also update old mini-result if present
+  var mt=document.getElementById('mini-time');if(mt)mt.textContent=fmt(newT);
+  var ms2=document.getElementById('mini-speed');if(ms2)ms2.textContent=(td/newT*3.6).toFixed(1)+' km/u';
+  var md=document.getElementById('mini-diff');if(md){if(Math.abs(diff)<1){md.textContent='+/- 0s';md.className='mini-diff neu';}else{md.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');md.className='mini-diff '+(diff>1?'win':'loss');}}
+  // Update resultaat tab
+  document.getElementById('res-time').textContent=fmt(newT);
+  document.getElementById('res-pr').textContent=fmt(myT);
+  document.getElementById('res-speed').textContent=(td/newT*3.6).toFixed(1)+' km/u';
+  document.getElementById('res-wkg').textContent=(P/Math.max(1,weight-wloss)).toFixed(2)+' W/kg';
+  var prdEl=document.getElementById('res-prdiff');prdEl.textContent=Math.abs(diff)<1?'+/- 0s':(diff>0?'-':'+')+fmt(Math.abs(diff));prdEl.style.color=diff>1?'var(--green)':diff<-1?'var(--coral)':'var(--textmu)';
+  var rdEl=document.getElementById('res-diff');
+  if(Math.abs(diff)<1){rdEl.textContent='Geen verandering';rdEl.className='res-diff neu';}
+  else{rdEl.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');rdEl.className='res-diff '+(diff>1?'win':'loss');}
+  // Factors
+  function c(fn){return myT-fn()*scale;}
+  var factors=[
+    {n:'Gewicht rijder',col:'#1D9E75',v:c(function(){return simSeg(gpxPoints,P0,(weight-wloss)+bikeW,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Gewicht fiets',col:'#5DCAA5',v:c(function(){return simSeg(gpxPoints,P0,weight+(bikeW-bikeloss),bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Extra vermogen',col:'#0F6E56',v:c(function(){return simSeg(gpxPoints,P0+powergain,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Rijpositie',col:'#9FE1CB',v:c(function(){return simSeg(gpxPoints,P0,baseM,aero,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Kleding',col:'#378ADD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda+clothing.cda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Wind (richtingseffect)',col:'#D85A30',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,totalWindMs,1,rhoStd,0.985,0.995);})},
+    {n:'Luchtdichtheid',col:'#EF9F27',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1,rho,0.985,0.995);})},
+    {n:'FTP-effect weer',col:'#BA7517',v:c(function(){return simSeg(gpxPoints,P0*ftpEffect,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Groepsrit',col:'#7F77DD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,draft,rhoStd,0.985,0.995);})},
+    {n:'Banden',col:'#AFA9EC',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,finalCrr,0,1,rhoStd,0.985,0.995);})},
+    {n:'Vermoeidheid',col:'#F09595',v:c(function(){return simSeg(gpxPoints,P0*(1-fatigueLoss[fi]),baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})}
+  ];
+  // Factors top 4
+  var top4=factors.slice().sort(function(a,b){return Math.abs(b.v)-Math.abs(a.v);}).slice(0,4);
+  var factorsHtml=top4.map(function(f){var cls=f.v>1?'pos':f.v<-1?'neg':'neu';return '<div class="mini-factor"><span class="mini-factor-name"><span class="mini-dot" style="background:'+f.col+'"></span>'+f.n+'</span><span class="mini-factor-val '+cls+'">'+fmtD(f.v)+'</span></div>';}).join('');
+  var ilf=document.getElementById('il-factors');if(ilf)ilf.innerHTML=factorsHtml;
+  var mf=document.getElementById('mini-factors');if(mf)mf.innerHTML=factorsHtml;
+  // Mini weer
+  var weerTxt='Geen weerdata beschikbaar.';
+  if(weatherData){var _ts2=document.getElementById('il-time-slider')||document.getElementById('acc-time-slider');var h2=_ts2?parseInt(_ts2.value):new Date().getHours(),s2=selectedDay*24+h2,t2=weatherData.hourly.temperature_2m[s2]||15,w2=weatherData.hourly.wind_speed_10m[s2]||0,r2=weatherData.hourly.precipitation[s2]||0,fe=calcFtpEff(t2),ce2=calcCdaEff(t2,weatherData.hourly.surface_pressure[s2]||1013,weatherData.hourly.relative_humidity_2m[s2]||60);weerTxt=String(h2).padStart(2,'0')+':00 - '+Math.round(t2)+'C, wind '+Math.round(w2)+' km/u'+(r2>0?', '+r2.toFixed(1)+'mm regen':'')+' | FTP: '+(fe>=0?'+':'')+fe+'%, CdA: '+(ce2>=0?'+':'')+ce2+'%';}
+  var mw=document.getElementById('mini-weer');if(mw)mw.textContent=weerTxt;
+  var iw=document.getElementById('il-weer');if(iw)iw.textContent=weerTxt;
+  // Band info in accordion
+  if(bike){var tireNames={'0.0025':'Race tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};var tn=document.getElementById('acc-tire');var tp=document.getElementById('acc-pressure');if(tn)tn.textContent=(tireNames[String(bike.tire)]||'Onbekend');var pressEffect=(6.5-bikeBar)*0.0003*myT*15;if(tp)tp.textContent=bikeBar+' bar'+(Math.abs(pressEffect)>1?' ('+fmtD(pressEffect)+' vs 6.5bar)':'');}
+  // Full breakdown
+  document.getElementById('breakdown-list').innerHTML=factors.map(function(f){var cls=f.v>1?'pos':f.v<-1?'neg':'neu';return '<div class="bd-row"><span class="bd-name"><span class="bd-dot" style="background:'+f.col+'"></span>'+f.n+'</span><span class="bd-val '+cls+'">'+fmtD(f.v)+'</span></div>';}).join('');
+  var wins=factors.filter(function(f){return f.v>1;}),tot=wins.reduce(function(a,c){return a+c.v;},0);
+  document.getElementById('bar-wrap').innerHTML=tot<1?'':wins.map(function(f){return '<div class="bar-seg" style="width:'+(f.v/tot*100).toFixed(1)+'%;background:'+f.col+'"></div>';}).join('');
+  var top=factors.slice().sort(function(a,b){return b.v-a.v;})[0];
+  document.getElementById('hint').textContent=tot>2?'Grootste winst: '+top.n+' ('+fmtD(top.v)+')':'Pas instellingen aan.';
+  var adv=[];if(selectedSegment&&selectedSegment.average_grade>3&&wloss===0)adv.push('Klimsegment - gewichtsverlies heeft hier de meeste impact.');if(selectedSegment&&selectedSegment.average_grade<2&&aero>0.307)adv.push('Vlak segment - aeropositie levert de meeste winst.');if(draft===1.0)adv.push('Wiel zitten spaart 35% luchtweerstand.');if(!adv.length)adv.push('Experimenteer met de instellingen.');
+  document.getElementById('advice').innerHTML=adv.map(function(a){return '-> '+a;}).join('<br>');
+}
+
+//
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  var tabs=['segment','fiets','weer'];
+  var i=tabs.indexOf(name);if(i>=0)document.querySelectorAll('.tab')[i].classList.add('active');
+  var p=document.getElementById('panel-'+name);if(p)p.classList.add('active');
+}
+
+//
+['mytime-min','mytime-sec','wloss','bikeloss','powergain','fatigue'].forEach(function(id){
+  var el=document.getElementById(id);if(!el)return;
+  el.addEventListener('input',function(){
+    var out=document.getElementById(id+'-out');
+    if(out)out.textContent=id==='mytime-sec'?String(el.value).padStart(2,'0'):el.value;
+    if(id==='mytime-min'||id==='mytime-sec'){var m=document.getElementById('mytime-min').value,s=document.getElementById('mytime-sec').value;var sum=document.getElementById('acc-tijd-sum');if(sum)sum.textContent=m+'m '+String(s).padStart(2,'0')+'s';}
+    calcResult();
+  });
+});
+
+//
+(async function init(){
+  loadProfiel();loadBikes();renderClothing();
+  var h=new Date().getHours();
+  var ts=document.getElementById('time-slider');if(ts)ts.value=h;
+  var ats=document.getElementById('acc-time-slider');if(ats)ats.value=h;
+  var stl=document.getElementById('sel-time-lbl');if(stl)stl.textContent=String(h).padStart(2,'0')+':00';
+  var atl=document.getElementById('acc-time-lbl');if(atl)atl.textContent=String(h).padStart(2,'0')+':00';
+  initWeather();
+  var savedToken=sessionStorage.getItem('strava_token'),savedAthlete=sessionStorage.getItem('strava_athlete');
+  if(savedToken&&savedAthlete){accessToken=savedToken;try{athlete=JSON.parse(savedAthlete);}catch(e){}showLoggedIn();return;}
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('code')){var ok=await handleOAuth();if(ok){showLoggedIn();return;}}
+  // Show welcome screen
+  document.getElementById('welcome-screen').style.display='block';
+  // If no Client ID yet, show the input field directly
+  if(!STRAVA_CLIENT_ID){
+    document.getElementById('clientid-screen').style.display='block';
+  } else {
+    document.getElementById('client-id-input').value = STRAVA_CLIENT_ID;
+  }
+})();
+</script>
+</body>
+</html>

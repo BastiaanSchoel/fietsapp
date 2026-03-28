@@ -97,15 +97,23 @@ exports.handler = async (event) => {
     // Try to get KOM from leaderboard
     let komTime = null;
     try {
+      // Try overall leaderboard first (requires read_all scope)
       const lbRes = await fetch(
-        `https://www.strava.com/api/v3/segments/${id}/leaderboard?per_page=1`,
+        `https://www.strava.com/api/v3/segments/${id}/leaderboard?per_page=1&gender=M`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       if (lbRes.ok) {
         const lb = await lbRes.json();
         if (lb.entries && lb.entries.length > 0) {
-          komTime = lb.entries[0].elapsed_time; // KOM time in seconds
+          komTime = lb.entries[0].elapsed_time;
         }
+      }
+      // Fallback: try xoms field
+      if (!komTime && seg.xoms && seg.xoms.kom) {
+        // xoms.kom is a string like "1:23" - parse it
+        const parts = seg.xoms.kom.split(':').map(Number);
+        if (parts.length === 2) komTime = parts[0]*60 + parts[1];
+        else if (parts.length === 3) komTime = parts[0]*3600 + parts[1]*60 + parts[2];
       }
     } catch(e) {}
 

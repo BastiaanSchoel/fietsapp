@@ -1740,8 +1740,14 @@ async function selectSegment(id, itemEl, fromRide){
   document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
   var clickedItem = document.getElementById('seg-item-'+id);
   if(clickedItem) clickedItem.classList.add('active');
+  // Try getElementById first, fallback to nextSibling of clicked element
   var inlineEl = document.getElementById('seg-inline-'+id);
-  if(!inlineEl) return;
+  if(!inlineEl && itemEl) {
+    // Look for next sibling with class seg-inline-detail
+    var next = itemEl.nextElementSibling;
+    if(next && next.classList.contains('seg-inline-detail')) inlineEl = next;
+  }
+  if(!inlineEl) { console.warn('inlineEl not found for seg', id); return; }
   inlineEl.style.display='block';
   inlineEl.innerHTML='<div style="padding:12px;text-align:center;font-size:12px;color:var(--textmu);font-family:monospace;">Laden...</div>';
 

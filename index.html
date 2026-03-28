@@ -1094,6 +1094,8 @@ function showLoggedIn(){
   switchTab('segment');
   // Pre-load Strava bikes into garage
   loadStravaGear();
+  // Auto-load rides (default tab)
+  setTimeout(function(){ initRideDates(); loadRides(); }, 200);
 }
 function logout(){sessionStorage.clear();window.location.reload();}
 
@@ -1130,30 +1132,47 @@ function switchSegSource(src) {
   document.getElementById('src-rides').style.display = src==='rides' ? 'block' : 'none';
   document.getElementById('src-routes').style.display = src==='routes' ? 'block' : 'none';
   // Auto-load on first switch
-  if(src==='rides' && allRides.length===0) loadRides();
+  if(src==='rides' && allRides.length===0) { initRideDates(); loadRides(); }
   if(src==='routes' && allRoutes.length===0) loadRoutes();
 }
 
 // RITTEN
+function initRideDates() {
+  var fromEl = document.getElementById('rides-from');
+  var toEl = document.getElementById('rides-to');
+  if (!fromEl || !toEl) return;
+  if (fromEl.value && toEl.value) return; // already set
+  var now = new Date();
+  var oneYearAgo = new Date(now);
+  oneYearAgo.setFullYear(now.getFullYear() - 1);
+  toEl.value = now.toISOString().split('T')[0];
+  fromEl.value = oneYearAgo.toISOString().split('T')[0];
+}
+
 async function loadRides() {
   var el = document.getElementById('rides-list');
+  if (!el) return;
+  initRideDates();
   el.innerHTML = '<div class="loading-text">Laden...</div>';
   try {
-    // Get period from selector
-    var periodEl = document.getElementById('rides-period');
-    var months = periodEl ? parseInt(periodEl.value) : 12;
-    var after = Math.floor(Date.now()/1000) - months*30*24*3600;
-    // Fetch multiple pages to get 1 year
+    var fromEl = document.getElementById('rides-from');
+    var toEl = document.getElementById('rides-to');
+    var after = fromEl && fromEl.value ? Math.floor(new Date(fromEl.value).getTime()/1000) : Math.floor(Date.now()/1000) - 365*24*3600;
+    var before = toEl && toEl.value ? Math.floor(new Date(toEl.value).getTime()/1000) + 86400 : Math.floor(Date.now()/1000);
     var all = [];
-    for (var page = 1; page <= 5; page++) {
-      var res = await fetch('/api/strava-activities?token='+accessToken+'&page='+page+'&after='+after);
+    for (var page = 1; page <= 10; page++) {
+      var url = '/api/strava-activities?token='+accessToken+'&page='+page+'&after='+after+'&before='+before;
+      var res = await fetch(url);
       var batch = await res.json();
       if (!Array.isArray(batch) || batch.length === 0) break;
       all = all.concat(batch);
       if (batch.length < 30) break;
     }
     allRides = all;
-    if (!allRides.length) { el.innerHTML = '<div class="loading-text">Geen ritten gevonden in deze periode.</div>'; return; }
+    if (!allRides.length) {
+      el.innerHTML = '<div class="loading-text">Geen ritten gevonden in deze periode.</div>';
+      return;
+    }
     renderRidesList(allRides);
   } catch(e) {
     el.innerHTML = '<div class="loading-text">Fout: '+e.message+'</div>';

@@ -764,6 +764,28 @@ function loadProfiel(){
 
 //
 function getActiveBike(){return bikes.length?bikes[Math.min(activebikeIdx,bikes.length-1)]:null;}
+function addStravaGear(gearId, gearName) {
+  // Add bike from Strava with default values, user can edit later
+  var bike = {
+    name: gearName,
+    type: 'road',
+    weight: 8.5,
+    cda: 0.324,
+    tire: 0.0032,
+    tirePressure: 6.5,
+    gear_id: gearId
+  };
+  bikes.push(bike);
+  activebikeIdx = bikes.length - 1;
+  try{localStorage.setItem('bikes_data',JSON.stringify(bikes));localStorage.setItem('active_bike',activebikeIdx);}catch(e){}
+  renderGarage();
+  calcResult();
+  // Remove the notification
+  var notes = document.querySelectorAll('[style*="FFF3CD"]');
+  notes.forEach(function(n){ if(n.textContent.indexOf(gearName)!==-1) n.remove(); });
+  alert(gearName + ' toegevoegd aan je garage! Pas het gewicht en CdA aan via Fiets/Kleding.');
+}
+
 function renderGarage(){
   var html=!bikes.length?'<div class="loading-text">Nog geen fietsen.</div>':bikes.map(function(b,i){
     var a=i===activebikeIdx?' active':'';
@@ -1101,8 +1123,8 @@ function filterRides() {
 function renderRidesList(rides) {
   var el = document.getElementById('rides-list');
   if (!rides.length) { el.innerHTML = '<div class="loading-text">Geen ritten gevonden.</div>'; return; }
-  // Only show cycling activities
-  var cycling = rides.filter(function(r){ return r.type === 'Ride' || r.type === 'VirtualRide' || r.type === 'GravelRide'; });
+  // Only show real cycling activities (exclude virtual/indoor)
+  var cycling = rides.filter(function(r){ return r.type === 'Ride' || r.type === 'GravelRide' || r.type === 'MountainBikeRide' || r.type === 'EBikeRide'; });
   if (!cycling.length) { el.innerHTML = '<div class="loading-text">Geen fietsritten gevonden.</div>'; return; }
   el.innerHTML = cycling.map(function(r) {
     var date = new Date(r.start_date).toLocaleDateString('nl-NL', {day:'numeric', month:'short', year:'numeric'});
@@ -1153,14 +1175,28 @@ async function selectRide(id, itemEl) {
     var act = await res.json();
     if (act.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+act.error+'</div>'; return; }
 
-    // Auto-select bike if in garage
-    if (act.gear_id && bikes.length) {
+    // Auto-select or add bike from Strava activity
+    if (act.gear_id) {
       var matchIdx = -1;
+      // Match by stored gear_id
       bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === act.gear_id) matchIdx = i; });
+      // Match by name
       if (matchIdx === -1 && act.gear_name) {
         bikes.forEach(function(b,i){ if(b.name && b.name.toLowerCase().indexOf(act.gear_name.toLowerCase())!==-1) matchIdx = i; });
       }
-      if (matchIdx !== -1) { activebikeIdx = matchIdx; try{localStorage.setItem('active_bike',matchIdx);}catch(e){} renderGarage(); }
+      if (matchIdx !== -1) {
+        activebikeIdx = matchIdx;
+        try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
+        renderGarage();
+      } else if (act.gear_name) {
+        // Bike not in garage yet - show notification in inline
+        var note = document.createElement('div');
+        note.style.cssText = 'background:#FFF3CD;border-radius:var(--rs);padding:8px 10px;font-size:11px;color:#7A5000;margin-bottom:8px;';
+        note.innerHTML = 'Fiets uit Strava: <strong>' + act.gear_name + '</strong> — staat niet in je garage. ' +
+          '<button onclick="addStravaGear('' + act.gear_id + '','' + act.gear_name.replace(/'/g,'') + '')" ' +
+          'style="background:var(--green);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;margin-left:4px;">Toevoegen</button>';
+        inlineEl.insertBefore(note, inlineEl.firstChild);
+      }
     }
 
     var segs = act.segments || [];
@@ -1229,17 +1265,71 @@ function renderRoutesList(routes) {
   el.innerHTML = routes.map(function(r) {
     var dist = ((r.distance||0)/1000).toFixed(1)+' km';
     var elev = Math.round(r.elevation_gain||0)+' m';
-    return '<div class="segment-item">'+
+    return '<div class="segment-item" id="route-item-'+r.id+'" onclick="selectRoute('+r.id+',this)">'+
       '<div style="flex:1;">'+
         '<div class="seg-name">'+r.name+'</div>'+
         '<div class="seg-meta">'+dist+' - '+elev+' hoogte</div>'+
-        (r.description ? '<div class="seg-meta">'+r.description.substring(0,60)+'</div>' : '')+
       '</div>'+
-      '<div style="font-size:10px;color:var(--textmu);flex-shrink:0;">'+
-        '<a href="https://www.strava.com/routes/'+r.id+'" target="_blank" style="color:var(--green);text-decoration:none;">Bekijk &#8599;</a>'+
-      '</div>'+
-    '</div>';
+      '<div style="font-size:11px;color:var(--textmu);">&#9660;</div>'+
+    '</div>'+
+    '<div class="seg-inline-detail" id="route-inline-'+r.id+'" style="display:none;"></div>';
   }).join('');
+}
+
+var currentOpenRouteId = null;
+
+async function selectRoute(id, itemEl) {
+  if (currentOpenRouteId === id) {
+    var prev = document.getElementById('route-inline-'+id);
+    if(prev){ prev.style.display='none'; prev.innerHTML=''; }
+    document.querySelectorAll('#routes-list .segment-item').forEach(function(e){e.classList.remove('active');});
+    currentOpenRouteId = null;
+    return;
+  }
+  if (currentOpenRouteId !== null) {
+    var prevD = document.getElementById('route-inline-'+currentOpenRouteId);
+    if(prevD){ prevD.style.display='none'; prevD.innerHTML=''; }
+    var prevI = document.getElementById('route-item-'+currentOpenRouteId);
+    if(prevI) prevI.classList.remove('active');
+  }
+  currentOpenRouteId = id;
+  document.querySelectorAll('#routes-list .segment-item').forEach(function(e){e.classList.remove('active');});
+  var clickedItem = document.getElementById('route-item-'+id);
+  if(clickedItem) clickedItem.classList.add('active');
+  var inlineEl = document.getElementById('route-inline-'+id);
+  if(!inlineEl) return;
+  inlineEl.style.display = 'block';
+  inlineEl.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--textmu);font-family:monospace;">Segmenten laden...</div>';
+
+  try {
+    var res = await fetch('/api/strava-route-detail?token='+accessToken+'&id='+id);
+    var route = await res.json();
+    if (route.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+route.error+'</div>'; return; }
+
+    var segs = route.segments || [];
+    if (!segs.length) {
+      inlineEl.innerHTML = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;padding:10px;font-size:12px;color:var(--textmu);">Geen gesternde segmenten op deze route gevonden.</div>';
+      return;
+    }
+
+    var html = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
+    html += '<div style="padding:7px 10px;background:var(--gl);border-bottom:0.5px solid var(--border);font-size:11px;font-weight:500;color:var(--gdp);">'+segs.length+' segmenten op deze route</div>';
+    html += '<div style="padding:4px 0;">';
+    segs.forEach(function(seg) {
+      var pr = seg.athlete_pr_effort ? fmt(seg.athlete_pr_effort.elapsed_time) : 'Geen PR';
+      var gc = Math.abs(seg.average_grade||0)>3 ? 'var(--coral)' : 'var(--green)';
+      html += '<div class="segment-item" id="seg-item-'+seg.id+'" onclick="selectSegment('+seg.id+',this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;">';
+      html += '<div style="flex:1;"><div class="seg-name">'+seg.name+'</div>';
+      html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - PR: '+pr+'</div></div>';
+      html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+(seg.average_grade||0).toFixed(1)+'%</div></div>';
+      html += '</div>';
+      html += '<div class="seg-inline-detail" id="seg-inline-'+seg.id+'" style="display:none;"></div>';
+    });
+    html += '</div></div>';
+    inlineEl.innerHTML = html;
+  } catch(e) {
+    inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
+  }
 }
 function renderSegmentList(segs){
   if(!segs.length){document.getElementById('segment-list').innerHTML='<div class="loading-text">Geen segmenten. Ster segmenten in Strava.</div>';return;}
@@ -1409,21 +1499,15 @@ async function selectSegment(id, itemEl){
     ilBaseSec = prSec || 1200;
 
     // Auto-select bike from garage if it matches the PR bike
-    if (seg.pr_bike && seg.pr_bike.gear_id && bikes.length) {
-      // Try to match by gear_id stored in bike, or by name
+    if (seg.pr_bike && seg.pr_bike.gear_id) {
       var matchIdx = -1;
-      bikes.forEach(function(b, i) {
-        if (b.gear_id && b.gear_id === seg.pr_bike.gear_id) matchIdx = i;
-      });
-      // If no match by ID, try by name
+      bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === seg.pr_bike.gear_id) matchIdx = i; });
       if (matchIdx === -1 && seg.pr_bike.gear_name) {
-        bikes.forEach(function(b, i) {
-          if (b.name && b.name.toLowerCase().indexOf(seg.pr_bike.gear_name.toLowerCase()) !== -1) matchIdx = i;
-        });
+        bikes.forEach(function(b,i){ if(b.name && b.name.toLowerCase().indexOf(seg.pr_bike.gear_name.toLowerCase())!==-1) matchIdx = i; });
       }
       if (matchIdx !== -1) {
         activebikeIdx = matchIdx;
-        try { localStorage.setItem('active_bike', matchIdx); } catch(e) {}
+        try{localStorage.setItem('active_bike',matchIdx);}catch(e){}
       }
     }
     var hadPr = seg.pr && seg.pr.pr_elapsed_time;

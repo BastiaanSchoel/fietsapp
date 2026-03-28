@@ -1134,15 +1134,20 @@ function filterRides() {
 
 function renderRidesList(rides) {
   var el = document.getElementById('rides-list');
-  if (!rides.length) { el.innerHTML = '<div class="loading-text">Geen ritten gevonden.</div>'; return; }
+  if (!rides || !rides.length) { el.innerHTML = '<div class="loading-text">Geen ritten gevonden.</div>'; return; }
   // Only show real cycling activities (exclude virtual/indoor)
   var cycling = rides.filter(function(r){ return r.type === 'Ride' || r.type === 'GravelRide' || r.type === 'MountainBikeRide' || r.type === 'EBikeRide'; });
-  if (!cycling.length) { el.innerHTML = '<div class="loading-text">Geen fietsritten gevonden.</div>'; return; }
+  if (!cycling.length) { el.innerHTML = '<div class="loading-text">Geen buitenritten gevonden in deze periode. Probeer een langere periode.</div>'; return; }
   el.innerHTML = cycling.map(function(r) {
     var date = new Date(r.start_date).toLocaleDateString('nl-NL', {day:'numeric', month:'short', year:'numeric'});
     var dist = ((r.distance||0)/1000).toFixed(1)+' km';
     var dur = fmt(r.moving_time||0);
-    var gear = r.gear_name ? r.gear_name : 'Onbekende fiets';
+    var gear = r.gear_name || '';
+    if (!gear && r.gear_id) {
+      bikes.forEach(function(b){ if(b.gear_id === r.gear_id) gear = b.name; });
+    }
+    if (!gear && r.gear_id) gear = r.gear_id;
+    if (!gear) gear = 'Fiets onbekend';
     return '<div class="segment-item" id="ride-item-'+r.id+'" onclick="selectRide('+r.id+',this)">'+
       '<div style="flex:1;">'+
         '<div class="seg-name">'+r.name+'</div>'+
@@ -1190,9 +1195,9 @@ async function selectRide(id, itemEl) {
     // Auto-select or add bike from Strava activity
     if (act.gear_id) {
       var matchIdx = -1;
-      // Match by stored gear_id
+      // Match by stored gear_id (most reliable)
       bikes.forEach(function(b,i){ if(b.gear_id && b.gear_id === act.gear_id) matchIdx = i; });
-      // Match by name
+      // Match by name if gear_name available
       if (matchIdx === -1 && act.gear_name) {
         bikes.forEach(function(b,i){ if(b.name && b.name.toLowerCase().indexOf(act.gear_name.toLowerCase())!==-1) matchIdx = i; });
       }
@@ -1220,7 +1225,12 @@ async function selectRide(id, itemEl) {
       return;
     }
 
-    var gearLabel = act.gear_name ? act.gear_name : 'Onbekende fiets';
+    var gearLabel = act.gear_name || '';
+    if (!gearLabel && act.gear_id) {
+      bikes.forEach(function(b){ if(b.gear_id === act.gear_id) gearLabel = b.name; });
+    }
+    if (!gearLabel && act.gear_id) gearLabel = act.gear_id;
+    if (!gearLabel) gearLabel = 'Fiets onbekend';
     var html = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
     html += '<div style="padding:8px 10px;background:var(--gl);border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">';
     html += '<div style="font-size:11px;font-weight:500;color:var(--gdp);">'+segs.length+' segmenten</div>';
@@ -1322,13 +1332,18 @@ async function selectRoute(id, itemEl) {
     if (route.error) { inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+route.error+'</div>'; return; }
 
     var segs = route.segments || [];
+    var isFallback = route.is_starred_fallback || false;
     if (!segs.length) {
-      inlineEl.innerHTML = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;padding:10px;font-size:12px;color:var(--textmu);">Geen gesternde segmenten op deze route gevonden.</div>';
+      inlineEl.innerHTML = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;padding:10px;font-size:12px;color:var(--textmu);">Geen segmenten gevonden op deze route. Voeg segmenten toe via de Stersegmenten tab.</div>';
       return;
     }
 
+    var headerLabel = isFallback
+      ? segs.length+' stersegmenten (route-segmenten niet beschikbaar)'
+      : segs.length+' segmenten op deze route';
+
     var html = '<div style="background:var(--surface);border:0.5px solid var(--green);border-radius:var(--rs);margin:4px 0;overflow:hidden;">';
-    html += '<div style="padding:7px 10px;background:var(--gl);border-bottom:0.5px solid var(--border);font-size:11px;font-weight:500;color:var(--gdp);">'+segs.length+' segmenten op deze route</div>';
+    html += '<div style="padding:7px 10px;background:var(--gl);border-bottom:0.5px solid var(--border);font-size:11px;font-weight:500;color:var(--gdp);">'+headerLabel+'</div>';
     html += '<div style="padding:4px 0;">';
     segs.forEach(function(seg) {
       var pr = seg.athlete_pr_effort ? fmt(seg.athlete_pr_effort.elapsed_time) : 'Geen PR';

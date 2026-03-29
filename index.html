@@ -368,7 +368,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
     <div class="tabs">
       <button class="tab active" onclick="switchTab('segment')">Strava</button>
       <button class="tab" onclick="switchTab('weer')">Weer</button>
-      <button class="tab" onclick="switchTab('profiel')">Profiel</button>
+      
     </div>
 
     <!-- WEER -->
@@ -428,92 +428,6 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
     </div>
 
     <!-- PROFIEL -->
-    <div id="panel-profiel" class="panel">
-      <div class="card">
-        <div class="card-title">Profiel</div>
-        <div id="pf-strava-row2" style="display:none;margin-bottom:0.75rem;">
-          <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--bg);border-radius:var(--rs);">
-            <img id="pf-avatar2" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-            <div id="pf-naam2" style="font-size:12px;font-weight:500;flex:1;"></div>
-            <div style="font-size:10px;color:var(--gd);">Strava</div>
-          </div>
-        </div>
-        <div class="pf-grid">
-          <div>
-            <div class="pf-field-label">Gewicht (kg)</div>
-            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()"><span class="pf-unit">kg</span></div>
-            <div class="pf-src" id="pf-weight-src"></div>
-          </div>
-          <div>
-            <div class="pf-field-label">Lengte (cm)</div>
-            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()"><span class="pf-unit">cm</span></div>
-          </div>
-          <div>
-            <div class="pf-field-label">FTP (W)</div>
-            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()"><span class="pf-unit">W</span></div>
-            <div class="pf-src" id="pf-ftp-src"></div>
-          </div>
-          <div>
-            <div class="pf-field-label">Leeftijd</div>
-            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()"><span class="pf-unit">jr</span></div>
-          </div>
-        </div>
-        <div class="pf-metrics">
-          <div class="pf-metric"><div class="pf-metric-l">W/kg</div><div class="pf-metric-v" id="pf-wkg">--</div></div>
-          <div class="pf-metric"><div class="pf-metric-l">BMI</div><div class="pf-metric-v" id="pf-bmi">--</div></div>
-          <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
-          <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
-        </div>
-        <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
-      </div>
-    </div>
-
-    <!-- FIETS/KLEDING -->
-    <div id="panel-fiets" class="panel">
-      <div class="card">
-        <div class="card-title">Mijn garage</div>
-        <div id="garage-list"></div>
-        <button class="add-bike-btn" onclick="toggleBikeForm()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Fiets toevoegen
-        </button>
-        <div class="bike-form" id="bike-form">
-          <div class="form-row">
-            <div><div class="form-lbl">Naam</div><input type="text" class="form-input" id="bf-name" placeholder="bijv. Canyon Ultimate"></div>
-            <div><div class="form-lbl">Type</div><select class="form-select" id="bf-type"><option value="road">Racefiets</option><option value="tt">Tijdritfiets</option><option value="gravel">Gravel</option><option value="mtb">MTB</option><option value="climb">Klimfiets</option></select></div>
-          </div>
-          <div class="form-row">
-            <div><div class="form-lbl">Gewicht (kg)</div><input type="number" class="form-input" id="bf-weight" value="8.5" step="0.1" min="4" max="20"></div>
-            <div><div class="form-lbl">CdA</div><select class="form-select" id="bf-cda"><option value="0.200">TT (0.200)</option><option value="0.230">Aerobars (0.230)</option><option value="0.307" selected>Drops (0.307)</option><option value="0.324">Hoods (0.324)</option><option value="0.350">Gravel (0.350)</option><option value="0.408">Tops (0.408)</option></select></div>
-          </div>
-          <div class="form-row">
-            <div><div class="form-lbl">Bandtype</div><select class="form-select" id="bf-tire"><option value="0.0025">Race tubeless</option><option value="0.0032" selected>GP5000</option><option value="0.0040">Standaard</option><option value="0.0055">Training</option><option value="0.0080">Gravel</option><option value="0.0120">MTB</option></select></div>
-            <div><div class="form-lbl">Spanning (bar)</div><input type="number" class="form-input" id="bf-pressure" value="6.5" step="0.5" min="1" max="9"></div>
-          </div>
-          <div class="form-row">
-          <div><div class="form-lbl">Strava Gear ID (optioneel)</div><input type="text" class="form-input" id="bf-gearid" placeholder="bijv. b1234567" style="font-size:11px;"></div>
-          <div style="display:flex;align-items:flex-end;"><button class="save-bike-btn" onclick="saveBike()">Opslaan</button></div>
-        </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Kleding & uitrusting</div>
-        <div style="font-size:11px;color:var(--textmu);margin-bottom:0.75rem;">Klik aan wat je draagt</div>
-        <div style="font-size:10px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace;">Bovenkant</div>
-        <div class="clothing-grid" id="clothing-top" style="margin-bottom:0.75rem;"></div>
-        <div style="font-size:10px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace;">Onderkant & schoenen</div>
-        <div class="clothing-grid" id="clothing-bottom" style="margin-bottom:0.75rem;"></div>
-        <div style="font-size:10px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-family:'DM Mono',monospace;">Extra's</div>
-        <div class="clothing-grid" id="clothing-extra"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:0.5px solid var(--border);font-size:11px;">
-          <span style="color:var(--textmu);">Gewicht</span><span style="font-weight:600;font-family:'DM Mono',monospace;" id="clothing-weight">--</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:11px;">
-          <span style="color:var(--textmu);">CdA-effect</span><span style="font-weight:600;font-family:'DM Mono',monospace;" id="clothing-cda">--</span>
-        </div>
-      </div>
-    </div>
-
     <!-- SEGMENT -->
     <div id="panel-segment" class="panel active">
       <div id="login-prompt" style="text-align:center;padding:2rem 1rem;border:1.5px dashed var(--borderm);border-radius:var(--r);margin-bottom:0.875rem;">
@@ -658,18 +572,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
           </div>
         </div>
 
-        <!-- Wat als -->
-        <div class="accord">
-          <button class="accord-btn" onclick="toggleAccord('acc-watals',this)">
-            <span>Wat als?</span>
-            <span class="accord-arrow">&#9660;</span>
-          </button>
-          <div class="accord-body" id="acc-watals">
-            <div class="srow"><div class="srow-lbl">Gewicht (+/-)</div><input type="range" id="wloss" min="-5" max="5" step="0.5" value="0"><div class="srow-val"><span id="wloss-out">0.0</span> kg</div></div>
-            <div class="srow"><div class="srow-lbl">Extra vermogen</div><input type="range" id="powergain" min="0" max="80" step="5" value="0"><div class="srow-val">+<span id="powergain-out">0</span> W</div></div>
-            <div class="srow" style="margin-bottom:0;"><div class="srow-lbl">Fiets lichter</div><input type="range" id="bikeloss" min="0" max="5" step="0.5" value="0"><div class="srow-val">-<span id="bikeloss-out">0.0</span> kg</div></div>
-          </div>
-        </div>
+
 
         <!-- Positie & groep -->
         
@@ -2235,7 +2138,7 @@ function calcResult(){
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
-  var tabs=['segment','weer','profiel'];
+  var tabs=['segment','weer'];
   var i=tabs.indexOf(name);if(i>=0)document.querySelectorAll('.tab')[i].classList.add('active');
   if(name==='profiel'){
     // Show profiel panel inline

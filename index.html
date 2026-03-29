@@ -2080,7 +2080,7 @@ function calcResult(){
   var simKomDiffEl=document.getElementById('il-kom-diff');
   if(simKomDiffEl && ilKomSec) {
     var simVsKom = ilKomSec - newT;
-    simKomDiffEl.textContent = simVsKom > 1 ? fmt(simVsKom)+' verschil' : simVsKom < -1 ? 'Sneller dan KOM!' : 'Gelijk aan KOM';
+    var simVsKomDiff = newT - ilKomSec; simKomDiffEl.textContent = simVsKomDiff > 1 ? '+'+fmt(simVsKomDiff)+' vs KOM' : simVsKomDiff < -1 ? '-'+fmt(Math.abs(simVsKomDiff))+' vs KOM' : '= KOM';
     simKomDiffEl.style.color = simVsKom < -1 ? 'var(--green)' : 'var(--textmu)';
   }
   var ilDiff=document.getElementById('il-diff');

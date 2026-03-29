@@ -35,10 +35,12 @@ exports.handler = async (event) => {
         athlete_pr_effort: s.athlete_pr_effort || null,
         kom_time: (function(xoms) {
           if (!xoms || !xoms.kom) return null;
-          var parts = xoms.kom.split(':').map(Number);
+          const k = xoms.kom.trim();
+          if (k.endsWith('s')) return parseInt(k) || null;
+          const parts = k.split(':').map(Number);
           if (parts.length === 2) return parts[0]*60 + parts[1];
           if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
-          return parseInt(xoms.kom) || null;
+          return parseInt(k) || null;
         })(s.xoms)
       }));
     } else {
@@ -62,10 +64,12 @@ exports.handler = async (event) => {
             athlete_pr_effort: s.athlete_pr_effort || null,
             kom_time: (function(xoms) {
           if (!xoms || !xoms.kom) return null;
-          var parts = xoms.kom.split(':').map(Number);
+          const k = xoms.kom.trim();
+          if (k.endsWith('s')) return parseInt(k) || null;
+          const parts = k.split(':').map(Number);
           if (parts.length === 2) return parts[0]*60 + parts[1];
           if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
-          return parseInt(xoms.kom) || null;
+          return parseInt(k) || null;
         })(s.xoms)
           }));
         }

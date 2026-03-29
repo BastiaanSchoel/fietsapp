@@ -69,6 +69,10 @@ exports.handler = async (event) => {
           if (pr && prEffort.start_date) {
             pr.pr_date = prEffort.start_date;
           }
+          // Set average watts from effort
+          if (pr && prEffort.average_watts) {
+            pr.average_watts = Math.round(prEffort.average_watts);
+          }
 
           // Get activity details for bike
           if (prEffort.activity && prEffort.activity.id) {

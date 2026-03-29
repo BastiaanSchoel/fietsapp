@@ -97,24 +97,43 @@ exports.handler = async (event) => {
     // Try to get KOM from leaderboard
     let komTime = null;
     try {
-      // Try overall leaderboard first (requires read_all scope)
+      // Try overall leaderboard
       const lbRes = await fetch(
-        `https://www.strava.com/api/v3/segments/${id}/leaderboard?per_page=1&gender=M`,
+        `https://www.strava.com/api/v3/segments/${id}/leaderboard?per_page=1`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      if (lbRes.ok) {
-        const lb = await lbRes.json();
-        if (lb.entries && lb.entries.length > 0) {
-          komTime = lb.entries[0].elapsed_time;
-        }
+      const lbText = await lbRes.text();
+      let lbData = {};
+      try { lbData = JSON.parse(lbText); } catch(e) {}
+      
+      if (lbData.entries && lbData.entries.length > 0) {
+        komTime = lbData.entries[0].elapsed_time;
       }
-      // Fallback: try xoms field
+      
+      // Fallback: try segment efforts - get fastest ever
+      if (!komTime) {
+        try {
+          const efRes = await fetch(
+            `https://www.strava.com/api/v3/segment_efforts?segment_id=${id}&per_page=1`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          if (efRes.ok) {
+            const efforts = await efRes.json();
+            // This only returns YOUR efforts, not KOM
+            // Use xoms as final fallback
+          }
+        } catch(e) {}
+      }
+
+      // Fallback: try xoms field from segment
       if (!komTime && seg.xoms && seg.xoms.kom) {
-        // xoms.kom is a string like "1:23" - parse it
         const parts = seg.xoms.kom.split(':').map(Number);
         if (parts.length === 2) komTime = parts[0]*60 + parts[1];
         else if (parts.length === 3) komTime = parts[0]*3600 + parts[1]*60 + parts[2];
       }
+      
+      // Store leaderboard debug info
+      const lbDebug = { status: lbRes.status, hasEntries: !!(lbData.entries), entryCount: lbData.entries ? lbData.entries.length : 0 };
     } catch(e) {}
 
     return {
@@ -132,7 +151,8 @@ exports.handler = async (event) => {
         end_latlng: seg.end_latlng || null,
         pr,
         pr_bike: prBike,
-        kom_time: komTime, // KOM elapsed time in seconds from leaderboard
+        kom_time: komTime,
+        lb_debug: lbDebug,
         points: enriched
       })
     };

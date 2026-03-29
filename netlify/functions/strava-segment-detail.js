@@ -80,9 +80,18 @@ exports.handler = async (event) => {
     // Get KOM time from xoms (no extra scope needed)
     let komTime = null;
     if (seg.xoms && seg.xoms.kom) {
-      const parts = seg.xoms.kom.split(':').map(Number);
-      if (parts.length === 2) komTime = parts[0]*60 + parts[1];
-      else if (parts.length === 3) komTime = parts[0]*3600 + parts[1]*60 + parts[2];
+      const kom = seg.xoms.kom.trim();
+      if (kom.endsWith('s') && !kom.includes(':')) {
+        // Format: "39s"
+        komTime = parseInt(kom) || null;
+      } else if (kom.includes(':')) {
+        // Format: "1:23" or "1:23:45"
+        const parts = kom.split(':').map(Number);
+        if (parts.length === 2) komTime = parts[0]*60 + parts[1];
+        else if (parts.length === 3) komTime = parts[0]*3600 + parts[1]*60 + parts[2];
+      } else {
+        komTime = parseInt(kom) || null;
+      }
     }
 
     return {

@@ -50,27 +50,37 @@ exports.handler = async (event) => {
       };
     }
 
-    // Get bike used for PR
+    // Get PR effort to find date and bike
     let prBike = null;
     try {
+      // Fetch up to 200 efforts, find the fastest (= PR)
       const effortsRes = await fetch(
-        `https://www.strava.com/api/v3/segments/${id}/all_efforts?per_page=1`,
+        `https://www.strava.com/api/v3/segments/${id}/all_efforts?per_page=200`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       if (effortsRes.ok) {
         const efforts = await effortsRes.json();
-        if (efforts.length > 0 && efforts[0].activity_id) {
-          const actRes = await fetch(
-            `https://www.strava.com/api/v3/activities/${efforts[0].activity_id}`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          );
-          if (actRes.ok) {
-            const act = await actRes.json();
-            if (act.gear_id) {
-              prBike = { gear_id: act.gear_id, gear_name: act.gear ? act.gear.name : null };
-            }
-            if (pr && !pr.pr_date && act.start_date) {
-              pr.pr_date = act.start_date;
+        if (efforts.length > 0) {
+          // Find effort with minimum elapsed_time = PR effort
+          const prEffort = efforts.reduce((best, e) =>
+            e.elapsed_time < best.elapsed_time ? e : best, efforts[0]);
+
+          // Set PR date from the effort start date
+          if (pr && prEffort.start_date) {
+            pr.pr_date = prEffort.start_date;
+          }
+
+          // Get activity details for bike
+          if (prEffort.activity && prEffort.activity.id) {
+            const actRes = await fetch(
+              `https://www.strava.com/api/v3/activities/${prEffort.activity.id}`,
+              { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            if (actRes.ok) {
+              const act = await actRes.json();
+              if (act.gear_id) {
+                prBike = { gear_id: act.gear_id, gear_name: act.gear ? act.gear.name : null };
+              }
             }
           }
         }

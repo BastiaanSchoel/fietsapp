@@ -2,10 +2,7 @@ exports.handler = async (event) => {
   const { token, id } = event.queryStringParameters || {};
 
   if (!token || !id) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Token of segment ID ontbreekt' })
-    };
+    return { statusCode: 400, body: JSON.stringify({ error: 'Token of segment ID ontbreekt' }) };
   }
 
   try {
@@ -18,17 +15,13 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: seg.message || 'Segment niet gevonden' }) };
     }
 
-    // Get segment streams (GPS + altitude data)
+    // Get segment streams
     const streamRes = await fetch(
       `https://www.strava.com/api/v3/segments/${id}/streams?keys=latlng,altitude,distance&key_by_type=true`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
     const streams = await streamRes.json();
-    if (!streamRes.ok) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Kon segmentdata niet ophalen' }) };
-    }
 
-    // Build point array
     const latlng = streams.latlng?.data || [];
     const altitude = streams.altitude?.data || [];
     const distance = streams.distance?.data || [];
@@ -57,7 +50,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Get PR effort to find the bike used
+    // Get bike used for PR
     let prBike = null;
     try {
       const effortsRes = await fetch(
@@ -66,10 +59,6 @@ exports.handler = async (event) => {
       );
       if (effortsRes.ok) {
         const efforts = await effortsRes.json();
-        if (efforts.length > 0 && efforts[0].activity && efforts[0].activity.gear_id) {
-          prBike = { gear_id: efforts[0].activity.gear_id };
-        }
-        // Also try to get activity detail for full gear info
         if (efforts.length > 0 && efforts[0].activity_id) {
           const actRes = await fetch(
             `https://www.strava.com/api/v3/activities/${efforts[0].activity_id}`,
@@ -78,63 +67,23 @@ exports.handler = async (event) => {
           if (actRes.ok) {
             const act = await actRes.json();
             if (act.gear_id) {
-              prBike = {
-                gear_id: act.gear_id,
-                gear_name: act.gear ? act.gear.name : null
-              };
+              prBike = { gear_id: act.gear_id, gear_name: act.gear ? act.gear.name : null };
             }
-            // Use activity start_date if pr_date is missing
             if (pr && !pr.pr_date && act.start_date) {
               pr.pr_date = act.start_date;
             }
           }
         }
       }
-    } catch(e) {
-      // bike lookup failed, continue without
-    }
-
-    // Try to get KOM from leaderboard
-    let komTime = null;
-    try {
-      // Try overall leaderboard
-      const lbRes = await fetch(
-        `https://www.strava.com/api/v3/segments/${id}/leaderboard?per_page=1`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      const lbText = await lbRes.text();
-      let lbData = {};
-      try { lbData = JSON.parse(lbText); } catch(e) {}
-      
-      if (lbData.entries && lbData.entries.length > 0) {
-        komTime = lbData.entries[0].elapsed_time;
-      }
-      
-      // Fallback: try segment efforts - get fastest ever
-      if (!komTime) {
-        try {
-          const efRes = await fetch(
-            `https://www.strava.com/api/v3/segment_efforts?segment_id=${id}&per_page=1`,
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          );
-          if (efRes.ok) {
-            const efforts = await efRes.json();
-            // This only returns YOUR efforts, not KOM
-            // Use xoms as final fallback
-          }
-        } catch(e) {}
-      }
-
-      // Fallback: try xoms field from segment
-      if (!komTime && seg.xoms && seg.xoms.kom) {
-        const parts = seg.xoms.kom.split(':').map(Number);
-        if (parts.length === 2) komTime = parts[0]*60 + parts[1];
-        else if (parts.length === 3) komTime = parts[0]*3600 + parts[1]*60 + parts[2];
-      }
-      
-      // Store leaderboard debug info
-      const lbDebug = { status: lbRes.status, hasEntries: !!(lbData.entries), entryCount: lbData.entries ? lbData.entries.length : 0 };
     } catch(e) {}
+
+    // Get KOM time from xoms (no extra scope needed)
+    let komTime = null;
+    if (seg.xoms && seg.xoms.kom) {
+      const parts = seg.xoms.kom.split(':').map(Number);
+      if (parts.length === 2) komTime = parts[0]*60 + parts[1];
+      else if (parts.length === 3) komTime = parts[0]*3600 + parts[1]*60 + parts[2];
+    }
 
     return {
       statusCode: 200,
@@ -152,7 +101,7 @@ exports.handler = async (event) => {
         pr,
         pr_bike: prBike,
         kom_time: komTime,
-        lb_debug: lbDebug,
+        xoms: seg.xoms || null,
         points: enriched
       })
     };

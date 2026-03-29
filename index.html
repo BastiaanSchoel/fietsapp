@@ -367,8 +367,8 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
   <div id="app-screen" style="display:none;">
     <div class="tabs">
       <button class="tab active" onclick="switchTab('segment')">Strava</button>
-      <button class="tab" onclick="switchTab('fiets')">Fiets/Kleding</button>
       <button class="tab" onclick="switchTab('weer')">Weer</button>
+      <button class="tab" onclick="switchTab('profiel')">Profiel</button>
     </div>
 
     <!-- WEER -->
@@ -424,6 +424,47 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
           <div class="moment-cell"><div class="moment-lbl">CdA-effect</div><div class="moment-val" id="mt-cda">--</div><div class="moment-eff" id="mt-cda-eff"></div></div>
           <div class="moment-cell"><div class="moment-lbl">Netto effect</div><div class="moment-val" id="mt-netto">--</div><div class="moment-eff" id="mt-netto-eff"></div></div>
         </div>
+      </div>
+    </div>
+
+    <!-- PROFIEL -->
+    <div id="panel-profiel" class="panel">
+      <div class="card">
+        <div class="card-title">Profiel</div>
+        <div id="pf-strava-row2" style="display:none;margin-bottom:0.75rem;">
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--bg);border-radius:var(--rs);">
+            <img id="pf-avatar2" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <div id="pf-naam2" style="font-size:12px;font-weight:500;flex:1;"></div>
+            <div style="font-size:10px;color:var(--gd);">Strava</div>
+          </div>
+        </div>
+        <div class="pf-grid">
+          <div>
+            <div class="pf-field-label">Gewicht (kg)</div>
+            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()"><span class="pf-unit">kg</span></div>
+            <div class="pf-src" id="pf-weight-src"></div>
+          </div>
+          <div>
+            <div class="pf-field-label">Lengte (cm)</div>
+            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()"><span class="pf-unit">cm</span></div>
+          </div>
+          <div>
+            <div class="pf-field-label">FTP (W)</div>
+            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()"><span class="pf-unit">W</span></div>
+            <div class="pf-src" id="pf-ftp-src"></div>
+          </div>
+          <div>
+            <div class="pf-field-label">Leeftijd</div>
+            <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()"><span class="pf-unit">jr</span></div>
+          </div>
+        </div>
+        <div class="pf-metrics">
+          <div class="pf-metric"><div class="pf-metric-l">W/kg</div><div class="pf-metric-v" id="pf-wkg">--</div></div>
+          <div class="pf-metric"><div class="pf-metric-l">BMI</div><div class="pf-metric-v" id="pf-bmi">--</div></div>
+          <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
+          <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
+        </div>
+        <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
       </div>
     </div>
 
@@ -631,16 +672,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
         </div>
 
         <!-- Positie & groep -->
-        <div class="accord">
-          <button class="accord-btn" onclick="toggleAccord('acc-positie',this)">
-            <span>Positie & groep</span>
-            <span class="accord-arrow">&#9660;</span>
-          </button>
-          <div class="accord-body" id="acc-positie">
-            <div class="sel-row"><label>Rijpositie</label><select id="aero" onchange="calcResult()"><option value="0.408">Tops (0.408)</option><option value="0.324" selected>Hoods (0.324)</option><option value="0.307">Drops (0.307)</option><option value="0.230">Aerobars (0.230)</option><option value="0.200">TT (0.200)</option></select></div>
-            <div class="sel-row" style="margin-bottom:0;"><label>Groepsrit</label><select id="draft" onchange="calcResult()"><option value="1.00" selected>Solo</option><option value="0.85">Klein groepje</option><option value="0.72">Groot peloton</option><option value="0.65">Wiel zitten</option></select></div>
-          </div>
-        </div>
+        
 
         <!-- Vermoeidheid -->
         <div class="accord">
@@ -1549,37 +1581,10 @@ function buildInlineDetail(prSec) {
 
 
 
-  // Fiets
-  var fietsBody = '<div id="il-garage"></div>';
-  fietsBody += '<div style="display:flex;gap:5px;margin-top:5px;">';
-  fietsBody += '<div style="flex:1;background:var(--bg);border-radius:var(--rs);padding:5px 7px;font-size:10px;"><div style="color:var(--textmu);margin-bottom:1px;">Band</div><div style="font-weight:600;font-family:monospace;" id="il-tire">--</div></div>';
-  fietsBody += '<div style="flex:1;background:var(--bg);border-radius:var(--rs);padding:5px 7px;font-size:10px;"><div style="color:var(--textmu);margin-bottom:1px;">Spanning</div><div style="font-weight:600;font-family:monospace;" id="il-bar">--</div></div>';
-  fietsBody += '</div>';
-  html += buildAccRow('il-acc-fiets', 'Fiets', fietsBody);
 
-  // Wat als - gewicht (open by default)
-  var watalsBody = '';
-  watalsBody += '<div class="srow"><div class="srow-lbl">Gewicht (+/-)</div><input type="range" id="wloss" min="-5" max="5" step="0.5" value="0"><div class="srow-val"><span id="wloss-out">0.0</span> kg</div></div>';
-  watalsBody += '<div style="background:var(--bg);border-radius:var(--rs);padding:7px 10px;font-size:11px;">';
-  watalsBody += '<div style="color:var(--textmu);margin-bottom:2px;">Totaal gewicht</div>';
-  watalsBody += '<div style="font-weight:600;font-family:monospace;" id="il-total-weight">--</div>';
-  watalsBody += '</div>';
-  var watalsHtml = buildAccRow('il-acc-watals', 'Wat als?', watalsBody);
-  watalsHtml = watalsHtml.replace('class="accord-body" id="il-acc-watals"', 'class="accord-body open" id="il-acc-watals"');
-  watalsHtml = watalsHtml.replace('class="accord-btn" data-target="il-acc-watals"', 'class="accord-btn open" data-target="il-acc-watals"');
-  html += watalsHtml;
 
-  // Kleding (closed by default)
-  var kledingBody = '';
-  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Bovenkant</div>';
-  kledingBody += '<div class="clothing-grid" id="il-cloth-top" style="margin-bottom:7px;"></div>';
-  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Onderkant</div>';
-  kledingBody += '<div class="clothing-grid" id="il-cloth-bottom" style="margin-bottom:7px;"></div>';
-  kledingBody += '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;font-family:monospace;">Extras</div>';
-  kledingBody += '<div class="clothing-grid" id="il-cloth-extra"></div>';
-  html += buildAccRow('il-acc-kleding', 'Kleding', kledingBody);
 
-  // Weer (closed by default)
+  // Weer (open by default)
   var weerBody = '';
   weerBody += '<div style="font-size:11px;color:var(--textmu);margin-bottom:8px;" id="il-weer-loc">Geen weerdata.</div>';
   weerBody += '<div id="il-days-scroll" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:8px;scrollbar-width:none;"></div>';
@@ -1587,10 +1592,22 @@ function buildInlineDetail(prSec) {
   weerBody += '<input type="range" id="il-time-slider" min="0" max="23" step="1" value="' + curH + '" style="width:100%;margin-bottom:3px;">';
   weerBody += '<div style="text-align:center;font-size:12px;font-weight:500;font-family:monospace;margin-bottom:8px;" id="il-time-lbl">' + hStr + '</div>';
   weerBody += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;" id="il-weer-cells"></div>';
-  html += buildAccRow('il-acc-weer', 'Weer en tijdstip', weerBody);
+  var weerHtml = buildAccRow('il-acc-weer', 'Weer en tijdstip', weerBody);
+  weerHtml = weerHtml.replace('class="accord-body" id="il-acc-weer"', 'class="accord-body open" id="il-acc-weer"');
+  weerHtml = weerHtml.replace('class="accord-btn" data-target="il-acc-weer"', 'class="accord-btn open" data-target="il-acc-weer"');
+  html += weerHtml;
 
-
-
+  // Wat als (open by default)
+  var watalsBody = '';
+  watalsBody += '<div class="srow"><div class="srow-lbl">Gewicht (+/-)</div><input type="range" id="wloss" min="-10" max="10" step="0.5" value="0"><div class="srow-val"><span id="wloss-out">0.0</span> kg</div></div>';
+  watalsBody += '<div style="background:var(--bg);border-radius:var(--rs);padding:7px 10px;font-size:11px;margin-top:6px;">';
+  watalsBody += '<div style="color:var(--textmu);margin-bottom:2px;">Totaal gewicht</div>';
+  watalsBody += '<div style="font-weight:600;font-family:monospace;" id="il-total-weight">--</div>';
+  watalsBody += '</div>';
+  var watalsHtml = buildAccRow('il-acc-watals', 'Wat als?', watalsBody);
+  watalsHtml = watalsHtml.replace('class="accord-body" id="il-acc-watals"', 'class="accord-body open" id="il-acc-watals"');
+  watalsHtml = watalsHtml.replace('class="accord-btn" data-target="il-acc-watals"', 'class="accord-btn open" data-target="il-acc-watals"');
+  html += watalsHtml;
 
 
   html += '</div>';
@@ -2103,7 +2120,7 @@ function calcResult(){
   var wloss=parseFloat(document.getElementById('wloss').value)||0;
   var bikeloss=parseFloat(document.getElementById('bikeloss').value)||0;
   var powergain=parseFloat(document.getElementById('powergain').value)||0;
-  var aero=parseFloat(document.getElementById('aero').value)||0.324;
+  var aeroEl=document.getElementById('aero'); var aero=aeroEl?parseFloat(aeroEl.value):0.324;
   var draft=parseFloat(document.getElementById('draft').value)||1.0;
   var fi=parseInt(document.getElementById('fatigue').value)-1;
   var chain=parseFloat(document.getElementById('chain').value)||0.985;
@@ -2118,7 +2135,7 @@ function calcResult(){
   var rho=rhoStd,tempForCalc=baseTemp,ftpEffect=1;
   var weatherWindMs=0, weatherWindDir=0;
   if(weatherData){
-    var _tsEl=document.getElementById('il-time-slider')||document.getElementById('acc-time-slider');
+    var _tsEl=document.getElementById('il-time-slider')||document.getElementById('acc-time-slider')||document.getElementById('time-slider');
     var h=_tsEl?parseInt(_tsEl.value):new Date().getHours();
     var s=selectedDay*24+h;
     tempForCalc=weatherData.hourly.temperature_2m[s]||15;
@@ -2135,7 +2152,7 @@ function calcResult(){
   var P0=ftp,P=(P0+powergain)*(1-fatigueLoss[fi])*ftpEffect;
   var finalCrr=bikeCrr+(6.5-bikeBar)*0.0003;
   var newCda=aero+clothing.cda;
-  var baseM=weight+bikeW,newM=(weight-wloss)+(bikeW-bikeloss);
+  var baseM=weight+bikeW,newM=(weight+wloss)+bikeW; // wloss: negative=lighter, positive=heavier
   var baseSim=simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1.0,rhoStd,0.985,0.995);
   var scale=myT/baseSim;
   // Add totalWindMs = weather wind (direction-aware) + manual wind
@@ -2181,10 +2198,9 @@ function calcResult(){
   // Factors
   function c(fn){return myT-fn()*scale;}
   var factors=[
-    {n:'Gewicht rijder',col:'#1D9E75',v:c(function(){return simSeg(gpxPoints,P0,(weight-wloss)+bikeW,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
+    {n:'Gewicht aanpassing',col:'#1D9E75',v:c(function(){return simSeg(gpxPoints,P0,(weight+wloss)+bikeW,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Gewicht fiets',col:'#5DCAA5',v:c(function(){return simSeg(gpxPoints,P0,weight+(bikeW-bikeloss),bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Extra vermogen',col:'#0F6E56',v:c(function(){return simSeg(gpxPoints,P0+powergain,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
-    {n:'Rijpositie',col:'#9FE1CB',v:c(function(){return simSeg(gpxPoints,P0,baseM,aero,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Kleding',col:'#378ADD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda+clothing.cda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Wind (richtingseffect)',col:'#D85A30',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,totalWindMs,1,rhoStd,0.985,0.995);})},
     {n:'Luchtdichtheid',col:'#EF9F27',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1,rho,0.985,0.995);})},
@@ -2219,9 +2235,20 @@ function calcResult(){
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
-  var tabs=['segment','fiets','weer'];
+  var tabs=['segment','weer','profiel'];
   var i=tabs.indexOf(name);if(i>=0)document.querySelectorAll('.tab')[i].classList.add('active');
-  var p=document.getElementById('panel-'+name);if(p)p.classList.add('active');
+  if(name==='profiel'){
+    // Show profiel panel inline
+    var p=document.getElementById('panel-profiel');
+    if(p)p.classList.add('active');
+    else{
+      // Profiel panel doesn't exist yet - close the dropdown and show inline
+      var pp=document.getElementById('profiel-panel');
+      if(pp){pp.classList.add('open');}
+    }
+  } else {
+    var p=document.getElementById('panel-'+name);if(p)p.classList.add('active');
+  }
 }
 
 //
@@ -2229,7 +2256,9 @@ function switchTab(name){
   var el=document.getElementById(id);if(!el)return;
   el.addEventListener('input',function(){
     var out=document.getElementById(id+'-out');
-    if(out)out.textContent=id==='mytime-sec'?String(el.value).padStart(2,'0'):el.value;
+    var val = parseFloat(el.value);
+    if(id==='wloss') out.textContent = (val>0?'+':'')+val.toFixed(1);
+    else if(out) out.textContent=id==='mytime-sec'?String(el.value).padStart(2,'0'):el.value;
     if(id==='mytime-min'||id==='mytime-sec'){var m=document.getElementById('mytime-min').value,s=document.getElementById('mytime-sec').value;var sum=document.getElementById('acc-tijd-sum');if(sum)sum.textContent=m+'m '+String(s).padStart(2,'0')+'s';}
     calcResult();
   });

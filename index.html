@@ -1751,12 +1751,16 @@ async function selectSegment(id, itemEl, fromRide){
     var prStr = hadPr ? fmt(seg.pr.pr_elapsed_time) : (komSec ? 'KOM: '+fmt(komSec) : (prSec ? 'Schatting: '+fmt(prSec) : 'Geen PR'));
     var prDate = '';
     if (seg.pr && seg.pr.pr_date) {
-      var prDateObj = new Date(seg.pr.pr_date);
-      // Short date for compact display
-      prDate = prDateObj.toLocaleDateString('nl-NL',{day:'numeric', month:'short', year:'2-digit'});
-      // Add time on new line
-      var prTime = prDateObj.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-      if(prTime && prTime !== '00:00') prDate += ' ' + prTime;
+      try {
+        var prDateObj = new Date(seg.pr.pr_date);
+        if (!isNaN(prDateObj.getTime())) {
+          prDate = prDateObj.toLocaleDateString('nl-NL',{day:'numeric', month:'short', year:'numeric'});
+          var prTimeStr = prDateObj.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+          if(prTimeStr && prTimeStr !== '00:00') prDate += ' ' + prTimeStr;
+        } else {
+          prDate = String(seg.pr.pr_date).split('T')[0];
+        }
+      } catch(e) { prDate = ''; }
     }
 
     inlineEl.innerHTML = buildInlineDetail(prSec);
@@ -2025,13 +2029,13 @@ function calcResult(){
   var bikeCrr=bike?parseFloat(bike.tire):0.0032;
   var bikeBar=bike?parseFloat(bike.tirePressure):6.5;
   var clothing=getClothingTotals();
-  var wloss=parseFloat(document.getElementById('wloss').value)||0;
-  var bikeloss=parseFloat(document.getElementById('bikeloss').value)||0;
-  var powergain=parseFloat(document.getElementById('powergain').value)||0;
+  var wlossEl=document.getElementById('wloss'); var wloss=wlossEl?parseFloat(wlossEl.value)||0:0;
+  var bikeloss=0; // removed from UI
+  var powergain=0; // removed from UI
   var aeroEl=document.getElementById('aero'); var aero=aeroEl?parseFloat(aeroEl.value):0.324;
-  var draft=parseFloat(document.getElementById('draft').value)||1.0;
-  var fi=parseInt(document.getElementById('fatigue').value)-1;
-  var chain=parseFloat(document.getElementById('chain').value)||0.985;
+  var draftEl=document.getElementById('draft'); var draft=draftEl?parseFloat(draftEl.value)||1.0:1.0;
+  var fatigueEl=document.getElementById('fatigue'); var fi=fatigueEl?parseInt(fatigueEl.value)-1:0;
+  var chainEl=document.getElementById('chain'); var chain=chainEl?parseFloat(chainEl.value)||0.985:0.985;
   // Base conditions: use PR weather if available, else standard
   var rhoStd = 1.225;
   var baseTemp = 15, baseWindMs = 0, baseWindDir = 0;

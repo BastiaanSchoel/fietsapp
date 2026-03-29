@@ -1958,8 +1958,8 @@ function buildInlineDetail(prSec) {
   html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
   html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gereden</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-ridden">--</div>';
+  html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--green);margin-top:2px;" id="il-ridden-watts"></div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-ridden-date"></div>';
-  html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-ridden-watts"></div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="il-ridden-bike"></div>';
   html += '</div>';
   // PR
@@ -1978,6 +1978,7 @@ function buildInlineDetail(prSec) {
   html += '<div style="background:var(--gl);border-radius:var(--rs);padding:6px 7px;">';
   html += '<div style="font-size:9px;color:var(--gd);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Simulatie</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--green);" id="il-time">--</div>';
+  html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--green);margin-top:2px;" id="il-sim-watts"></div>';
   html += '<div style="font-size:9px;color:var(--gd);margin-top:1px;" id="il-diff">--</div>';
   html += '</div>';
   html += '</div>';
@@ -2048,6 +2049,8 @@ var currentOpenSegId = null;
 var ilBaseSec = 0;
 var ilKomSec = 0;
 var ilRiddenSec = 0; // Time from ride segment effort
+var ilRiddenWatts = 0;
+var ilRiddenBike = '';
 var stravaGearCache = {};
 var prWeatherData = null; // Historical weather at time of PR
 
@@ -2330,7 +2333,13 @@ async function selectSegment(id, itemEl, fromRide){
       // KOM
       var komEl = document.getElementById('il-kom-time');
       var komDiffEl = document.getElementById('il-kom-diff');
+      var komWattsEl = document.getElementById('il-kom-watts');
       if(komEl) komEl.textContent = ilKomSec ? fmt(ilKomSec) : '--';
+      // Estimate KOM watts: scale PR watts by (PR time / KOM time)^3 (power-speed relationship)
+      if(komWattsEl && ilKomSec && _seg && _seg.pr && _seg.pr.average_watts && ilBaseSec) {
+        var komWattsEst = Math.round(_seg.pr.average_watts * Math.pow(ilBaseSec / ilKomSec, 3));
+        komWattsEl.textContent = '~'+komWattsEst+'W';
+      }
       if(komDiffEl) {
         if(ilKomSec && _prSec) {
           var komDiff = _prSec - ilKomSec;
@@ -2606,6 +2615,8 @@ function calcResult(){
   // Update inline result
   var ilTime=document.getElementById('il-time');if(ilTime)ilTime.textContent=fmt(newT);
   var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u gem.';
+  var simWattsEl=document.getElementById('il-sim-watts');
+  if(simWattsEl) simWattsEl.textContent = Math.round(P)+'W';
   // Update KOM diff vs simulation
   var simKomDiffEl=document.getElementById('il-kom-diff');
   if(simKomDiffEl && ilKomSec) {

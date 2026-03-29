@@ -14,6 +14,7 @@ exports.handler = async (event) => {
       id: e.segment.id,
       name: e.segment.name,
       elapsed_time: e.elapsed_time,
+      average_watts: e.average_watts || null,
       distance: e.segment.distance,
       average_grade: e.segment.average_grade,
       maximum_grade: e.segment.maximum_grade,

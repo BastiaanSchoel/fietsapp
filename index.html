@@ -529,17 +529,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
           </button>
           <div class="accord-body" id="acc-fiets">
             <div id="acc-garage-list"></div>
-            <div style="display:flex;gap:5px;margin-top:5px;">
-              <div style="flex:1;background:var(--surface);border-radius:var(--rs);padding:6px 8px;font-size:10px;">
-                <div style="color:var(--textmu);margin-bottom:1px;">Band</div>
-                <div style="font-weight:600;font-family:'DM Mono',monospace;" id="acc-tire">--</div>
-              </div>
-              <div style="flex:1;background:var(--surface);border-radius:var(--rs);padding:6px 8px;font-size:10px;">
-                <div style="color:var(--textmu);margin-bottom:1px;">Spanning</div>
-                <div style="font-weight:600;font-family:'DM Mono',monospace;" id="acc-pressure">--</div>
-              </div>
-            </div>
-          </div>
+            
         </div>
 
         <!-- Kleding -->
@@ -790,8 +780,7 @@ function renderAccGarage(){
     el.appendChild(div);
   });
   var bike=getActiveBike();
-  var tireEl=document.getElementById('acc-tire');
-  var presEl=document.getElementById('acc-pressure');
+
   if(bike){
     var tireNames={'0.0025':'Race tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};
     if(tireEl)tireEl.textContent=(tireNames[String(bike.tire)]||'Onbekend')+' ('+bike.tire+')';
@@ -1271,7 +1260,9 @@ async function selectRide(id, itemEl) {
       else if (seg.pr_rank === 2) prBadge = '<span style="font-size:9px;background:#C0C0C0;color:#444;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">2e</span>';
       else if (seg.pr_rank === 3) prBadge = '<span style="font-size:9px;background:#CD7F32;color:#fff;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">3e</span>';
       var gc = Math.abs(seg.average_grade)>3 ? 'var(--coral)' : 'var(--green)';
-      html += '<div class="segment-item ride-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+seg.elapsed_time+'" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
+      var segWatts = seg.average_watts ? Math.round(seg.average_watts) : 0;
+      var segBikeName = act.gear_name || (act.gear_id ? act.gear_id : '');
+      html += '<div class="segment-item ride-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+seg.elapsed_time+'" data-watts="'+segWatts+'" data-bike="'+segBikeName+'" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
       html += '<div style="flex:1;"><div class="seg-name">'+seg.name+prBadge+'</div>';
       html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - Gereden: '+fmt(seg.elapsed_time)+'</div></div>';
       html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+seg.average_grade.toFixed(1)+'%</div></div>';
@@ -1453,6 +1444,8 @@ function buildInlineDetail(prSec) {
   html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gereden</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-ridden">--</div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-ridden-date"></div>';
+  html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-ridden-watts"></div>';
+  html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="il-ridden-bike"></div>';
   html += '</div>';
   // PR
   html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
@@ -1640,6 +1633,8 @@ function selectSegmentFromRideEl(el) {
   var id = el.getAttribute('data-seg-id');
   var ridden = parseInt(el.getAttribute('data-ridden')) || 0;
   ilRiddenSec = ridden;
+  ilRiddenWatts = parseInt(el.getAttribute('data-watts')) || 0;
+  ilRiddenBike = el.getAttribute('data-bike') || '';
   selectSegment(id, el, true);
 }
 
@@ -1795,6 +1790,24 @@ async function selectSegment(id, itemEl, fromRide){
       if(riddenDateEl) riddenDateEl.textContent = _riddenSec ? 'deze rit' : (_prDate ? 'PR datum' : '');
       // Gray out gereden if same as PR (no separate ride data)
       if(riddenEl && !_riddenSec) riddenEl.style.color = 'var(--textmu)';
+      // PR watts and bike
+      var prWattsEl = document.getElementById('il-pr-watts');
+      var prBikeEl = document.getElementById('il-pr-bike');
+      if(prWattsEl) prWattsEl.textContent = (_seg && _seg.pr && _seg.pr.average_watts) ? _seg.pr.average_watts+'W' : '';
+      if(prBikeEl && _seg && _seg.pr_bike) {
+        var bname = '';
+        if(_seg.pr_bike.gear_name) { bname = _seg.pr_bike.gear_name; }
+        else if(_seg.pr_bike.gear_id) {
+          bikes.forEach(function(b){ if(b.gear_id===_seg.pr_bike.gear_id) bname=b.name; });
+          if(!bname) bname = _seg.pr_bike.gear_id;
+        }
+        prBikeEl.textContent = bname;
+      }
+      // Ridden watts and bike (from ride context)
+      var riddenWattsEl = document.getElementById('il-ridden-watts');
+      var riddenBikeEl = document.getElementById('il-ridden-bike');
+      if(riddenWattsEl) riddenWattsEl.textContent = _riddenWatts ? _riddenWatts+'W' : '';
+      if(riddenBikeEl) riddenBikeEl.textContent = _riddenBike || '';
 
       // KOM
       var komEl = document.getElementById('il-kom-time');
@@ -1879,8 +1892,7 @@ function renderIlGarage(){
   }).join('');
   var bike=getActiveBike();
   var tireNames={'0.0025':'Tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};
-  var te=document.getElementById('il-tire');var be=document.getElementById('il-bar');
-  if(bike){if(te)te.textContent=tireNames[String(bike.tire)]||'Onbekend';if(be)be.textContent=bike.tirePressure+' bar';}
+
   var fs=document.getElementById('il-fiets-sum');if(fs&&bike)fs.textContent=bike.name;
 }
 
@@ -2118,7 +2130,7 @@ function calcResult(){
     {n:'Luchtdichtheid',col:'#EF9F27',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1,rho,0.985,0.995);})},
     {n:'FTP-effect weer',col:'#BA7517',v:c(function(){return simSeg(gpxPoints,P0*ftpEffect,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Groepsrit',col:'#7F77DD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,draft,rhoStd,0.985,0.995);})},
-    {n:'Banden',col:'#AFA9EC',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,finalCrr,0,1,rhoStd,0.985,0.995);})},
+
     {n:'Vermoeidheid',col:'#F09595',v:c(function(){return simSeg(gpxPoints,P0*(1-fatigueLoss[fi]),baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})}
   ];
   // Factors top 4
@@ -2131,8 +2143,7 @@ function calcResult(){
   if(weatherData){var _ts2=document.getElementById('il-time-slider')||document.getElementById('acc-time-slider');var h2=_ts2?parseInt(_ts2.value):new Date().getHours(),s2=selectedDay*24+h2,t2=weatherData.hourly.temperature_2m[s2]||15,w2=weatherData.hourly.wind_speed_10m[s2]||0,r2=weatherData.hourly.precipitation[s2]||0,fe=calcFtpEff(t2),ce2=calcCdaEff(t2,weatherData.hourly.surface_pressure[s2]||1013,weatherData.hourly.relative_humidity_2m[s2]||60);weerTxt=String(h2).padStart(2,'0')+':00 - '+Math.round(t2)+'C, wind '+Math.round(w2)+' km/u'+(r2>0?', '+r2.toFixed(1)+'mm regen':'')+' | FTP: '+(fe>=0?'+':'')+fe+'%, CdA: '+(ce2>=0?'+':'')+ce2+'%';}
   var mw=document.getElementById('mini-weer');if(mw)mw.textContent=weerTxt;
   var iw=document.getElementById('il-weer');if(iw)iw.textContent=weerTxt;
-  // Band info in accordion
-  if(bike){var tireNames={'0.0025':'Race tubeless','0.0032':'GP5000','0.004':'Standaard','0.0040':'Standaard','0.0055':'Training','0.008':'Gravel','0.0080':'Gravel','0.012':'MTB','0.0120':'MTB'};var tn=document.getElementById('acc-tire');var tp=document.getElementById('acc-pressure');if(tn)tn.textContent=(tireNames[String(bike.tire)]||'Onbekend');var pressEffect=(6.5-bikeBar)*0.0003*myT*15;if(tp)tp.textContent=bikeBar+' bar'+(Math.abs(pressEffect)>1?' ('+fmtD(pressEffect)+' vs 6.5bar)':'');}
+
   // Full breakdown
   document.getElementById('breakdown-list').innerHTML=factors.map(function(f){var cls=f.v>1?'pos':f.v<-1?'neg':'neu';return '<div class="bd-row"><span class="bd-name"><span class="bd-dot" style="background:'+f.col+'"></span>'+f.n+'</span><span class="bd-val '+cls+'">'+fmtD(f.v)+'</span></div>';}).join('');
   var wins=factors.filter(function(f){return f.v>1;}),tot=wins.reduce(function(a,c){return a+c.v;},0);

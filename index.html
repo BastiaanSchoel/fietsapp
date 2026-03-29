@@ -532,21 +532,540 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
             
         </div>
 
-        <!-- Kleding -->
-        <div class="accord">
-          <button class="accord-btn" onclick="toggleAccord('acc-kleding',this)">
-            <span>Kleding <span class="accord-summary" id="acc-kleding-sum"></span></span>
-            <span class="accord-arrow">&#9660;</span>
-          </button>
-          <div class="accord-body" id="acc-kleding">
-            <div style="font-size:10px;color:var(--textmu);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;">Bovenkant</div>
-            <div class="clothing-grid" id="acc-clothing-top" style="margin-bottom:8px;"></div>
-            <div style="font-size:10px;color:var(--textmu);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;">Onderkant</div>
-            <div class="clothing-grid" id="acc-clothing-bottom" style="margin-bottom:8px;"></div>
-            <div style="font-size:10px;color:var(--textmu);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-family:'DM Mono',monospace;">Extra's</div>
-            <div class="clothing-grid" id="acc-clothing-extra"></div>
+>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watts-up</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#1D9E75;--gl:#E1F5EE;--gd:#0F6E56;--gdp:#085041;
+  --coral:#D85A30;--amber:#EF9F27;--blue:#378ADD;--purple:#7F77DD;--bluel:#85B7EB;
+  --bg:#F7F6F2;--surface:#fff;
+  --border:rgba(0,0,0,0.08);--borderm:rgba(0,0,0,0.14);
+  --text:#1A1A18;--textm:#5A5A54;--textmu:#9A9A90;
+  --r:12px;--rs:8px;--strava:#FC4C02;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--gdp);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:7px;color:white;font-size:15px;font-weight:600;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:0.1em;text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:6px;}
+.strava-btn{display:flex;align-items:center;gap:5px;background:var(--strava);color:white;border:none;border-radius:6px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.profiel-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);color:white;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;}
+.athlete-bar{display:flex;align-items:center;gap:7px;color:white;}
+.athlete-avatar{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);object-fit:cover;}
+.athlete-name{font-size:12px;font-weight:500;}
+.logout-btn{background:rgba(255,255,255,0.15);border:none;color:white;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;font-family:inherit;margin-left:3px;}
+
+/* Profiel panel */
+.profiel-panel{display:none;position:fixed;top:52px;right:0;width:300px;max-height:calc(100vh - 52px);overflow-y:auto;background:var(--surface);border-left:0.5px solid var(--borderm);border-bottom:0.5px solid var(--borderm);z-index:200;padding:1rem;box-shadow:-4px 4px 16px rgba(0,0,0,0.1);}
+.profiel-panel.open{display:block;}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:0.75rem;}
+.pf-field-label{font-size:10px;color:var(--textmu);margin-bottom:3px;}
+.pf-input-wrap{position:relative;}
+.pf-input{width:100%;padding:7px 26px 7px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;}
+.pf-input:focus{border-color:var(--green);}
+.pf-unit{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--textmu);pointer-events:none;}
+.pf-src{font-size:10px;color:var(--gd);margin-top:2px;}
+.pf-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:0.75rem;}
+.pf-metric{background:var(--bg);border-radius:var(--rs);padding:7px 9px;}
+.pf-metric-l{font-size:10px;color:var(--textmu);margin-bottom:1px;}
+.pf-metric-v{font-size:14px;font-weight:500;}
+.pf-advice{background:var(--gl);border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--gdp);line-height:1.5;}
+
+/* Main */
+.main{max-width:960px;margin:0 auto;padding:1.25rem 1.25rem 4rem;}
+.tabs{display:flex;gap:3px;margin-bottom:1.25rem;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:4px;}
+.tab{flex:1;padding:8px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:var(--rs);cursor:pointer;color:var(--textm);border:none;background:none;font-family:inherit;transition:all 0.12s;}
+.tab:hover{background:var(--bg);}
+.tab.active{background:var(--green);color:white;}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-bottom:0.875rem;}
+.card-title{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);margin-bottom:0.875rem;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:space-between;}
+.badge{font-size:9px;background:var(--gl);color:var(--gd);padding:2px 5px;border-radius:3px;font-weight:600;}
+
+/* Welcome */
+.welcome-wrap{max-width:380px;margin:3rem auto;}
+.welcome-hero{text-align:center;margin-bottom:1.5rem;}
+.welcome-logo-box{width:64px;height:64px;background:var(--gdp);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.welcome-title{font-size:22px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;}
+.welcome-sub{font-size:13px;color:var(--textmu);line-height:1.6;}
+.welcome-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.welcome-features{padding:1.1rem;border-bottom:0.5px solid var(--border);}
+.welcome-feature{display:flex;align-items:center;gap:9px;font-size:12px;margin-bottom:10px;}
+.welcome-feature:last-child{margin-bottom:0;}
+.welcome-feat-icon{width:26px;height:26px;border-radius:7px;background:var(--gl);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.welcome-feat-title{font-weight:500;color:var(--text);}
+.welcome-feat-sub{font-size:11px;color:var(--textmu);}
+.welcome-action{padding:1.1rem;}
+.connect-btn{width:100%;padding:12px;background:var(--strava);color:white;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;}
+.skip-btn{width:100%;padding:7px;background:none;border:none;font-size:11px;color:var(--textmu);cursor:pointer;font-family:inherit;text-decoration:underline;margin-top:6px;}
+.clientid-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-top:0.75rem;}
+.clientid-input{width:100%;padding:8px 11px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:14px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;margin-bottom:7px;}
+.clientid-submit{width:100%;padding:9px;background:var(--strava);color:white;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;}
+
+/* Weather */
+.loc-bar{display:flex;align-items:center;gap:7px;padding:6px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:0.75rem;}
+.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.loc-name{font-size:12px;font-weight:500;flex:1;}
+.loc-time{font-size:10px;color:var(--textmu);font-family:'DM Mono',monospace;}
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:0.75rem;}
+.live-cell{background:var(--bg);border-radius:var(--rs);padding:7px 9px;}
+.live-lbl{font-size:10px;color:var(--textmu);margin-bottom:1px;}
+.live-val{font-size:14px;font-weight:500;}
+.live-sub{font-size:10px;color:var(--textmu);margin-top:1px;}
+.ftp-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:var(--rs);margin-bottom:0.75rem;font-size:11px;}
+.ftp-bar.neg{background:#FFF3CD;color:#7A5000;}
+.ftp-bar.pos{background:var(--gl);color:var(--gdp);}
+.ftp-bar.neu{background:var(--bg);color:var(--textmu);}
+.days-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;margin-bottom:0.75rem;scrollbar-width:none;}
+.days-scroll::-webkit-scrollbar{display:none;}
+.day-card{flex-shrink:0;width:60px;background:var(--bg);border-radius:8px;padding:7px 5px;text-align:center;cursor:pointer;border:1.5px solid transparent;transition:all 0.12s;}
+.day-card:hover{border-color:var(--borderm);}
+.day-card.active{background:var(--surface);border-color:var(--green);}
+.day-name{font-size:10px;color:var(--textmu);margin-bottom:2px;font-weight:500;}
+.day-card.active .day-name{color:var(--gd);font-weight:600;}
+.day-icon{font-size:15px;margin-bottom:2px;height:20px;display:flex;align-items:center;justify-content:center;}
+.day-temp{font-size:11px;font-weight:500;}
+.day-wind{font-size:9px;color:var(--textmu);margin-top:1px;font-family:'DM Mono',monospace;}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--textmu);}
+.leg-line{width:12px;height:2px;border-radius:1px;}
+.time-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--textmu);margin-bottom:4px;font-family:'DM Mono',monospace;}
+.sel-time{text-align:center;font-size:12px;font-weight:500;margin-top:5px;font-family:'DM Mono',monospace;}
+.moment-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:0.75rem;}
+.moment-cell{background:var(--bg);border-radius:var(--rs);padding:7px 9px;}
+.moment-lbl{font-size:10px;color:var(--textmu);margin-bottom:1px;}
+.moment-val{font-size:13px;font-weight:500;}
+.moment-eff{font-size:10px;margin-top:1px;font-family:'DM Mono',monospace;}
+.moment-eff.neg{color:var(--coral);}
+.moment-eff.pos{color:var(--green);}
+
+/* Garage */
+.bike-card{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--bg);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:all 0.12s;}
+.bike-card:hover{border-color:var(--borderm);}
+.bike-card.active{border-color:var(--green);background:var(--gl);}
+.bike-icon{width:28px;height:28px;border-radius:7px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bike-name{font-size:12px;font-weight:500;}
+.bike-sub{font-size:10px;color:var(--textmu);}
+.active-badge{margin-left:auto;font-size:10px;background:var(--gl);color:var(--gd);padding:2px 7px;border-radius:9px;font-weight:500;flex-shrink:0;}
+.add-bike-btn{width:100%;padding:8px;background:none;border:0.5px dashed var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--textmu);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:3px;}
+.add-bike-btn:hover{border-color:var(--green);color:var(--green);}
+.bike-form{background:var(--bg);border-radius:var(--rs);padding:11px;margin-top:7px;display:none;}
+.bike-form.open{display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
+.form-lbl{font-size:10px;color:var(--textmu);margin-bottom:3px;}
+.form-input{width:100%;padding:6px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:12px;font-family:'DM Mono',monospace;color:var(--text);background:var(--surface);outline:none;}
+.form-select{width:100%;padding:6px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:12px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;}
+.save-bike-btn{background:var(--green);color:white;border:none;border-radius:var(--rs);padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+
+/* Clothing */
+.clothing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.clothing-btn{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 5px;font-size:11px;color:var(--textmu);cursor:pointer;font-family:inherit;text-align:center;transition:all 0.12s;line-height:1.3;}
+.clothing-btn:hover{border-color:var(--borderm);}
+.clothing-btn.on{border-color:var(--green);background:var(--gl);color:var(--gd);font-weight:500;}
+.clothing-weight{font-size:9px;color:var(--textmu);margin-top:1px;}
+.clothing-btn.on .clothing-weight{color:var(--gd);}
+
+/* Segment */
+.search-wrap{display:flex;gap:6px;margin-bottom:0.875rem;}
+.search-input{flex:1;padding:8px 11px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;}
+.search-input:focus{border-color:var(--green);}
+.search-btn{background:var(--green);color:white;border:none;border-radius:var(--rs);padding:8px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+.segment-list{display:flex;flex-direction:column;gap:5px;}
+.segment-item{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--bg);border-radius:var(--rs);cursor:pointer;border:0.5px solid transparent;transition:all 0.12s;}
+.segment-item:hover,.segment-item.active{border-color:var(--green);background:var(--gl);}
+.seg-name{font-size:13px;font-weight:500;}
+.seg-meta{font-size:10px;color:var(--textmu);margin-top:1px;font-family:'DM Mono',monospace;}
+.seg-right{text-align:right;flex-shrink:0;}
+.seg-grade{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;}
+.seg-grade.climb{color:var(--coral);}
+.seg-grade.flat{color:var(--green);}
+.seg-pr-small{font-size:10px;color:var(--textmu);margin-top:1px;}
+.loading-text{font-size:12px;color:var(--textmu);text-align:center;padding:1.25rem;font-family:'DM Mono',monospace;}
+.seg-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:0.875rem;}
+.stat{background:var(--bg);border-radius:var(--rs);padding:8px 10px;}
+.stat-lbl{font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;}
+.stat-val{font-size:14px;font-weight:600;}
+.profile-wrap{width:100%;height:75px;border-radius:var(--rs);overflow:hidden;margin-bottom:0.875rem;}
+canvas.seg-canvas{width:100%;height:100%;display:block;}
+
+/* Accordion */
+.accord{border-top:0.5px solid var(--border);}
+.accord-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 0;background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text);}
+.accord-summary{font-size:10px;color:var(--textmu);font-weight:400;margin-left:6px;}
+.accord-arrow{font-size:10px;color:var(--textmu);transition:transform 0.18s;}
+.accord-btn.open .accord-arrow{transform:rotate(180deg);}
+.accord-body{display:none;padding-bottom:10px;}
+.accord-body.open{display:block;}
+
+/* Mini result */
+.mini-result{background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:0.875rem;}
+.mini-time{font-size:32px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-0.03em;line-height:1;}
+.mini-diff{font-size:15px;font-weight:600;font-family:'DM Mono',monospace;margin-top:3px;}
+.mini-diff.win{color:var(--green);}
+.mini-diff.loss{color:var(--coral);}
+.mini-diff.neu{color:var(--textmu);}
+.mini-factor{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2px 0;}
+.mini-factor-name{color:var(--textm);display:flex;align-items:center;gap:5px;}
+.mini-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.mini-factor-val{font-weight:600;font-family:'DM Mono',monospace;}
+.mini-factor-val.pos{color:var(--green);}
+.mini-factor-val.neg{color:var(--coral);}
+.mini-factor-val.neu{color:var(--textmu);}
+.mini-weer{background:var(--surface);border-radius:var(--rs);padding:6px 9px;font-size:10px;color:var(--textmu);margin-top:6px;line-height:1.5;}
+
+/* Segment garage select */
+.seg-bike-opt{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--surface);border-radius:var(--rs);margin-bottom:4px;cursor:pointer;border:1px solid var(--border);transition:all 0.12s;}
+.seg-bike-opt:hover{border-color:var(--borderm);}
+.seg-bike-opt.active{border-color:var(--green);background:var(--gl);}
+.seg-inline-detail{border-radius:0 0 var(--rs) var(--rs);overflow:hidden;}
+.seg-src-tab{flex:1;padding:7px 4px;font-size:11px;font-weight:500;text-align:center;border-radius:6px;cursor:pointer;color:var(--textm);border:0.5px solid transparent;background:none;font-family:inherit;transition:all 0.12s;}
+.seg-src-tab:hover{background:var(--surface);}
+.seg-src-tab.active{background:var(--surface);color:var(--green);font-weight:600;border-color:var(--green);}
+.seg-bike-name{font-size:12px;font-weight:500;}
+.seg-bike-sub{font-size:10px;color:var(--textmu);}
+
+/* Slider rows */
+.srow{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.srow:last-child{margin-bottom:0;}
+.srow-lbl{font-size:12px;color:var(--text);width:120px;flex-shrink:0;}
+.srow input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--borderm);border-radius:2px;outline:none;cursor:pointer;}
+.srow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--green);cursor:pointer;border:2.5px solid white;box-shadow:0 0 0 1px var(--green);}
+.srow-val{font-size:12px;font-weight:500;width:64px;text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;}
+.sel-row{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.sel-row:last-child{margin-bottom:0;}
+.sel-row label{font-size:12px;color:var(--text);width:100px;flex-shrink:0;}
+.sel-row select{flex:1;font-size:12px;padding:6px 9px;border:0.5px solid var(--borderm);border-radius:var(--rs);background:var(--surface);color:var(--text);font-family:inherit;cursor:pointer;outline:none;}
+
+/* Resultaat */
+.res-big{text-align:center;padding:1.25rem 0 1rem;border-bottom:0.5px solid var(--border);margin-bottom:1rem;}
+.res-lbl{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);margin-bottom:5px;}
+.res-time{font-size:56px;font-weight:600;letter-spacing:-0.04em;line-height:1;font-family:'DM Mono',monospace;}
+.res-diff{font-size:18px;font-weight:500;margin-top:5px;}
+.res-diff.win{color:var(--green);}
+.res-diff.loss{color:var(--coral);}
+.res-diff.neu{color:var(--textmu);}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:0.875rem;}
+.metric{background:var(--bg);border-radius:var(--rs);padding:10px;}
+.metric-lbl{font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:'DM Mono',monospace;}
+.metric-val{font-size:16px;font-weight:600;}
+.pr-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.pr-row:last-child{border-bottom:none;}
+.pr-badge{font-size:10px;padding:2px 7px;border-radius:9px;font-weight:600;font-family:'DM Mono',monospace;margin-right:7px;}
+.pr-silver{background:#E8E8E0;color:#444441;}
+.pr-bronze{background:#F5C4B3;color:#712B13;}
+.pr-name{color:var(--textm);}
+.pr-time{font-weight:600;font-family:'DM Mono',monospace;}
+.bd-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.bd-row:last-child{border-bottom:none;}
+.bd-name{color:var(--textm);display:flex;align-items:center;gap:6px;}
+.bd-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.bd-val{font-weight:600;font-family:'DM Mono',monospace;}
+.bd-val.pos{color:var(--green);}
+.bd-val.neg{color:var(--coral);}
+.bd-val.neu{color:var(--textmu);}
+.bar-wrap{height:6px;background:var(--bg);border-radius:3px;margin:10px 0 5px;overflow:hidden;display:flex;gap:2px;}
+.bar-seg{height:6px;border-radius:2px;}
+.hint{font-size:11px;color:var(--textmu);font-family:'DM Mono',monospace;}
+.warn-box{background:#FFF3CD;border-radius:var(--rs);padding:8px 11px;font-size:11px;color:#7A5000;margin-bottom:0.875rem;line-height:1.5;display:none;}
+.info-box{background:var(--gl);border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--gdp);margin-top:0.75rem;line-height:1.5;}
+footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-family:'DM Mono',monospace;}
+@media(max-width:640px){.res-time{font-size:44px;}.seg-stats{grid-template-columns:repeat(2,1fr);}.live-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+      <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
+    </svg>
+    <div><div>Watts-up</div><div class="logo-sub">Segment Simulator</div></div>
+  </div>
+  <div class="hdr-right">
+    <button class="profiel-btn" onclick="toggleProfiel()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profiel
+    </button>
+    <div id="hdr-auth">
+      <button class="strava-btn" onclick="loginWithStrava()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        Strava
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Profiel panel -->
+<div class="profiel-panel" id="profiel-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+    <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);font-family:'DM Mono',monospace;">Profiel</div>
+    <button onclick="toggleProfiel()" style="background:none;border:none;cursor:pointer;color:var(--textmu);font-size:16px;line-height:1;padding:0;">&#215;</button>
+  </div>
+  <div id="pf-strava-row" style="display:none;margin-bottom:0.75rem;">
+    <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--bg);border-radius:var(--rs);">
+      <img id="pf-avatar" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+      <div id="pf-naam" style="font-size:12px;font-weight:500;flex:1;"></div>
+      <div style="font-size:10px;color:var(--gd);">Strava</div>
+    </div>
+  </div>
+  <div class="pf-grid">
+    <div>
+      <div class="pf-field-label">Gewicht (kg)</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()"><span class="pf-unit">kg</span></div>
+      <div class="pf-src" id="pf-weight-src"></div>
+    </div>
+    <div>
+      <div class="pf-field-label">Lengte (cm)</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()"><span class="pf-unit">cm</span></div>
+    </div>
+    <div>
+      <div class="pf-field-label">FTP (W)</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()"><span class="pf-unit">W</span></div>
+      <div class="pf-src" id="pf-ftp-src"></div>
+    </div>
+    <div>
+      <div class="pf-field-label">Leeftijd</div>
+      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()"><span class="pf-unit">jr</span></div>
+    </div>
+  </div>
+  <div class="pf-metrics">
+    <div class="pf-metric"><div class="pf-metric-l">W/kg</div><div class="pf-metric-v" id="pf-wkg">--</div></div>
+    <div class="pf-metric"><div class="pf-metric-l">BMI</div><div class="pf-metric-v" id="pf-bmi">--</div></div>
+    <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
+    <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
+  </div>
+  <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
+</div>
+
+<div class="main">
+
+  <!-- WELKOMST -->
+  <div id="welcome-screen" style="display:none;">
+    <div class="welcome-wrap">
+      <div class="welcome-hero">
+        <div class="welcome-logo-box">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+            <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
+          </svg>
+        </div>
+        <div class="welcome-title">Watts-up</div>
+        <div class="welcome-sub">Simuleer je Strava-segmenten en ontdek hoeveel sneller je kunt worden</div>
+      </div>
+      <div class="welcome-card">
+        <div class="welcome-features">
+          <div class="welcome-feature">
+            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></div>
+            <div><div class="welcome-feat-title">Live weer</div><div class="welcome-feat-sub">Op basis van jouw locatie, 7-daagse voorspelling</div></div>
+          </div>
+          <div class="welcome-feature">
+            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div><div class="welcome-feat-title">Segmenten uit Strava</div><div class="welcome-feat-sub">PR, KOM-verschil, direct simuleren</div></div>
+          </div>
+          <div class="welcome-feature">
+            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <div><div class="welcome-feat-title">Wat als? simulaties</div><div class="welcome-feat-sub">Gewicht, aero, materiaal, conditie</div></div>
           </div>
         </div>
+        <div class="welcome-action">
+          <button class="connect-btn" onclick="loginWithStrava()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Verbinden met Strava
+          </button>
+          <button class="skip-btn" onclick="skipToApp()">Doorgaan zonder Strava</button>
+        </div>
+      </div>
+      <div id="clientid-screen" style="display:none;">
+        <div class="clientid-wrap">
+          <div style="font-size:12px;font-weight:500;margin-bottom:5px;">Strava Client ID</div>
+          <div style="font-size:11px;color:var(--textmu);margin-bottom:9px;">Ga naar <a href="https://www.strava.com/settings/api" target="_blank" style="color:var(--green);">strava.com/settings/api</a></div>
+          <input type="text" id="client-id-input" class="clientid-input" placeholder="bijv. 123456" oninput="this.style.borderColor=this.value.length>2?'var(--green)':'var(--borderm)'">
+          <button class="clientid-submit" onclick="saveClientId()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Inloggen met Strava
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen" style="display:none;">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('segment')">Strava</button>
+      <button class="tab" onclick="switchTab('weer')">Weer</button>
+      
+    </div>
+
+    <!-- WEER -->
+    <div id="panel-weer" class="panel">
+      <div class="card">
+        <div class="card-title">Live weer <span class="badge">auto</span></div>
+        <div id="weer-loading" class="loading-text">Locatie ophalen...</div>
+        <div id="weer-error" style="display:none;background:#FFF3CD;border-radius:var(--rs);padding:9px;font-size:11px;color:#7A5000;"></div>
+        <div id="weer-live" style="display:none;">
+          <div class="loc-bar">
+            <div class="loc-dot"></div>
+            <div class="loc-name" id="loc-name">--</div>
+            <div class="loc-time" id="loc-time">--</div>
+          </div>
+          <div class="live-grid">
+            <div class="live-cell"><div class="live-lbl">Temperatuur</div><div class="live-val" id="lv-temp">--</div><div class="live-sub" id="lv-feels">--</div></div>
+            <div class="live-cell"><div class="live-lbl">Wind</div><div class="live-val" id="lv-wind">--</div><div class="live-sub" id="lv-winddir">--</div></div>
+            <div class="live-cell"><div class="live-lbl">Neerslag</div><div class="live-val" id="lv-rain">--</div><div class="live-sub" id="lv-humid">--</div></div>
+            <div class="live-cell"><div class="live-lbl">Luchtdruk</div><div class="live-val" id="lv-pressure">--</div><div class="live-sub">hPa</div></div>
+            <div class="live-cell"><div class="live-lbl">Gevoelstemp.</div><div class="live-val" id="lv-apptemp">--</div><div class="live-sub">gevoeld</div></div>
+            <div class="live-cell"><div class="live-lbl">UV-index</div><div class="live-val" id="lv-uv">--</div><div class="live-sub" id="lv-uvlbl">--</div></div>
+          </div>
+          <div class="ftp-bar neu" id="ftp-bar">
+            <span id="ftp-bar-txt">FTP-effect berekenen...</span>
+            <span id="ftp-bar-val" style="font-weight:600;font-family:'DM Mono',monospace;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="forecast-card" style="display:none;">
+        <div class="card-title">7-daagse voorspelling <span style="font-size:10px;font-weight:400;color:var(--textmu);">klik voor detail</span></div>
+        <div class="days-scroll" id="days-scroll"></div>
+      </div>
+      <div class="card" id="detail-card" style="display:none;">
+        <div class="card-title"><span id="detail-title">24-uurs verloop</span><span style="font-size:10px;font-weight:400;color:var(--textmu);">sleep slider</span></div>
+        <div style="position:relative;width:100%;"><canvas id="weather-chart" height="130"></canvas></div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-line" style="background:var(--coral)"></div>Temp</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--blue)"></div>Wind</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--bluel)"></div>Neerslag</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--amber)"></div>FTP%</div>
+          <div class="leg-item"><div class="leg-line" style="background:var(--purple)"></div>CdA%</div>
+        </div>
+        <div style="margin-top:0.75rem;">
+          <div class="time-labels"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+          <input type="range" id="time-slider" min="0" max="23" step="1" value="10" style="width:100%;">
+          <div class="sel-time" id="sel-time-lbl">10:00</div>
+        </div>
+        <div class="moment-grid">
+          <div class="moment-cell"><div class="moment-lbl">Temperatuur</div><div class="moment-val" id="mt-temp">--</div><div class="moment-eff" id="mt-temp-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">Wind</div><div class="moment-val" id="mt-wind">--</div><div class="moment-eff" id="mt-wind-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">Neerslag</div><div class="moment-val" id="mt-rain">--</div><div class="moment-eff" id="mt-rain-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">FTP-effect</div><div class="moment-val" id="mt-ftp">--</div><div class="moment-eff" id="mt-ftp-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">CdA-effect</div><div class="moment-val" id="mt-cda">--</div><div class="moment-eff" id="mt-cda-eff"></div></div>
+          <div class="moment-cell"><div class="moment-lbl">Netto effect</div><div class="moment-val" id="mt-netto">--</div><div class="moment-eff" id="mt-netto-eff"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFIEL -->
+    <!-- SEGMENT -->
+    <div id="panel-segment" class="panel active">
+      <div id="login-prompt" style="text-align:center;padding:2rem 1rem;border:1.5px dashed var(--borderm);border-radius:var(--r);margin-bottom:0.875rem;">
+        <div style="font-size:15px;font-weight:500;margin-bottom:6px;">Verbind met Strava</div>
+        <div style="font-size:12px;color:var(--textmu);margin-bottom:1rem;">Log in om je gestemde segmenten te laden</div>
+        <button class="connect-btn" style="display:inline-flex;width:auto;padding:10px 18px;" onclick="loginWithStrava()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+          Inloggen met Strava
+        </button>
+      </div>
+
+      <div id="seg-search-card" class="card" style="display:none;">
+        <!-- Source tabs -->
+        <div style="display:flex;gap:3px;margin-bottom:1rem;background:var(--bg);border-radius:var(--rs);padding:3px;border:0.5px solid var(--border);">
+          <button class="seg-src-tab active" id="srctab-rides" onclick="switchSegSource('rides')">Ritten</button>
+          <button class="seg-src-tab" id="srctab-routes" onclick="switchSegSource('routes')">Routes</button>
+          <button class="seg-src-tab" id="srctab-starred" onclick="switchSegSource('starred')">&#9733; Stersegmenten</button>
+        </div>
+
+        <!-- Stersegmenten -->
+        <div id="src-starred" style="display:none;">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam..." oninput="filterSegments()">
+            <button class="search-btn" onclick="loadSegments()">&#8635;</button>
+          </div>
+          <div id="segment-list" class="segment-list"><div class="loading-text">Laden...</div></div>
+        </div>
+
+        <!-- Ritten -->
+        <div id="src-rides">
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:7px;align-items:flex-end;">
+            <div>
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Vanaf</div>
+              <input type="date" id="rides-from" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Tot en met</div>
+              <input type="date" id="rides-to" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
+            </div>
+            <button class="search-btn" onclick="loadRides()" style="height:30px;">&#8635;</button>
+          </div>
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="rides-search" placeholder="Zoek rit op naam..." oninput="filterRides()">
+          </div>
+          <div id="rides-list" class="segment-list"><div class="loading-text">Laden...</div></div>
+        </div>
+
+        <!-- Routes -->
+        <div id="src-routes" style="display:none;">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="routes-search" placeholder="Zoek route op naam..." oninput="filterRoutes()">
+            <button class="search-btn" onclick="loadRoutes()">&#8635;</button>
+          </div>
+          <div id="routes-list" class="segment-list"><div class="loading-text">Klik &#8635; om routes te laden.</div></div>
+        </div>
+      </div>
+
+      <div id="seg-detail" class="card" style="display:none;">
+        <div class="card-title" id="seg-title">Segment</div>
+        <div class="seg-stats">
+          <div class="stat"><div class="stat-lbl">Afstand</div><div class="stat-val" id="seg-dist">--</div></div>
+          <div class="stat"><div class="stat-lbl">Hoogte</div><div class="stat-val" id="seg-elev">--</div></div>
+          <div class="stat"><div class="stat-lbl">Helling</div><div class="stat-val" id="seg-grade">--</div></div>
+          <div class="stat"><div class="stat-lbl">Max helling</div><div class="stat-val" id="seg-maxgrade">--</div></div>
+          <div class="stat"><div class="stat-lbl">Jouw PR</div><div class="stat-val" id="seg-pr">--</div></div>
+          <div class="stat"><div class="stat-lbl">PR datum</div><div class="stat-val" id="seg-prdate" style="font-size:11px;">--</div></div>
+        </div>
+        <div class="profile-wrap"><canvas class="seg-canvas" id="profile-canvas"></canvas></div>
+
+        <!-- Mini resultaat -->
+        <div class="mini-result" id="mini-result" style="display:none;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:0.5rem;">
+            <div>
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">Gesimuleerde tijd</div>
+              <div class="mini-time" id="mini-time">--</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">t.o.v. PR</div>
+              <div class="mini-diff neu" id="mini-diff">--</div>
+              <div style="font-size:10px;color:var(--textmu);margin-top:1px;" id="mini-speed">--</div>
+            </div>
+          </div>
+          <div id="mini-factors" style="margin-bottom:5px;"></div>
+          <div class="mini-weer" id="mini-weer">Weer: geen data</div>
+        </div>
+
+        <!-- Instellingen -->
+        <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:0.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);margin-bottom:0.5rem;font-family:'DM Mono',monospace;">Instellingen aanpassen</div>
+        </div>
+
+
+
+        <!-- Fiets -->
+        <div class="accord">
+          <button class="accord-btn" onclick="toggleAccord('acc-fiets',this)">
+            <span>Fiets <span class="accord-summary" id="acc-fiets-sum"></span></span>
+            <span class="accord-arrow">&#9660;</span>
+          </button>
+          <div class="accord-body" id="acc-fiets">
+            <div id="acc-garage-list"></div>
+            
+        </div>
+
 
         <!-- Weer -->
         <div class="accord">
@@ -748,7 +1267,7 @@ function addStravaGear(gearId, gearName) {
   // Remove the notification
   var notes = document.querySelectorAll('[style*="FFF3CD"]');
   notes.forEach(function(n){ if(n.textContent.indexOf(gearName)!==-1) n.remove(); });
-  alert(gearName + ' toegevoegd aan je garage! Pas het gewicht en CdA aan via Fiets/Kleding.');
+  alert(gearName + ' toegevoegd aan je garage! Pas het gewicht en CdA aan in het Profiel.');
 }
 
 function renderGarage(){
@@ -767,7 +1286,7 @@ function renderGarage(){
 }
 function renderAccGarage(){
   var el=document.getElementById('acc-garage-list');if(!el)return;
-  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:4px 0;">Voeg fietsen toe via Fiets/Kleding tab.</div>';return;}
+  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:4px 0;">Voeg fietsen toe in het Profiel.</div>';return;}
   el.innerHTML='';
   bikes.forEach(function(b,i){
     var div=document.createElement('div');
@@ -1765,6 +2284,9 @@ async function selectSegment(id, itemEl, fromRide){
     var _prStr = prStr;
     var _segDist = seg.distance;
     var _segGrade = seg.average_grade;
+    var _seg = seg;
+    var _riddenWatts = ilRiddenWatts || 0;
+    var _riddenBike = ilRiddenBike || '';
     // If ridden time equals PR time, they came from same source - keep distinct display
     var _showRidden = _riddenSec > 0 && _riddenSec !== _prSec;
 
@@ -1876,7 +2398,7 @@ function wireIlSliders(){
 
 function renderIlGarage(){
   var el=document.getElementById('il-garage');if(!el)return;
-  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:3px 0;">Voeg fietsen toe via Fiets/Kleding tab.</div>';return;}
+  if(!bikes.length){el.innerHTML='<div style="font-size:11px;color:var(--textmu);padding:3px 0;">Voeg fietsen toe in het Profiel.</div>';return;}
   el.innerHTML=bikes.map(function(b,i){
     var a=i===activebikeIdx?' active':'';
     return '<div class="seg-bike-opt'+a+'" onclick="selectBikeAcc('+i+')">'+
@@ -2121,7 +2643,7 @@ function calcResult(){
     {n:'Gewicht aanpassing',col:'#1D9E75',v:c(function(){return simSeg(gpxPoints,P0,(weight+wloss)+bikeW,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Gewicht fiets',col:'#5DCAA5',v:c(function(){return simSeg(gpxPoints,P0,weight+(bikeW-bikeloss),bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
     {n:'Extra vermogen',col:'#0F6E56',v:c(function(){return simSeg(gpxPoints,P0+powergain,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},
-    {n:'Kleding',col:'#378ADD',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda+clothing.cda,0.004,0,1,rhoStd,0.985,0.995);})},
+
     {n:'Wind (richtingseffect)',col:'#D85A30',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,totalWindMs,1,rhoStd,0.985,0.995);})},
     {n:'Luchtdichtheid',col:'#EF9F27',v:c(function(){return simSeg(gpxPoints,P0,baseM,bikeCda,0.004,0,1,rho,0.985,0.995);})},
     {n:'FTP-effect weer',col:'#BA7517',v:c(function(){return simSeg(gpxPoints,P0*ftpEffect,baseM,bikeCda,0.004,0,1,rhoStd,0.985,0.995);})},

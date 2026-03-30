@@ -1786,6 +1786,10 @@ async function selectRide(id, itemEl) {
     });
     html += '</div></div>';
     inlineEl.innerHTML = html;
+    // Add click handlers after innerHTML (onclick in innerHTML can fail in strict contexts)
+    inlineEl.querySelectorAll('.route-seg-item').forEach(function(el) {
+      el.addEventListener('click', function() { selectSegmentFromRideEl(this); });
+    });
   } catch(e) {
     inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
   }
@@ -1905,7 +1909,7 @@ async function selectRouteByIdx(idx) {
     segs.forEach(function(seg) {
       var pr = seg.athlete_pr_effort ? fmt(seg.athlete_pr_effort.elapsed_time) : 'Geen PR';
       var gc = Math.abs(seg.average_grade||0)>3 ? 'var(--coral)' : 'var(--green)';
-      html += '<div class="segment-item route-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="0" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
+      html += '<div class="segment-item route-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+(seg.athlete_pr_effort?seg.athlete_pr_effort.elapsed_time:0)+'" data-watts="0" data-bike="" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
       html += '<div style="flex:1;"><div class="seg-name">'+seg.name+'</div>';
       html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - PR: '+pr+'</div></div>';
       html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+(seg.average_grade||0).toFixed(1)+'%</div></div>';
@@ -1914,6 +1918,10 @@ async function selectRouteByIdx(idx) {
     });
     html += '</div></div>';
     inlineEl.innerHTML = html;
+    // Add click handlers after innerHTML (onclick in innerHTML can fail in strict contexts)
+    inlineEl.querySelectorAll('.route-seg-item').forEach(function(el) {
+      el.addEventListener('click', function() { selectSegmentFromRideEl(this); });
+    });
   } catch(e) {
     inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
   }
@@ -2182,13 +2190,15 @@ async function selectSegment(id, itemEl, fromRide){
   document.querySelectorAll('.segment-item').forEach(function(e){e.classList.remove('active');});
   var clickedItem = document.getElementById('seg-item-'+id);
   if(clickedItem) clickedItem.classList.add('active');
-  // Try getElementById first, fallback to nextSibling of clicked element
-  var inlineEl = document.getElementById('seg-inline-'+id);
-  if(!inlineEl && itemEl) {
-    // Look for next sibling with class seg-inline-detail
+  // For nested segments (ride/route), always use nextElementSibling
+  // getElementById can find wrong element if same segment was opened elsewhere
+  var inlineEl = null;
+  if(itemEl) {
     var next = itemEl.nextElementSibling;
     if(next && next.classList.contains('seg-inline-detail')) inlineEl = next;
   }
+  // Fallback to getElementById for starred segments
+  if(!inlineEl) inlineEl = document.getElementById('seg-inline-'+id);
   if(!inlineEl) { console.warn('inlineEl not found for seg', id); return; }
   inlineEl.style.display='block';
   inlineEl.innerHTML='<div style="padding:12px;text-align:center;font-size:12px;color:var(--textmu);font-family:monospace;">Laden...</div>';

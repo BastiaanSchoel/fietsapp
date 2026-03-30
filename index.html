@@ -1786,10 +1786,7 @@ async function selectRide(id, itemEl) {
     });
     html += '</div></div>';
     inlineEl.innerHTML = html;
-    // Add click handlers after innerHTML (onclick in innerHTML can fail in strict contexts)
-    inlineEl.querySelectorAll('.route-seg-item').forEach(function(el) {
-      el.addEventListener('click', function() { selectSegmentFromRideEl(this); });
-    });
+
   } catch(e) {
     inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
   }
@@ -1909,7 +1906,9 @@ async function selectRouteByIdx(idx) {
     segs.forEach(function(seg) {
       var pr = seg.athlete_pr_effort ? fmt(seg.athlete_pr_effort.elapsed_time) : 'Geen PR';
       var gc = Math.abs(seg.average_grade||0)>3 ? 'var(--coral)' : 'var(--green)';
-      html += '<div class="segment-item route-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+(seg.athlete_pr_effort?seg.athlete_pr_effort.elapsed_time:0)+'" data-watts="0" data-bike="" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
+      var routeSegWatts = (seg.athlete_pr_effort && seg.athlete_pr_effort.average_watts) ? Math.round(seg.athlete_pr_effort.average_watts) : 0;
+      var routeSegRidden = seg.athlete_pr_effort ? seg.athlete_pr_effort.elapsed_time : 0;
+      html += '<div class="segment-item route-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+routeSegRidden+'" data-watts="'+routeSegWatts+'" data-bike="" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
       html += '<div style="flex:1;"><div class="seg-name">'+seg.name+'</div>';
       html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - PR: '+pr+'</div></div>';
       html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+(seg.average_grade||0).toFixed(1)+'%</div></div>';
@@ -1918,10 +1917,7 @@ async function selectRouteByIdx(idx) {
     });
     html += '</div></div>';
     inlineEl.innerHTML = html;
-    // Add click handlers after innerHTML (onclick in innerHTML can fail in strict contexts)
-    inlineEl.querySelectorAll('.route-seg-item').forEach(function(el) {
-      el.addEventListener('click', function() { selectSegmentFromRideEl(this); });
-    });
+
   } catch(e) {
     inlineEl.innerHTML = '<div style="padding:10px;color:var(--coral);font-size:12px;">Fout: '+e.message+'</div>';
   }
@@ -2159,6 +2155,8 @@ function selectSegmentFromRide(id, riddenSec, itemEl) {
 }
 
 function selectSegmentFromRideEl(el) {
+  // Stop propagation to prevent parent ride/route click from firing
+  if(event) event.stopPropagation();
   var id = el.getAttribute('data-seg-id');
   var ridden = parseInt(el.getAttribute('data-ridden')) || 0;
   ilRiddenSec = ridden;

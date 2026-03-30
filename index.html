@@ -1935,7 +1935,7 @@ function renderSegmentList(segs){
   }).join('');
   document.getElementById('segment-list').innerHTML = html;
 }
-function buildInlineDetail(prSec) {
+function buildInlineDetail(prSec, showRidden) {
   var minV = Math.floor(prSec/60);
   var secV = prSec % 60;
   var curH = new Date().getHours();

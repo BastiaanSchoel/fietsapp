@@ -2056,6 +2056,7 @@ var currentOpenSegId = null;
 var ilBaseSec = 0;
 var ilKomSec = 0;
 var ilRiddenSec = 0; // Time from ride segment effort
+var ilFromRoute = false;
 var ilRiddenWatts = 0;
 var ilRiddenBike = '';
 var stravaGearCache = {};
@@ -2155,13 +2156,14 @@ function selectSegmentFromRide(id, riddenSec, itemEl) {
 }
 
 function selectSegmentFromRideEl(el) {
-  // Stop propagation to prevent parent ride/route click from firing
   if(event) event.stopPropagation();
   var id = el.getAttribute('data-seg-id');
   var ridden = parseInt(el.getAttribute('data-ridden')) || 0;
   ilRiddenSec = ridden;
   ilRiddenWatts = parseInt(el.getAttribute('data-watts')) || 0;
   ilRiddenBike = el.getAttribute('data-bike') || '';
+  // Flag whether this comes from a route (no separate ridden time)
+  ilFromRoute = el.classList.contains('route-seg-item');
   selectSegment(id, el, true);
 }
 
@@ -2299,6 +2301,7 @@ async function selectSegment(id, itemEl, fromRide){
     var _segDist = seg.distance;
     var _segGrade = seg.average_grade;
     var _seg = seg;
+    var _fromRoute = ilFromRoute;
     var _riddenWatts = ilRiddenWatts || 0;
     var _riddenBike = ilRiddenBike || '';
     // If ridden time equals PR time, they came from same source - keep distinct display

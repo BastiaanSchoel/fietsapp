@@ -1959,7 +1959,7 @@ function buildInlineDetail(prSec) {
   html += '<div style="padding:10px;border-top:0.5px solid var(--border);margin-top:8px;">';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3px;margin-bottom:8px;">';
   // Gereden
-  html += '<div id="il-ridden-col" style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
+  html += '<div id="il-ridden-col" style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;display:'+(showRidden?'block':'none')+';">';
   html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Gereden</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-ridden">--</div>';
   html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--green);margin-top:2px;" id="il-ridden-watts"></div>';
@@ -2289,7 +2289,8 @@ async function selectSegment(id, itemEl, fromRide){
       } catch(e) { prDate = ''; }
     }
 
-    inlineEl.innerHTML = buildInlineDetail(prSec);
+    var _showRiddenNow = !ilFromRoute && ilRiddenSec > 0;
+    inlineEl.innerHTML = buildInlineDetail(prSec, _showRiddenNow);
 
     // Capture values NOW before setTimeout (closure over local copies)
     // ilBaseSec is set earlier in this try block = PR time

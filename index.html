@@ -2213,16 +2213,13 @@ function calcResult(){
   var baseForDiff = ilRiddenSec || ilBaseSec;
   var diffFromBase = baseForDiff - newT;
   var faster = diffFromBase > 0;
-  if(ilDiff){
-    if(Math.abs(diffFromBase)<1){
-      ilDiff.textContent='+/- 0s';
-      ilDiff.style.color='var(--textmu)';
-    } else {
-      ilDiff.textContent=(faster?'-':'+')+fmt(Math.abs(diffFromBase))+(faster?' sneller':' langzamer');
-      ilDiff.style.color=faster?'var(--green)':'var(--coral)';
-    }
+  if(Math.abs(diffFromBase)<1){
+    if(ilDiff){ilDiff.textContent='+/- 0s'; ilDiff.style.color='var(--textmu)';}
+  } else {
+    if(ilDiff){ilDiff.textContent=(faster?'-':'+')+fmt(Math.abs(diffFromBase))+(faster?' sneller':' langzamer'); ilDiff.style.color=faster?'var(--green)':'var(--coral)';}
   }
   // Always color sim block regardless of ilDiff
+  var simColor = Math.abs(diffFromBase)<1 ? 'var(--green)' : faster ? 'var(--green)' : 'var(--coral)';
   if(ilSimCol){
     if(Math.abs(diffFromBase)<1){
       ilSimCol.style.background='var(--gl)';
@@ -2232,6 +2229,11 @@ function calcResult(){
       ilSimCol.style.border='0.5px solid '+(faster?'var(--green)':'var(--coral)');
     }
   }
+  // Color sim time and watts
+  var ilTimeEl=document.getElementById('il-time');
+  if(ilTimeEl) ilTimeEl.style.color=simColor;
+  var ilSimWattsEl=document.getElementById('il-sim-watts');
+  if(ilSimWattsEl) ilSimWattsEl.style.color=simColor;
   // Update ridden column if from ride
   var riddenEl2=document.getElementById('il-ridden');
   if(riddenEl2 && ilRiddenSec) riddenEl2.textContent=fmt(ilRiddenSec);

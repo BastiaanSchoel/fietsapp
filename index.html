@@ -1326,7 +1326,8 @@ async function selectRide(id, itemEl) {
       var gc = Math.abs(seg.average_grade)>3 ? 'var(--coral)' : 'var(--green)';
       var segWatts = seg.average_watts ? Math.round(seg.average_watts) : 0;
       var segBikeName = act.gear_name || (act.gear_id ? act.gear_id : '');
-      html += '<div class="segment-item ride-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+seg.elapsed_time+'" data-watts="'+segWatts+'" data-bike="'+segBikeName+'" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
+      var segEffortId = seg.effort_id || '';
+      html += '<div class="segment-item ride-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+seg.elapsed_time+'" data-watts="'+segWatts+'" data-bike="'+segBikeName+'" data-effort-id="'+segEffortId+'" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
       html += '<div style="flex:1;"><div class="seg-name">'+seg.name+prBadge+'</div>';
       html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - Gereden: '+fmt(seg.elapsed_time)+'</div></div>';
       html += '<div class="seg-right"><div style="font-size:12px;font-weight:600;font-family:monospace;color:'+gc+'">'+(seg.average_grade>0?'+':'')+seg.average_grade.toFixed(1)+'%</div></div>';
@@ -1502,7 +1503,11 @@ function buildInlineDetail(prSec, showRidden) {
   html += '</div>';
 
   // Profile canvas
-  html += '<div style="padding:8px 10px 0;"><canvas id="il-canvas" style="width:100%;height:60px;display:block;border-radius:4px;"></canvas></div>';
+  html += '<div style="padding:8px 10px 0;position:relative;" id="il-chart-wrap">';
+  html += '<canvas id="il-canvas" style="width:100%;height:100px;display:block;border-radius:4px;"></canvas>';
+  html += '<div id="il-crosshair" style="display:none;position:absolute;top:0;bottom:0;width:1px;background:rgba(0,0,0,0.3);pointer-events:none;"></div>';
+  html += '<div id="il-tooltip" style="display:none;position:absolute;top:4px;background:var(--surface);border:0.5px solid var(--border);border-radius:6px;padding:5px 8px;font-size:10px;font-family:monospace;pointer-events:none;white-space:nowrap;z-index:10;"></div>';
+  html += '</div>';
 
   // Mini result - 4 columns: Gereden / PR / KOM / Simulatie
   html += '<div style="padding:10px;border-top:0.5px solid var(--border);margin-top:8px;">';
@@ -1716,7 +1721,7 @@ function selectSegmentFromRideEl(el) {
   ilRiddenSec = ridden;
   ilRiddenWatts = parseInt(el.getAttribute('data-watts')) || 0;
   ilRiddenBike = el.getAttribute('data-bike') || '';
-  // Flag whether this comes from a route (no separate ridden time)
+  window._currentRideEffortId = el.getAttribute('data-effort-id') || null;
   ilFromRoute = el.classList.contains('route-seg-item');
   selectSegment(id, el, true);
 }
@@ -1920,9 +1925,25 @@ async function selectSegment(id, itemEl, fromRide){
         }
       }
 
-      // Draw profile
+      // Draw profile (initial without speed lines)
       var cv=document.getElementById('il-canvas');
-      if(cv) drawProfileOn(cv, gpxPoints);
+      if(cv) drawProfileOn(cv, gpxPoints, null);
+
+      // Load PR effort streams for speed overlay
+      ilStreams = { pr: null, ridden: null };
+      if(_seg && _seg.pr && _seg.pr.effort_id) {
+        loadEffortStreams(_seg.pr.effort_id, 'pr').then(function() {
+          var cv2=document.getElementById('il-canvas');
+          if(cv2) drawProfileOn(cv2, gpxPoints, ilStreams);
+        });
+      }
+      // Load ridden effort streams if from a ride
+      if(_riddenSec > 0 && window._currentRideEffortId) {
+        loadEffortStreams(window._currentRideEffortId, 'ridden').then(function() {
+          var cv2=document.getElementById('il-canvas');
+          if(cv2) drawProfileOn(cv2, gpxPoints, ilStreams);
+        });
+      }
 
       // Wire sliders and render sub-components
       wireIlSliders();
@@ -2100,15 +2121,131 @@ function ilSelectDay(i){
   calcResult();
 }
 
-function drawProfileOn(cv, pts){
-  var W=cv.offsetWidth||300,H=60;cv.width=W;cv.height=H;
-  var ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
-  if(!pts||pts.length<2)return;
-  var eles=pts.map(function(p){return p.ele;}),minE=Math.min.apply(null,eles),maxE=Math.max.apply(null,eles),range=maxE-minE||1,td=pts[pts.length-1].dist,pad=4;
-  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-  ctx.lineTo(W-pad,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();ctx.fillStyle='#E1F5EE';ctx.fill();
-  ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
+// Speed streams for compare chart
+var ilStreams = { pr: null, ridden: null };
+var ilSegChart = null;
+
+async function loadEffortStreams(effortId, key) {
+  if (!effortId || !accessToken) return null;
+  try {
+    var res = await fetch('/api/strava-effort-streams?token='+accessToken+'&effort_id='+effortId);
+    if (!res.ok) return null;
+    var data = await res.json();
+    ilStreams[key] = data;
+    return data;
+  } catch(e) { return null; }
+}
+
+function drawProfileOn(cv, pts, streams) {
+  var wrap = document.getElementById('il-chart-wrap');
+  if(!wrap) {
+    // Fallback simple draw
+    var W=cv.offsetWidth||300,H=100;cv.width=W;cv.height=H;
+    var ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
+    if(!pts||pts.length<2)return;
+    var eles=pts.map(function(p){return p.ele;}),minE=Math.min.apply(null,eles),maxE=Math.max.apply(null,eles),range=maxE-minE||1,td=pts[pts.length-1].dist,pad=4;
+    ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.lineTo(W-pad,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();ctx.fillStyle='#E1F5EE';ctx.fill();
+    return;
+  }
+
+  var W = wrap.offsetWidth || 300, H = 100;
+  cv.width = W; cv.height = H;
+  var ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  if(!pts||pts.length<2) return;
+
+  var pad = 6;
+  var eles = pts.map(function(p){return p.ele;});
+  var minE = Math.min.apply(null,eles), maxE = Math.max.apply(null,eles);
+  var rangeE = maxE - minE || 1;
+  var td = pts[pts.length-1].dist;
+
+  function xOf(dist) { return pad + (dist/td)*(W-2*pad); }
+  function yOfEle(ele) { return H-pad-((ele-minE)/rangeE)*(H-2*pad-4); }
+
+  // Draw elevation fill
+  ctx.beginPath();
+  pts.forEach(function(p,i){ i===0?ctx.moveTo(xOf(p.dist),yOfEle(p.ele)):ctx.lineTo(xOf(p.dist),yOfEle(p.ele)); });
+  ctx.lineTo(xOf(td),H-pad); ctx.lineTo(xOf(0),H-pad); ctx.closePath();
+  ctx.fillStyle='rgba(29,158,117,0.08)'; ctx.fill();
+  ctx.beginPath();
+  pts.forEach(function(p,i){ i===0?ctx.moveTo(xOf(p.dist),yOfEle(p.ele)):ctx.lineTo(xOf(p.dist),yOfEle(p.ele)); });
+  ctx.strokeStyle='#1D9E75'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Draw speed lines if streams available
+  function drawSpeed(streamData, color, dashed) {
+    if(!streamData||!streamData.velocity||!streamData.distance) return;
+    var vels = streamData.velocity, dists = streamData.distance;
+    var maxV = Math.max.apply(null,vels.filter(function(v){return v>0;})) || 15;
+    var minV = Math.min.apply(null,vels.filter(function(v){return v>0;})) || 0;
+    var rangeV = maxV - minV || 1;
+    function yOfV(v) { return H - pad - ((v-minV)/rangeV)*(H*0.5-pad); }
+    ctx.beginPath();
+    if(dashed) ctx.setLineDash([4,3]); else ctx.setLineDash([]);
+    var started = false;
+    dists.forEach(function(d,i){
+      if(vels[i] <= 0) return;
+      var x = xOf(d), y = yOfV(vels[i]);
+      if(!started) { ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawSpeed(streams && streams.pr, '#FC4C02', false);     // PR = Strava orange
+  drawSpeed(streams && streams.ridden, '#3B82F6', true);  // Rit = blue dashed
+
+  // Store pts and streams for mousemove
+  cv._pts = pts; cv._streams = streams; cv._td = td; cv._pad = pad;
+  cv._minE = minE; cv._rangeE = rangeE;
+
+  // Add mousemove interaction
+  cv.onmousemove = function(e) {
+    var rect = cv.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var frac = Math.max(0, Math.min(1, (mx - pad)/(W-2*pad)));
+    var dist = frac * td;
+
+    // Find nearest GPX point
+    var best = 0, bestD = Infinity;
+    pts.forEach(function(p,i){ var dd=Math.abs(p.dist-dist); if(dd<bestD){bestD=dd;best=i;} });
+    var p = pts[best];
+
+    // Crosshair
+    var ch = document.getElementById('il-crosshair');
+    if(ch) { ch.style.display='block'; ch.style.left=mx+'px'; }
+
+    // Speed at this distance for each stream
+    function speedAt(streamData, d) {
+      if(!streamData||!streamData.velocity) return null;
+      var best=0, bestD=Infinity;
+      streamData.distance.forEach(function(sd,i){ var dd=Math.abs(sd-d); if(dd<bestD){bestD=dd;best=i;} });
+      return streamData.velocity[best] ? (streamData.velocity[best]*3.6).toFixed(1) : null;
+    }
+
+    var prV = speedAt(streams&&streams.pr, dist);
+    var ridV = speedAt(streams&&streams.ridden, dist);
+    var grade = p.grade ? p.grade.toFixed(1) : '0.0';
+    var distKm = (dist/1000).toFixed(2);
+
+    var tip = document.getElementById('il-tooltip');
+    if(tip) {
+      var html = '<b>'+distKm+' km</b> | '+p.ele.toFixed(0)+'m | '+grade+'%<br>';
+      if(prV) html += '<span style="color:#FC4C02">PR: '+prV+' km/u</span>';
+      if(ridV) html += (prV?' | ':'')+'<span style="color:#3B82F6">Rit: '+ridV+' km/u</span>';
+      tip.innerHTML = html;
+      tip.style.display = 'block';
+      var tipX = mx + 10;
+      if(tipX + 160 > W) tipX = mx - 170;
+      tip.style.left = tipX + 'px';
+    }
+  };
+
+  cv.onmouseleave = function() {
+    var ch=document.getElementById('il-crosshair');if(ch)ch.style.display='none';
+    var tip=document.getElementById('il-tooltip');if(tip)tip.style.display='none';
+  };
 }
 
 //

@@ -1,9 +1,9 @@
 exports.handler = async (event) => {
-  const { token, page, after, before } = event.queryStringParameters || {};
+  const { token, page, after, before, per_page } = event.queryStringParameters || {};
   if (!token) return { statusCode: 400, body: JSON.stringify({ error: 'Token ontbreekt' }) };
 
   try {
-    let url = `https://www.strava.com/api/v3/athlete/activities?per_page=30&page=${page||1}`;
+    let url = `https://www.strava.com/api/v3/athlete/activities?per_page=${per_page||30}&page=${page||1}`;
     if (after) url += `&after=${after}`;
     if (before) url += `&before=${before}`;
 

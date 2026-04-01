@@ -1990,7 +1990,7 @@ function buildInlineDetail(prSec, showRidden) {
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-kom-diff"></div>';
   html += '</div>';
   // Simulatie
-  html += '<div style="background:var(--gl);border-radius:var(--rs);padding:6px 7px;">';
+  html += '<div id="il-sim-col" style="background:var(--gl);border-radius:var(--rs);padding:6px 7px;">';
   html += '<div style="font-size:9px;color:var(--gd);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Simulatie</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--green);" id="il-time">--</div>';
   html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--green);margin-top:2px;" id="il-sim-watts"></div>';
@@ -2337,11 +2337,10 @@ async function selectSegment(id, itemEl, fromRide){
       // PR watts and bike
       var prWattsEl = document.getElementById('il-pr-watts');
       var prBikeEl = document.getElementById('il-pr-bike');
-      if(prWattsEl) prWattsEl.textContent = (_seg && _seg.pr && _seg.pr.average_watts) ? _seg.pr.average_watts+'W' : '';
-      if(prBikeEl && _seg && _seg.pr_bike) {
-        var bname = '';
-        if(_seg.pr_bike.gear_name) { bname = _seg.pr_bike.gear_name; }
-        else if(_seg.pr_bike.gear_id) {
+      if(prWattsEl) prWattsEl.textContent = _prWatts ? _prWatts+'W' : '';
+      if(prBikeEl) {
+        var bname = _prBikeName;
+        if(!bname && _seg && _seg.pr_bike && _seg.pr_bike.gear_id) {
           bikes.forEach(function(b){ if(b.gear_id===_seg.pr_bike.gear_id) bname=b.name; });
           if(!bname) bname = _seg.pr_bike.gear_id;
         }
@@ -2648,12 +2647,23 @@ function calcResult(){
     simKomDiffEl.style.color = simVsKom < -1 ? 'var(--green)' : 'var(--textmu)';
   }
   var ilDiff=document.getElementById('il-diff');
+  var ilSimCol=document.getElementById('il-sim-col');
   if(ilDiff){
-    // Compare to ridden time if available, else PR
     var baseForDiff = ilRiddenSec || ilBaseSec;
     var diffFromBase = baseForDiff - newT;
-    if(Math.abs(diffFromBase)<1){ilDiff.textContent='+/- 0s';ilDiff.style.color='var(--textmu)';}
-    else{ilDiff.textContent=(diffFromBase>0?'-':'+')+fmt(Math.abs(diffFromBase))+(diffFromBase>0?' sneller':' langzamer');ilDiff.style.color=diffFromBase>0?'var(--green)':'var(--coral)';}
+    if(Math.abs(diffFromBase)<1){
+      ilDiff.textContent='+/- 0s';
+      ilDiff.style.color='var(--textmu)';
+      if(ilSimCol){ilSimCol.style.background='var(--gl)';ilSimCol.style.border='none';}
+    } else {
+      var faster = diffFromBase > 0;
+      ilDiff.textContent=(faster?'-':'+')+fmt(Math.abs(diffFromBase))+(faster?' sneller':' langzamer');
+      ilDiff.style.color=faster?'var(--green)':'var(--coral)';
+      if(ilSimCol){
+        ilSimCol.style.background=faster?'rgba(29,158,117,0.12)':'rgba(220,80,80,0.10)';
+        ilSimCol.style.border='0.5px solid '+(faster?'var(--green)':'var(--coral)');
+      }
+    }
   }
   // Update ridden column if from ride
   var riddenEl2=document.getElementById('il-ridden');

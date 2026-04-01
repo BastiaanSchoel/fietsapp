@@ -2129,6 +2129,10 @@ async function loadEffortStreams(effortId, key) {
     if (!res.ok) return null;
     var data = await res.json();
     if (data.error) return null;
+    // Convert velocity from m/s to km/u
+    if (data.velocity) {
+      data.velocity = data.velocity.map(function(v){ return v * 3.6; });
+    }
     ilStreams[key] = data;
     return data;
   } catch(e) { return null; }
@@ -2272,7 +2276,7 @@ function drawProfileOn(cv, pts, streams, simSec, komSec) {
       if(!st||!st.velocity) return null;
       var bi=0, bd=Infinity;
       st.distance.forEach(function(sd,i){ var dd=Math.abs(sd-d); if(dd<bd){bd=dd;bi=i;} });
-      return st.velocity[bi]>0 ? st.velocity[bi].toFixed(1) : null;
+      return st.velocity[bi]>0 ? (Math.round(st.velocity[bi]*10)/10).toFixed(1) : null;
     }
 
     var prV=speedAt(streams&&streams.pr,dist);

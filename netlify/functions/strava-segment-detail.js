@@ -70,7 +70,7 @@ exports.handler = async (event) => {
             pr.pr_date = prEffort.start_date;
           }
           if (pr) {
-            pr.effort_id = prEffort.id;
+            pr.effort_id = String(prEffort.id);
           }
           // Set average watts from effort
           if (pr && prEffort.average_watts) {

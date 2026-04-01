@@ -1599,6 +1599,10 @@ function ilToggle(btn) {
   if (!body) return;
   body.classList.toggle('open');
   btn.classList.toggle('open');
+  // Update weer when accordion opens
+  if (id === 'il-acc-weer' && body.classList.contains('open')) {
+    updateIlWeer();
+  }
 }
 
 
@@ -1855,6 +1859,8 @@ async function selectSegment(id, itemEl, fromRide){
     var _fromRoute = ilFromRoute;
     var _riddenWatts = ilRiddenWatts || 0;
     var _riddenBike = ilRiddenBike || '';
+    var _prWatts = (seg.pr && seg.pr.average_watts) ? seg.pr.average_watts : 0;
+    var _prBikeName = (seg.pr_bike && seg.pr_bike.gear_name) ? seg.pr_bike.gear_name : '';
     // If ridden time equals PR time, they came from same source - keep distinct display
     var _showRidden = _riddenSec > 0 && _riddenSec !== _prSec;
 
@@ -1922,7 +1928,17 @@ async function selectSegment(id, itemEl, fromRide){
       wireIlSliders();
       renderIlGarage();
       renderIlClothing();
+      // Set time slider to current hour
+      var nowH = new Date().getHours();
+      var ilTs = document.getElementById('il-time-slider');
+      if(ilTs) { ilTs.value = nowH; }
+      var ilTl = document.getElementById('il-time-lbl');
+      if(ilTl) ilTl.textContent = String(nowH).padStart(2,'0')+':00';
+      // Set selected day to today (day 0)
+      selectedDay = 0;
       updateIlWeer();
+      // Retry weer update after delay in case weatherData just loaded
+      setTimeout(function(){ if(weatherData) updateIlWeer(); }, 2000);
 
       // First calculation
       calcResult();
@@ -2009,7 +2025,9 @@ function renderIlClothing(){
 function updateIlWeer(){
   if(!weatherData){
     var el=document.getElementById('il-weer-loc');
-    if(el)el.textContent='Geen weerdata — open de Weer-tab eerst.';
+    if(el)el.textContent='Weerdata laden...';
+    // Try to load weather if not yet loaded
+    if(navigator.geolocation && typeof initWeather === 'function') initWeather();
     return;
   }
   // Location label
@@ -2017,6 +2035,8 @@ function updateIlWeer(){
   if(locEl)locEl.textContent=document.getElementById('loc-name').textContent;
 
   // Render day cards
+  // Make sure selectedDay is valid
+  if(selectedDay >= weatherData.daily.time.length) selectedDay = 0;
   var daysEl=document.getElementById('il-days-scroll');
   if(daysEl){
     daysEl.innerHTML=weatherData.daily.time.map(function(t,i){
@@ -2215,11 +2235,11 @@ function calcResult(){
   var ms2=document.getElementById('mini-speed');if(ms2)ms2.textContent=(td/newT*3.6).toFixed(1)+' km/u';
   var md=document.getElementById('mini-diff');if(md){if(Math.abs(diff)<1){md.textContent='+/- 0s';md.className='mini-diff neu';}else{md.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');md.className='mini-diff '+(diff>1?'win':'loss');}}
   // Update resultaat tab
-  (document.getElementById('res-time')||{}).textContent=fmt(newT);
+  var _res_time=document.getElementById('res-time');if(_res_time)_res_time.textContent=fmt(newT);
   var _res_pr=document.getElementById('res-pr');if(_res_pr)_res_pr.textContent=fmt(myT);
   var _res_speed=document.getElementById('res-speed');if(_res_speed)_res_speed.textContent=(td/newT*3.6).toFixed(1)+' km/u';
   var _res_wkg=document.getElementById('res-wkg');if(_res_wkg)_res_wkg.textContent=(P/Math.max(1,weight-wloss)).toFixed(2)+' W/kg';
-  var prdEl=document.getElementById('res-prdiff');prdEl.textContent=Math.abs(diff)<1?'+/- 0s':(diff>0?'-':'+')+fmt(Math.abs(diff));prdEl.style.color=diff>1?'var(--green)':diff<-1?'var(--coral)':'var(--textmu)';
+  var prdEl=document.getElementById('res-prdiff');if(prdEl)prdEl.textContent=Math.abs(diff)<1?'+/- 0s':(diff>0?'-':'+')+fmt(Math.abs(diff));prdEl.style.color=diff>1?'var(--green)':diff<-1?'var(--coral)':'var(--textmu)';
   var rdEl=document.getElementById('res-diff');
   if(rdEl&&Math.abs(diff)<1){rdEl.textContent='Geen verandering';rdEl.className='res-diff neu';}
   else if(rdEl){rdEl.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');rdEl.className='res-diff '+(diff>1?'win':'loss');}

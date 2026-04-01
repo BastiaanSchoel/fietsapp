@@ -65,9 +65,12 @@ exports.handler = async (event) => {
           const prEffort = efforts.reduce((best, e) =>
             e.elapsed_time < best.elapsed_time ? e : best, efforts[0]);
 
-          // Set PR date from the effort start date
+          // Set PR date and effort ID
           if (pr && prEffort.start_date) {
             pr.pr_date = prEffort.start_date;
+          }
+          if (pr) {
+            pr.effort_id = prEffort.id;
           }
           // Set average watts from effort
           if (pr && prEffort.average_watts) {

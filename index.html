@@ -2210,21 +2210,26 @@ function calcResult(){
   }
   var ilDiff=document.getElementById('il-diff');
   var ilSimCol=document.getElementById('il-sim-col');
+  var baseForDiff = ilRiddenSec || ilBaseSec;
+  var diffFromBase = baseForDiff - newT;
+  var faster = diffFromBase > 0;
   if(ilDiff){
-    var baseForDiff = ilRiddenSec || ilBaseSec;
-    var diffFromBase = baseForDiff - newT;
     if(Math.abs(diffFromBase)<1){
       ilDiff.textContent='+/- 0s';
       ilDiff.style.color='var(--textmu)';
-      if(ilSimCol){ilSimCol.style.background='var(--gl)';ilSimCol.style.border='none';}
     } else {
-      var faster = diffFromBase > 0;
       ilDiff.textContent=(faster?'-':'+')+fmt(Math.abs(diffFromBase))+(faster?' sneller':' langzamer');
       ilDiff.style.color=faster?'var(--green)':'var(--coral)';
-      if(ilSimCol){
-        ilSimCol.style.background=faster?'rgba(29,158,117,0.12)':'rgba(220,80,80,0.10)';
-        ilSimCol.style.border='0.5px solid '+(faster?'var(--green)':'var(--coral)');
-      }
+    }
+  }
+  // Always color sim block regardless of ilDiff
+  if(ilSimCol){
+    if(Math.abs(diffFromBase)<1){
+      ilSimCol.style.background='var(--gl)';
+      ilSimCol.style.border='none';
+    } else {
+      ilSimCol.style.background=faster?'rgba(29,158,117,0.15)':'rgba(220,60,60,0.12)';
+      ilSimCol.style.border='0.5px solid '+(faster?'var(--green)':'var(--coral)');
     }
   }
   // Update ridden column if from ride

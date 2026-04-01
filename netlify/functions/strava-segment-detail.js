@@ -59,7 +59,9 @@ exports.handler = async (event) => {
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       if (effortsRes.ok) {
-        const efforts = await effortsRes.json();
+        const rawEfforts = await effortsRes.text();
+        const safeEfforts = rawEfforts.replace(/"id"\s*:\s*(\d{10,})/g, '"id": "$1"');
+        const efforts = JSON.parse(safeEfforts);
         if (efforts.length > 0) {
           // Find effort with minimum elapsed_time = PR effort
           const prEffort = efforts.reduce((best, e) =>

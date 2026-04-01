@@ -2212,7 +2212,7 @@ function calcResult(){
   }
   var ilDiff=document.getElementById('il-diff');
   var ilSimCol=document.getElementById('il-sim-col');
-  var baseForDiff = ilRiddenSec || ilBaseSec;
+  var baseForDiff = ilBaseSec || ilRiddenSec; // Always compare to PR
   var diffFromBase = baseForDiff - newT;
   var faster = diffFromBase > 0;
   if(Math.abs(diffFromBase)<1){

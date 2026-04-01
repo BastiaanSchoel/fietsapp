@@ -1326,7 +1326,7 @@ async function selectRide(id, itemEl) {
       var gc = Math.abs(seg.average_grade)>3 ? 'var(--coral)' : 'var(--green)';
       var segWatts = seg.average_watts ? Math.round(seg.average_watts) : 0;
       var segBikeName = act.gear_name || (act.gear_id ? act.gear_id : '');
-      var segEffortId = seg.effort_id || '';
+      var segEffortId = seg.effort_id ? String(seg.effort_id) : '';
       html += '<div class="segment-item ride-seg-item" id="seg-item-'+seg.id+'" data-seg-id="'+seg.id+'" data-ridden="'+seg.elapsed_time+'" data-watts="'+segWatts+'" data-bike="'+segBikeName+'" data-effort-id="'+segEffortId+'" onclick="selectSegmentFromRideEl(this)" style="border-radius:0;border-left:none;border-right:none;border-top:none;cursor:pointer;">';
       html += '<div style="flex:1;"><div class="seg-name">'+seg.name+prBadge+'</div>';
       html += '<div class="seg-meta">'+((seg.distance||0)/1000).toFixed(1)+' km - Gereden: '+fmt(seg.elapsed_time)+'</div></div>';
@@ -1937,7 +1937,7 @@ async function selectSegment(id, itemEl, fromRide){
         if(cv2) drawProfileOn(cv2, gpxPoints, ilStreams, null, _drawKom||null);
       }
       if(_seg && _seg.pr && _seg.pr.effort_id) {
-        loadEffortStreams(_seg.pr.effort_id, 'pr').then(redrawChart);
+        loadEffortStreams(String(_seg.pr.effort_id), 'pr').then(redrawChart);
       }
       if(_riddenSec > 0 && window._currentRideEffortId) {
         loadEffortStreams(window._currentRideEffortId, 'ridden').then(redrawChart);
@@ -2441,7 +2441,7 @@ function calcResult(){
   var _res_pr=document.getElementById('res-pr');if(_res_pr)_res_pr.textContent=fmt(myT);
   var _res_speed=document.getElementById('res-speed');if(_res_speed)_res_speed.textContent=(td/newT*3.6).toFixed(1)+' km/u';
   var _res_wkg=document.getElementById('res-wkg');if(_res_wkg)_res_wkg.textContent=(P/Math.max(1,weight-wloss)).toFixed(2)+' W/kg';
-  var prdEl=document.getElementById('res-prdiff');if(prdEl)prdEl.textContent=Math.abs(diff)<1?'+/- 0s':(diff>0?'-':'+')+fmt(Math.abs(diff));prdEl.style.color=diff>1?'var(--green)':diff<-1?'var(--coral)':'var(--textmu)';
+  var prdEl=document.getElementById('res-prdiff');if(prdEl){prdEl.textContent=Math.abs(diff)<1?'+/- 0s':(diff>0?'-':'+')+fmt(Math.abs(diff));prdEl.style.color=diff>0?'var(--green)':'var(--coral)';}
   var rdEl=document.getElementById('res-diff');
   if(rdEl&&Math.abs(diff)<1){rdEl.textContent='Geen verandering';rdEl.className='res-diff neu';}
   else if(rdEl){rdEl.textContent=(diff>0?'-':'+')+fmt(Math.abs(diff))+(diff>0?' sneller':' langzamer');rdEl.className='res-diff '+(diff>1?'win':'loss');}

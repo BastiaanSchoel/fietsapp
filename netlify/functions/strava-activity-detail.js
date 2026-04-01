@@ -13,6 +13,7 @@ exports.handler = async (event) => {
     const segments = (act.segment_efforts || []).map(e => ({
       id: e.segment.id,
       name: e.segment.name,
+      effort_id: e.id,
       elapsed_time: e.elapsed_time,
       average_watts: e.average_watts || null,
       distance: e.segment.distance,

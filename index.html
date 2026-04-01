@@ -1640,13 +1640,21 @@ async function loadRides() {
     var after = fromEl && fromEl.value ? Math.floor(new Date(fromEl.value).getTime()/1000) : Math.floor(Date.now()/1000) - 365*24*3600;
     var before = toEl && toEl.value ? Math.floor(new Date(toEl.value).getTime()/1000) + 86400 : Math.floor(Date.now()/1000);
     var all = [];
-    for (var page = 1; page <= 10; page++) {
-      var url = '/api/strava-activities?token='+accessToken+'&page='+page+'&after='+after+'&before='+before;
+    var currentBefore = before;
+    // Keep fetching until we reach the 'after' date
+    // Use sliding 'before' window since Strava limits to 200 total
+    for (var page = 1; page <= 20; page++) {
+      var url = '/api/strava-activities?token='+accessToken+'&page=1&per_page=100&after='+after+'&before='+currentBefore;
       var res = await fetch(url);
       var batch = await res.json();
       if (!Array.isArray(batch) || batch.length === 0) break;
       all = all.concat(batch);
-      if (batch.length < 30) break;
+      if (batch.length < 100) break; // got less than full page = done
+      // Move before to just before oldest activity in batch
+      var oldest = batch[batch.length - 1];
+      var oldestTs = Math.floor(new Date(oldest.start_date).getTime()/1000);
+      if (oldestTs <= after) break;
+      currentBefore = oldestTs - 1;
     }
     allRides = all;
     if (!allRides.length) {

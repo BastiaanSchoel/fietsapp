@@ -12,22 +12,24 @@ exports.handler = async (event) => {
       return { statusCode: res.status, body: JSON.stringify({ error: err.message || 'Activiteit niet gevonden' }) };
     }
 
-    // Use raw text to preserve 64-bit IDs (effort IDs, segment IDs)
+    // Use raw text - but only stringify effort IDs (they're the large 64-bit ones)
+    // Segment IDs are typically 7-9 digits, effort IDs are 18-19 digits
     const rawText = await res.text();
-    const safeText = rawText.replace(/"id"\s*:\s*(\d{10,})/g, '"id": "$1"');
+    // Only convert IDs with 15+ digits to strings (effort IDs, not segment IDs)
+    const safeText = rawText.replace(/"id"\s*:\s*(\d{15,})/g, '"id": "$1"');
     const act = JSON.parse(safeText);
 
     const segments = (act.segment_efforts || []).map(e => ({
-      id: e.segment.id,
-      name: e.segment.name,
-      effort_id: String(e.id),  // preserve as string
+      id: e.segment ? e.segment.id : null,        // segment ID (small, stays number)
+      name: e.segment ? e.segment.name : '',
+      effort_id: String(e.id),                     // effort ID (large, stored as string)
       elapsed_time: e.elapsed_time,
       average_watts: e.average_watts || null,
-      distance: e.segment.distance,
-      average_grade: e.segment.average_grade,
-      maximum_grade: e.segment.maximum_grade,
-      total_elevation_gain: e.segment.total_elevation_gain,
-      city: e.segment.city,
+      distance: e.segment ? e.segment.distance : 0,
+      average_grade: e.segment ? e.segment.average_grade : 0,
+      maximum_grade: e.segment ? e.segment.maximum_grade : 0,
+      total_elevation_gain: e.segment ? e.segment.total_elevation_gain : 0,
+      city: e.segment ? e.segment.city : '',
       pr_rank: e.pr_rank,
       achievements: e.achievements || []
     }));

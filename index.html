@@ -1498,7 +1498,7 @@ function buildInlineDetail(prSec, showRidden) {
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);">';
   html += '<div style="padding:8px 10px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Afstand</div><div style="font-size:13px;font-weight:600;" id="il-dist">--</div></div>';
   html += '<div style="padding:8px 10px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Helling</div><div style="font-size:13px;font-weight:600;" id="il-grade">--</div></div>';
-  html += '<div style="padding:8px 10px;border-bottom:0.5px solid var(--border);"><div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">PR</div><div style="font-size:13px;font-weight:600;" id="il-pr">--</div></div>';
+  html += '<div style="padding:8px 10px;border-bottom:0.5px solid var(--border);"><div style="font-size:10px;color:var(--text);font-family:monospace;text-transform:uppercase;margin-bottom:2px;font-weight:700;">PR</div><div style="font-size:13px;font-weight:600;" id="il-pr">--</div></div>';
   html += '</div>';
 
   // Profile canvas
@@ -1517,7 +1517,7 @@ function buildInlineDetail(prSec, showRidden) {
   html += '</div>';
   // PR
   html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
-  html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">PR</div>';
+  html += '<div style="font-size:10px;color:var(--text);font-family:monospace;text-transform:uppercase;margin-bottom:2px;font-weight:700;">PR</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;" id="il-pr-time">--</div>';
   html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--green);margin-top:2px;" id="il-pr-watts"></div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-pr-date-lbl"></div>';
@@ -1525,14 +1525,14 @@ function buildInlineDetail(prSec, showRidden) {
   html += '</div>';
   // KOM
   html += '<div style="background:var(--bg);border-radius:var(--rs);padding:6px 7px;">';
-  html += '<div style="font-size:9px;color:var(--textmu);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">KOM</div>';
+  html += '<div style="font-size:10px;color:var(--text);font-family:monospace;text-transform:uppercase;margin-bottom:2px;font-weight:700;">KOM</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--amber);" id="il-kom-time">--</div>';
   html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--amber);margin-top:2px;" id="il-kom-watts"></div>';
   html += '<div style="font-size:9px;color:var(--textmu);margin-top:1px;" id="il-kom-diff"></div>';
   html += '</div>';
   // Simulatie
   html += '<div id="il-sim-col" style="background:var(--gl);border-radius:var(--rs);padding:6px 7px;">';
-  html += '<div style="font-size:9px;color:var(--gd);font-family:monospace;text-transform:uppercase;margin-bottom:2px;">Simulatie</div>';
+  html += '<div style="font-size:10px;color:var(--text);font-family:monospace;text-transform:uppercase;margin-bottom:2px;font-weight:700;">Simulatie</div>';
   html += '<div style="font-size:15px;font-weight:600;font-family:monospace;letter-spacing:-0.02em;color:var(--green);" id="il-time">--</div>';
   html += '<div style="font-size:11px;font-weight:500;font-family:monospace;color:var(--green);margin-top:2px;" id="il-sim-watts"></div>';
   html += '<div style="font-size:9px;color:var(--gd);margin-top:1px;" id="il-diff">--</div>';
@@ -2138,6 +2138,8 @@ function simSeg(pts,P,mass,CdA,Crr,windMs,draft,rho,ce,de){
 
 //
 function calcResult(){
+  // Skip coloring if no segment loaded - avoid null errors
+  var _hasSegment = gpxPoints.length > 0;
   if(!gpxPoints.length){
     var nw=document.getElementById('no-seg-warn');if(nw)nw.style.display='block';
     return;
@@ -2197,7 +2199,7 @@ function calcResult(){
   var newSim=simSeg(gpxPoints,P,newM,newCda,finalCrr,totalWindMs,draft,rho,chain,0.995);
   var newT=newSim*scale,diff=myT-newT,td=gpxPoints[gpxPoints.length-1].dist;
   // Update inline result
-  var ilTime=document.getElementById('il-time');if(ilTime)ilTime.textContent=fmt(newT);
+  var ilTime=document.getElementById('il-time');if(ilTime){ilTime.textContent=fmt(newT);}
   var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u gem.';
   var simWattsEl=document.getElementById('il-sim-watts');
   if(simWattsEl) simWattsEl.textContent = Math.round(P)+'W';

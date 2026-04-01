@@ -7,13 +7,20 @@ exports.handler = async (event) => {
       `https://www.strava.com/api/v3/activities/${id}`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
-    const act = await res.json();
-    if (!res.ok) return { statusCode: 400, body: JSON.stringify({ error: act.message || 'Activiteit niet gevonden' }) };
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { statusCode: res.status, body: JSON.stringify({ error: err.message || 'Activiteit niet gevonden' }) };
+    }
+
+    // Use raw text to preserve 64-bit IDs (effort IDs, segment IDs)
+    const rawText = await res.text();
+    const safeText = rawText.replace(/"id"\s*:\s*(\d{10,})/g, '"id": "$1"');
+    const act = JSON.parse(safeText);
 
     const segments = (act.segment_efforts || []).map(e => ({
       id: e.segment.id,
       name: e.segment.name,
-      effort_id: String(e.id),
+      effort_id: String(e.id),  // preserve as string
       elapsed_time: e.elapsed_time,
       average_watts: e.average_watts || null,
       distance: e.segment.distance,

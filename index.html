@@ -1927,22 +1927,20 @@ async function selectSegment(id, itemEl, fromRide){
 
       // Draw profile (initial without speed lines)
       var cv=document.getElementById('il-canvas');
-      if(cv) drawProfileOn(cv, gpxPoints, null);
+      if(cv) drawProfileOn(cv, gpxPoints, null, null, ilKomSec||null);
 
-      // Load PR effort streams for speed overlay
+      // Load effort streams and redraw
       ilStreams = { pr: null, ridden: null };
-      if(_seg && _seg.pr && _seg.pr.effort_id) {
-        loadEffortStreams(_seg.pr.effort_id, 'pr').then(function() {
-          var cv2=document.getElementById('il-canvas');
-          if(cv2) drawProfileOn(cv2, gpxPoints, ilStreams);
-        });
+      var _drawSeg = _seg, _drawKom = ilKomSec;
+      function redrawChart() {
+        var cv2=document.getElementById('il-canvas');
+        if(cv2) drawProfileOn(cv2, gpxPoints, ilStreams, null, _drawKom||null);
       }
-      // Load ridden effort streams if from a ride
+      if(_seg && _seg.pr && _seg.pr.effort_id) {
+        loadEffortStreams(_seg.pr.effort_id, 'pr').then(redrawChart);
+      }
       if(_riddenSec > 0 && window._currentRideEffortId) {
-        loadEffortStreams(window._currentRideEffortId, 'ridden').then(function() {
-          var cv2=document.getElementById('il-canvas');
-          if(cv2) drawProfileOn(cv2, gpxPoints, ilStreams);
-        });
+        loadEffortStreams(window._currentRideEffortId, 'ridden').then(redrawChart);
       }
 
       // Wire sliders and render sub-components
@@ -2123,7 +2121,6 @@ function ilSelectDay(i){
 
 // Speed streams for compare chart
 var ilStreams = { pr: null, ridden: null };
-var ilSegChart = null;
 
 async function loadEffortStreams(effortId, key) {
   if (!effortId || !accessToken) return null;
@@ -2131,122 +2128,176 @@ async function loadEffortStreams(effortId, key) {
     var res = await fetch('/api/strava-effort-streams?token='+accessToken+'&effort_id='+effortId);
     if (!res.ok) return null;
     var data = await res.json();
+    if (data.error) return null;
     ilStreams[key] = data;
     return data;
   } catch(e) { return null; }
 }
 
-function drawProfileOn(cv, pts, streams) {
-  var wrap = document.getElementById('il-chart-wrap');
-  if(!wrap) {
-    // Fallback simple draw
-    var W=cv.offsetWidth||300,H=100;cv.width=W;cv.height=H;
-    var ctx=cv.getContext('2d');ctx.clearRect(0,0,W,H);
-    if(!pts||pts.length<2)return;
-    var eles=pts.map(function(p){return p.ele;}),minE=Math.min.apply(null,eles),maxE=Math.max.apply(null,eles),range=maxE-minE||1,td=pts[pts.length-1].dist,pad=4;
-    ctx.beginPath();pts.forEach(function(p,i){var x=pad+(p.dist/td)*(W-2*pad),y=H-pad-((p.ele-minE)/range)*(H-2*pad-2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-    ctx.lineTo(W-pad,H-pad);ctx.lineTo(pad,H-pad);ctx.closePath();ctx.fillStyle='#E1F5EE';ctx.fill();
-    return;
+// Simulate speed profile over GPX points given a total time
+function simSpeedProfile(pts, totalSec) {
+  if (!pts || pts.length < 2 || !totalSec) return null;
+  var td = pts[pts.length-1].dist;
+  // Use physics to estimate speed at each point proportional to grade
+  var speeds = [], times = [];
+  var P = parseFloat(document.getElementById('pf-ftp')&&document.getElementById('pf-ftp').value||280);
+  var M = (parseFloat(document.getElementById('pf-weight')&&document.getElementById('pf-weight').value||75)) + 9;
+  var CdA = 0.324, Crr = 0.004, rho = 1.225, g = 9.81;
+  var rawSpeeds = [];
+  for (var i = 1; i < pts.length; i++) {
+    var gr = (pts[i].grade||0)/100;
+    var lo=0.5, hi=30;
+    for (var j=0; j<40; j++) {
+      var mid=(lo+hi)/2, Fa=0.5*CdA*rho*mid*mid, Fr=Crr*M*g, Fg=M*g*Math.sin(Math.atan(gr));
+      if((Fa+Fr+Fg)*mid/(0.985*0.995) < P) lo=mid; else hi=mid;
+    }
+    rawSpeeds.push((lo+hi)/2);
   }
+  // Scale so total time matches
+  var rawTime = 0;
+  for (var i=1; i<pts.length; i++) rawTime += (pts[i].dist-pts[i-1].dist)/rawSpeeds[i-1];
+  var scale = rawTime / totalSec;
+  var result = { distance: [0], velocity: [rawSpeeds[0]*scale*3.6] };
+  for (var i=1; i<pts.length; i++) {
+    result.distance.push(pts[i].dist);
+    result.velocity.push(rawSpeeds[i-1]*scale*3.6);
+  }
+  return result;
+}
 
-  var W = wrap.offsetWidth || 300, H = 100;
+function drawProfileOn(cv, pts, streams, simSec, komSec) {
+  var wrap = document.getElementById('il-chart-wrap');
+  var W = (wrap ? wrap.offsetWidth : cv.offsetWidth) || 300, H = 110;
   cv.width = W; cv.height = H;
   var ctx = cv.getContext('2d');
   ctx.clearRect(0,0,W,H);
   if(!pts||pts.length<2) return;
 
-  var pad = 6;
+  var pad = 6, padTop = 8;
   var eles = pts.map(function(p){return p.ele;});
   var minE = Math.min.apply(null,eles), maxE = Math.max.apply(null,eles);
   var rangeE = maxE - minE || 1;
   var td = pts[pts.length-1].dist;
 
+  // Speed range across all streams
+  var allSpeeds = [];
+  function collectSpeeds(st) { if(st&&st.velocity) allSpeeds = allSpeeds.concat(st.velocity.filter(function(v){return v>0;})); }
+  collectSpeeds(streams && streams.pr);
+  collectSpeeds(streams && streams.ridden);
+  var komStream = komSec ? simSpeedProfile(pts, komSec) : null;
+  collectSpeeds(komStream);
+  var simStream = simSec ? simSpeedProfile(pts, simSec) : null;
+  collectSpeeds(simStream);
+  var maxV = allSpeeds.length ? Math.max.apply(null,allSpeeds) : 40;
+  var minV = allSpeeds.length ? Math.min.apply(null,allSpeeds) : 0;
+  var rangeV = maxV - minV || 1;
+
+  // Layout: top 60% = speed, bottom 40% = elevation
+  var speedH = Math.floor(H * 0.58), eleH = H - speedH;
+  var eleTop = speedH;
+
   function xOf(dist) { return pad + (dist/td)*(W-2*pad); }
-  function yOfEle(ele) { return H-pad-((ele-minE)/rangeE)*(H-2*pad-4); }
+  function yOfEle(ele) { return eleTop + eleH - pad - ((ele-minE)/rangeE)*(eleH-pad-2); }
+  function yOfV(v) { return padTop + (1-(v-minV)/rangeV)*(speedH-padTop-2); }
 
   // Draw elevation fill
   ctx.beginPath();
   pts.forEach(function(p,i){ i===0?ctx.moveTo(xOf(p.dist),yOfEle(p.ele)):ctx.lineTo(xOf(p.dist),yOfEle(p.ele)); });
-  ctx.lineTo(xOf(td),H-pad); ctx.lineTo(xOf(0),H-pad); ctx.closePath();
-  ctx.fillStyle='rgba(29,158,117,0.08)'; ctx.fill();
+  ctx.lineTo(xOf(td),eleTop+eleH-pad); ctx.lineTo(xOf(0),eleTop+eleH-pad); ctx.closePath();
+  ctx.fillStyle='rgba(29,158,117,0.10)'; ctx.fill();
   ctx.beginPath();
   pts.forEach(function(p,i){ i===0?ctx.moveTo(xOf(p.dist),yOfEle(p.ele)):ctx.lineTo(xOf(p.dist),yOfEle(p.ele)); });
-  ctx.strokeStyle='#1D9E75'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.strokeStyle='rgba(29,158,117,0.5)'; ctx.lineWidth=1; ctx.stroke();
 
-  // Draw speed lines if streams available
-  function drawSpeed(streamData, color, dashed) {
+  // Divider line
+  ctx.beginPath(); ctx.moveTo(pad,eleTop); ctx.lineTo(W-pad,eleTop);
+  ctx.strokeStyle='rgba(0,0,0,0.08)'; ctx.lineWidth=0.5; ctx.stroke();
+
+  // Draw speed line helper
+  function drawSpeedLine(streamData, color, width, dashed) {
     if(!streamData||!streamData.velocity||!streamData.distance) return;
     var vels = streamData.velocity, dists = streamData.distance;
-    var maxV = Math.max.apply(null,vels.filter(function(v){return v>0;})) || 15;
-    var minV = Math.min.apply(null,vels.filter(function(v){return v>0;})) || 0;
-    var rangeV = maxV - minV || 1;
-    function yOfV(v) { return H - pad - ((v-minV)/rangeV)*(H*0.5-pad); }
     ctx.beginPath();
-    if(dashed) ctx.setLineDash([4,3]); else ctx.setLineDash([]);
+    if(dashed) ctx.setLineDash([5,3]); else ctx.setLineDash([]);
     var started = false;
-    dists.forEach(function(d,i){
-      if(vels[i] <= 0) return;
-      var x = xOf(d), y = yOfV(vels[i]);
-      if(!started) { ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
-    });
-    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
+    for (var i=0; i<dists.length; i++) {
+      if(!(vels[i]>0)) continue;
+      var x=xOf(dists[i]), y=yOfV(vels[i]);
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=color; ctx.lineWidth=width; ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  drawSpeed(streams && streams.pr, '#FC4C02', false);     // PR = Strava orange
-  drawSpeed(streams && streams.ridden, '#3B82F6', true);  // Rit = blue dashed
+  // Legend colors
+  drawSpeedLine(streams&&streams.ridden, '#3B82F6', 1.5, true);   // Rit = blauw gestippeld
+  drawSpeedLine(streams&&streams.pr, '#FC4C02', 1.5, false);       // PR = Strava oranje
+  drawSpeedLine(komStream, '#F59E0B', 1.5, false);                  // KOM = goud
+  drawSpeedLine(simStream, '#1D9E75', 2, false);                    // Simulatie = groen
 
-  // Store pts and streams for mousemove
-  cv._pts = pts; cv._streams = streams; cv._td = td; cv._pad = pad;
-  cv._minE = minE; cv._rangeE = rangeE;
+  // Draw legend top-right
+  var legend = [];
+  if(streams&&streams.ridden) legend.push({c:'#3B82F6',l:'Rit'});
+  if(streams&&streams.pr) legend.push({c:'#FC4C02',l:'PR'});
+  if(komSec) legend.push({c:'#F59E0B',l:'KOM'});
+  if(simSec) legend.push({c:'#1D9E75',l:'Sim'});
+  var lx = W - pad;
+  legend.reverse().forEach(function(item) {
+    ctx.fillStyle = item.c;
+    ctx.font = '8px monospace';
+    var tw = ctx.measureText(item.l).width;
+    ctx.fillText(item.l, lx-tw, padTop+7);
+    lx -= tw + 10;
+  });
 
-  // Add mousemove interaction
+  // Store for mousemove
+  cv._pts=pts; cv._streams=streams; cv._td=td; cv._pad=pad;
+  cv._yOfV=yOfV; cv._xOf=xOf; cv._yOfEle=yOfEle;
+  cv._komStream=komStream; cv._simStream=simStream;
+
   cv.onmousemove = function(e) {
-    var rect = cv.getBoundingClientRect();
-    var mx = e.clientX - rect.left;
-    var frac = Math.max(0, Math.min(1, (mx - pad)/(W-2*pad)));
-    var dist = frac * td;
+    var rect=cv.getBoundingClientRect(), scaleX=W/rect.width;
+    var mx=(e.clientX-rect.left)*scaleX;
+    var frac=Math.max(0,Math.min(1,(mx-pad)/(W-2*pad)));
+    var dist=frac*td;
 
-    // Find nearest GPX point
-    var best = 0, bestD = Infinity;
+    var best=0, bestD=Infinity;
     pts.forEach(function(p,i){ var dd=Math.abs(p.dist-dist); if(dd<bestD){bestD=dd;best=i;} });
-    var p = pts[best];
+    var p=pts[best];
 
-    // Crosshair
-    var ch = document.getElementById('il-crosshair');
-    if(ch) { ch.style.display='block'; ch.style.left=mx+'px'; }
+    var ch=document.getElementById('il-crosshair');
+    if(ch){ch.style.display='block';ch.style.left=(mx/scaleX)+'px';}
 
-    // Speed at this distance for each stream
-    function speedAt(streamData, d) {
-      if(!streamData||!streamData.velocity) return null;
-      var best=0, bestD=Infinity;
-      streamData.distance.forEach(function(sd,i){ var dd=Math.abs(sd-d); if(dd<bestD){bestD=dd;best=i;} });
-      return streamData.velocity[best] ? (streamData.velocity[best]*3.6).toFixed(1) : null;
+    function speedAt(st, d) {
+      if(!st||!st.velocity) return null;
+      var bi=0, bd=Infinity;
+      st.distance.forEach(function(sd,i){ var dd=Math.abs(sd-d); if(dd<bd){bd=dd;bi=i;} });
+      return st.velocity[bi]>0 ? st.velocity[bi].toFixed(1) : null;
     }
 
-    var prV = speedAt(streams&&streams.pr, dist);
-    var ridV = speedAt(streams&&streams.ridden, dist);
-    var grade = p.grade ? p.grade.toFixed(1) : '0.0';
-    var distKm = (dist/1000).toFixed(2);
+    var prV=speedAt(streams&&streams.pr,dist);
+    var ridV=speedAt(streams&&streams.ridden,dist);
+    var komV=speedAt(komStream,dist);
+    var simV=speedAt(simStream,dist);
 
-    var tip = document.getElementById('il-tooltip');
-    if(tip) {
-      var html = '<b>'+distKm+' km</b> | '+p.ele.toFixed(0)+'m | '+grade+'%<br>';
-      if(prV) html += '<span style="color:#FC4C02">PR: '+prV+' km/u</span>';
-      if(ridV) html += (prV?' | ':'')+'<span style="color:#3B82F6">Rit: '+ridV+' km/u</span>';
-      tip.innerHTML = html;
-      tip.style.display = 'block';
-      var tipX = mx + 10;
-      if(tipX + 160 > W) tipX = mx - 170;
-      tip.style.left = tipX + 'px';
+    var tip=document.getElementById('il-tooltip');
+    if(tip){
+      var html='<b>'+(dist/1000).toFixed(2)+'km</b> '+p.ele.toFixed(0)+'m '+(p.grade>0?'+':'')+((p.grade||0).toFixed(1))+'%';
+      if(simV) html+='<br><span style="color:#1D9E75">Sim: '+simV+' km/u</span>';
+      if(prV) html+='<br><span style="color:#FC4C02">PR: '+prV+' km/u</span>';
+      if(komV) html+='<br><span style="color:#F59E0B">KOM: '+komV+' km/u</span>';
+      if(ridV) html+='<br><span style="color:#3B82F6">Rit: '+ridV+' km/u</span>';
+      tip.innerHTML=html; tip.style.display='block';
+      var tx=(mx/scaleX)+10; if(tx+170>W/scaleX) tx=(mx/scaleX)-175;
+      tip.style.left=tx+'px';
     }
   };
-
-  cv.onmouseleave = function() {
+  cv.onmouseleave=function(){
     var ch=document.getElementById('il-crosshair');if(ch)ch.style.display='none';
     var tip=document.getElementById('il-tooltip');if(tip)tip.style.display='none';
   };
 }
+
 
 //
 function drawProfile(pts){
@@ -2337,6 +2388,11 @@ function calcResult(){
   var newT=newSim*scale,diff=myT-newT,td=gpxPoints[gpxPoints.length-1].dist;
   // Update inline result
   var ilTime=document.getElementById('il-time');if(ilTime){ilTime.textContent=fmt(newT);}
+  // Redraw chart with updated simulation
+  if(_hasSegment && gpxPoints.length) {
+    var cv3=document.getElementById('il-canvas');
+    if(cv3) drawProfileOn(cv3, gpxPoints, ilStreams, newT, ilKomSec||null);
+  }
   var ilSpd=document.getElementById('il-speed');if(ilSpd)ilSpd.textContent=(td/newT*3.6).toFixed(1)+' km/u gem.';
   var simWattsEl=document.getElementById('il-sim-watts');
   if(simWattsEl) simWattsEl.textContent = Math.round(P)+'W';

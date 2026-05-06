@@ -309,257 +309,78 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
     <div class="tabs">
       <button class="tab active" onclick="switchTab('segment')">Strava</button>
       <button class="tab" onclick="switchTab('weer')">Weer</button>
-      
+      <button class="tab" onclick="switchTab('profiel')">Profiel</button>
     </div>
 
-    
 
-    <!-- PROFIEL -->
-    <!-- SEGMENT -->
-    <div id="panel-segment" class="panel active">
-      <div id="login-prompt" style="text-align:center;padding:2rem 1rem;border:1.5px dashed var(--borderm);border-radius:var(--r);margin-bottom:0.875rem;">
-        <div style="font-size:15px;font-weight:500;margin-bottom:6px;">Verbind met Strava</div>
-        <div style="font-size:12px;color:var(--textmu);margin-bottom:1rem;">Log in om je gestemde segmenten te laden</div>
-        <button class="connect-btn" style="display:inline-flex;width:auto;padding:10px 18px;" onclick="loginWithStrava()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-          Inloggen met Strava
-        </button>
-      </div>
-
-      <div id="seg-search-card" class="card" style="display:none;">
-        <!-- Source tabs -->
-        <div style="display:flex;gap:3px;margin-bottom:1rem;background:var(--bg);border-radius:var(--rs);padding:3px;border:0.5px solid var(--border);">
-          <button class="seg-src-tab active" id="srctab-rides" onclick="switchSegSource('rides')">Ritten</button>
-          <button class="seg-src-tab" id="srctab-routes" onclick="switchSegSource('routes')">Routes</button>
-          <button class="seg-src-tab" id="srctab-starred" onclick="switchSegSource('starred')">&#9733; Stersegmenten</button>
-        </div>
-
-        <!-- Stersegmenten -->
-        <div id="src-starred" style="display:none;">
-          <div class="search-wrap">
-            <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam..." oninput="filterSegments()">
-            <button class="search-btn" onclick="loadSegments()">&#8635;</button>
-          </div>
-          <div id="segment-list" class="segment-list"><div class="loading-text">Laden...</div></div>
-        </div>
-
-        <!-- Ritten -->
-        <div id="src-rides">
-          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:7px;align-items:flex-end;">
-            <div>
-              <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Vanaf</div>
-              <input type="date" id="rides-from" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Tot en met</div>
-              <input type="date" id="rides-to" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
-            </div>
-            <button class="search-btn" onclick="loadRides()" style="height:30px;">&#8635;</button>
-          </div>
-          <div class="search-wrap">
-            <input type="text" class="search-input" id="rides-search" placeholder="Zoek rit op naam..." oninput="filterRides()">
-          </div>
-          <div id="rides-list" class="segment-list"><div class="loading-text">Laden...</div></div>
-        </div>
-
-        <!-- Routes -->
-        <div id="src-routes" style="display:none;">
-          <div class="search-wrap">
-            <input type="text" class="search-input" id="routes-search" placeholder="Zoek route op naam..." oninput="filterRoutes()">
-            <button class="search-btn" onclick="loadRoutes()">&#8635;</button>
-          </div>
-          <div id="routes-list" class="segment-list"><div class="loading-text">Klik &#8635; om routes te laden.</div></div>
-        </div>
-      </div>
-
-      <div id="seg-detail" class="card" style="display:none;">
-        <div class="card-title" id="seg-title">Segment</div>
-        <div class="seg-stats">
-          <div class="stat"><div class="stat-lbl">Afstand</div><div class="stat-val" id="seg-dist">--</div></div>
-          <div class="stat"><div class="stat-lbl">Hoogte</div><div class="stat-val" id="seg-elev">--</div></div>
-          <div class="stat"><div class="stat-lbl">Helling</div><div class="stat-val" id="seg-grade">--</div></div>
-          <div class="stat"><div class="stat-lbl">Max helling</div><div class="stat-val" id="seg-maxgrade">--</div></div>
-          <div class="stat"><div class="stat-lbl">Jouw PR</div><div class="stat-val" id="seg-pr">--</div></div>
-          <div class="stat"><div class="stat-lbl">PR datum</div><div class="stat-val" id="seg-prdate" style="font-size:11px;">--</div></div>
-        </div>
-        <div class="profile-wrap"><canvas class="seg-canvas" id="profile-canvas"></canvas></div>
-
-        <!-- Mini resultaat -->
-        <div class="mini-result" id="mini-result" style="display:none;">
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:0.5rem;">
-            <div>
-              <div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">Gesimuleerde tijd</div>
-              <div class="mini-time" id="mini-time">--</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:10px;color:var(--textmu);margin-bottom:2px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;">t.o.v. PR</div>
-              <div class="mini-diff neu" id="mini-diff">--</div>
-              <div style="font-size:10px;color:var(--textmu);margin-top:1px;" id="mini-speed">--</div>
-            </div>
-          </div>
-          <div id="mini-factors" style="margin-bottom:5px;"></div>
-          <div class="mini-weer" id="mini-weer">Weer: geen data</div>
-        </div>
-
-        <!-- Instellingen -->
-        <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:0.5px solid var(--border);">
-          <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);margin-bottom:0.5rem;font-family:'DM Mono',monospace;">Instellingen aanpassen</div>
-        </div>
-
-
-
-        <!-- Fiets -->
-        <div class="accord">
-          <button class="accord-btn" onclick="toggleAccord('acc-fiets',this)">
-            <span>Fiets <span class="accord-summary" id="acc-fiets-sum"></span></span>
-            <span class="accord-arrow">&#9660;</span>
-          </button>
-          <div class="accord-body" id="acc-fiets">
-            <div id="acc-garage-list"></div>
-            
-        </div>
-
->
-<html lang="nl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Watts-up</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-</head>
-<body>
-
-<header>
+  <header>
   <div class="logo">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
-      <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
-    </svg>
-    <div><div>Watts-up</div><div class="logo-sub">Segment Simulator</div></div>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+    <span class="logo-text">Watts-up</span>
   </div>
   <div class="hdr-right">
-    <button class="profiel-btn" onclick="toggleProfiel()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Profiel
-    </button>
     <div id="hdr-auth">
       <button class="strava-btn" onclick="loginWithStrava()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-        Strava
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+        Verbinden
       </button>
     </div>
+    <button class="profiel-btn" onclick="toggleProfiel()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profiel
+    </button>
   </div>
-</header>
+  </header>
 
-<!-- Profiel panel -->
-<div class="profiel-panel" id="profiel-panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
-    <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);font-family:'DM Mono',monospace;">Profiel</div>
-    <button onclick="toggleProfiel()" style="background:none;border:none;cursor:pointer;color:var(--textmu);font-size:16px;line-height:1;padding:0;">&#215;</button>
+  <div id="login-prompt" style="text-align:center;padding:2rem 1rem;display:none;">
+    <p style="color:var(--textmu);margin-bottom:1rem;font-size:14px;">Verbind met Strava om je segmenten te laden</p>
+    <button class="connect-btn" onclick="loginWithStrava()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+      Verbinden met Strava
+    </button>
   </div>
-  <div id="pf-strava-row" style="display:none;margin-bottom:0.75rem;">
-    <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--bg);border-radius:var(--rs);">
-      <img id="pf-avatar" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-      <div id="pf-naam" style="font-size:12px;font-weight:500;flex:1;"></div>
-      <div style="font-size:10px;color:var(--gd);">Strava</div>
-    </div>
-  </div>
-  <div class="pf-grid">
-    <div>
-      <div class="pf-field-label">Gewicht (kg)</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()"><span class="pf-unit">kg</span></div>
-      <div class="pf-src" id="pf-weight-src"></div>
-    </div>
-    <div>
-      <div class="pf-field-label">Lengte (cm)</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()"><span class="pf-unit">cm</span></div>
-    </div>
-    <div>
-      <div class="pf-field-label">FTP (W)</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()"><span class="pf-unit">W</span></div>
-      <div class="pf-src" id="pf-ftp-src"></div>
-    </div>
-    <div>
-      <div class="pf-field-label">Leeftijd</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()"><span class="pf-unit">jr</span></div>
-    </div>
-  </div>
-  <div class="pf-metrics">
-    <div class="pf-metric"><div class="pf-metric-l">W/kg</div><div class="pf-metric-v" id="pf-wkg">--</div></div>
-    <div class="pf-metric"><div class="pf-metric-l">BMI</div><div class="pf-metric-v" id="pf-bmi">--</div></div>
-    <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
-    <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
-  </div>
-  <div id="pf-vo2max-section" style="margin-top:10px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);font-family:monospace;">VO₂max</div>
-      <button onclick="loadVO2max()" style="font-size:10px;background:var(--surface);border:0.5px solid var(--borderm);border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit;color:var(--text);">&#9654; Berekenen</button>
-    </div>
-    <div style="font-size:11px;color:var(--textmu);" id="pf-vo2max-placeholder">Klik op berekenen voor een schatting op basis van je Strava vermogensdata.</div>
-  </div>
-  <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
-</div>
 
-<div class="main">
-
-  <!-- WELKOMST -->
-  <div id="welcome-screen" style="display:none;">
-    <div class="welcome-wrap">
-      <div class="welcome-hero">
-        <div class="welcome-logo-box">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
-            <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 6H5"/><path d="M15 5l-3.5 7.5H18.5"/>
-          </svg>
-        </div>
-        <div class="welcome-title">Watts-up</div>
-        <div class="welcome-sub">Simuleer je Strava-segmenten en ontdek hoeveel sneller je kunt worden</div>
+  <!-- STRAVA -->
+  <div id="panel-segment" class="panel active">
+    <div id="seg-search-card" class="card" style="display:none;">
+      <div style="display:flex;gap:3px;margin-bottom:1rem;background:var(--bg);border-radius:var(--rs);padding:3px;">
+        <button class="seg-src-tab active" id="srctab-rides" onclick="switchSegSource('rides')">Ritten</button>
+        <button class="seg-src-tab" id="srctab-routes" onclick="switchSegSource('routes')">Routes</button>
+        <button class="seg-src-tab" id="srctab-starred" onclick="switchSegSource('starred')">&#9733; Stersegmenten</button>
       </div>
-      <div class="welcome-card">
-        <div class="welcome-features">
-          <div class="welcome-feature">
-            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></div>
-            <div><div class="welcome-feat-title">Live weer</div><div class="welcome-feat-sub">Op basis van jouw locatie, 7-daagse voorspelling</div></div>
+      <div id="src-rides">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:7px;align-items:flex-end;">
+          <div>
+            <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Vanaf</div>
+            <input type="date" id="rides-from" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
           </div>
-          <div class="welcome-feature">
-            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-            <div><div class="welcome-feat-title">Segmenten uit Strava</div><div class="welcome-feat-sub">PR, KOM-verschil, direct simuleren</div></div>
+          <div>
+            <div style="font-size:10px;color:var(--textmu);margin-bottom:3px;font-family:monospace;">Tot en met</div>
+            <input type="date" id="rides-to" style="width:100%;padding:6px 7px;border:0.5px solid var(--borderm);border-radius:var(--rs);font-size:11px;color:var(--text);background:var(--surface);font-family:inherit;outline:none;" onchange="loadRides()">
           </div>
-          <div class="welcome-feature">
-            <div class="welcome-feat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-            <div><div class="welcome-feat-title">Wat als? simulaties</div><div class="welcome-feat-sub">Gewicht, aero, materiaal, conditie</div></div>
-          </div>
+          <button class="search-btn" onclick="loadRides()" style="height:30px;">&#8635;</button>
         </div>
-        <div class="welcome-action">
-          <button class="connect-btn" onclick="loginWithStrava()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-            Verbinden met Strava
-          </button>
-          <button class="skip-btn" onclick="skipToApp()">Doorgaan zonder Strava</button>
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="rides-search" placeholder="Zoek rit op naam..." oninput="filterRides()">
         </div>
+        <div id="rides-list" class="segment-list"><div class="loading-text">Laden...</div></div>
       </div>
-      <div id="clientid-screen" style="display:none;">
-        <div class="clientid-wrap">
-          <div style="font-size:12px;font-weight:500;margin-bottom:5px;">Strava Client ID</div>
-          <div style="font-size:11px;color:var(--textmu);margin-bottom:9px;">Ga naar <a href="https://www.strava.com/settings/api" target="_blank" style="color:var(--green);">strava.com/settings/api</a></div>
-          <input type="text" id="client-id-input" class="clientid-input" placeholder="bijv. 123456" oninput="this.style.borderColor=this.value.length>2?'var(--green)':'var(--borderm)'">
-          <button class="clientid-submit" onclick="saveClientId()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-            Inloggen met Strava
-          </button>
+      <div id="src-routes" style="display:none;">
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="routes-search" placeholder="Zoek route op naam..." oninput="filterRoutes()">
+          <button class="search-btn" onclick="loadRoutes()">&#8635;</button>
         </div>
+        <div id="routes-list" class="segment-list"><div class="loading-text">Klik &#8635; om routes te laden.</div></div>
+      </div>
+      <div id="src-starred" style="display:none;">
+        <div class="search-wrap">
+          <input type="text" class="search-input" id="seg-search" placeholder="Zoek op naam..." oninput="filterSegments()">
+          <button class="search-btn" onclick="loadSegments()">&#8635;</button>
+        </div>
+        <div id="segment-list" class="segment-list"><div class="loading-text">Laden...</div></div>
       </div>
     </div>
   </div>
-
-  <!-- APP -->
-  <div id="app-screen" style="display:none;">
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('segment')">Strava</button>
-      <button class="tab" onclick="switchTab('weer')">Weer</button>
-      
-    </div>
 
     <!-- WEER -->
     <div id="panel-weer" class="panel">

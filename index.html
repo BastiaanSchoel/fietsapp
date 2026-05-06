@@ -823,8 +823,10 @@ async function loadVO2max() {
     }
     // Estimate FTP from best 20-min power (~95%)
     var estFtp = Math.round(data.best20minWatts * 0.95);
-    var weight = parseFloat(document.getElementById('pf-weight').value) || 75;
-    var age = parseFloat(document.getElementById('pf-age').value) || 45;
+    var wEl = document.getElementById('pf-weight');
+    var aEl = document.getElementById('pf-age');
+    var weight = wEl ? (parseFloat(wEl.value) || 75) : 75;
+    var age = aEl ? (parseFloat(aEl.value) || 45) : 45;
     var sex = athlete && athlete.sex ? athlete.sex : 'M';
     var vo2 = calcVO2max(estFtp, weight);
     var cat = getVO2maxCategory(vo2, age, sex);

@@ -270,53 +270,7 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
 </header>
 
 <!-- Profiel panel -->
-<div class="profiel-panel" id="profiel-panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
-    <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--textmu);font-family:'DM Mono',monospace;">Profiel</div>
-    <button onclick="toggleProfiel()" style="background:none;border:none;cursor:pointer;color:var(--textmu);font-size:16px;line-height:1;padding:0;">&#215;</button>
-  </div>
-  <div id="pf-strava-row" style="display:none;margin-bottom:0.75rem;">
-    <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--bg);border-radius:var(--rs);">
-      <img id="pf-avatar" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;">
-      <div id="pf-naam" style="font-size:12px;font-weight:500;flex:1;"></div>
-      <div style="font-size:10px;color:var(--gd);">Strava</div>
-    </div>
-  </div>
-  <div class="pf-grid">
-    <div>
-      <div class="pf-field-label">Gewicht (kg)</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-weight" value="75" min="40" max="150" step="0.5" oninput="updateProfiel()"><span class="pf-unit">kg</span></div>
-      <div class="pf-src" id="pf-weight-src"></div>
-    </div>
-    <div>
-      <div class="pf-field-label">Lengte (cm)</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-height" value="175" min="140" max="220" oninput="updateProfiel()"><span class="pf-unit">cm</span></div>
-    </div>
-    <div>
-      <div class="pf-field-label">FTP (W)</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-ftp" value="220" min="80" max="500" step="5" oninput="updateProfiel()"><span class="pf-unit">W</span></div>
-      <div class="pf-src" id="pf-ftp-src"></div>
-    </div>
-    <div>
-      <div class="pf-field-label">Leeftijd</div>
-      <div class="pf-input-wrap"><input type="number" class="pf-input" id="pf-age" value="35" min="15" max="80" oninput="updateProfiel()"><span class="pf-unit">jr</span></div>
-    </div>
-  </div>
-  <div class="pf-metrics">
-    <div class="pf-metric"><div class="pf-metric-l">W/kg</div><div class="pf-metric-v" id="pf-wkg">--</div></div>
-    <div class="pf-metric"><div class="pf-metric-l">BMI</div><div class="pf-metric-v" id="pf-bmi">--</div></div>
-    <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
-    <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
-  </div>
-  <div id="pf-vo2max-section" style="margin-top:10px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);font-family:monospace;">VO₂max</div>
-      <button onclick="loadVO2max()" style="font-size:10px;background:var(--surface);border:0.5px solid var(--borderm);border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit;color:var(--text);">&#9654; Berekenen</button>
-    </div>
-    <div style="font-size:11px;color:var(--textmu);" id="pf-vo2max-placeholder">Klik op berekenen voor een schatting op basis van je Strava vermogensdata.</div>
-  </div>
-  <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
-</div>
+
 
 <div class="main">
 
@@ -832,9 +786,9 @@ async function loadVO2max() {
     var cat = getVO2maxCategory(vo2, age, sex);
     var wpkg = (estFtp/weight).toFixed(2);
 
-    // Update placeholder or insert after header
+    // Update placeholder
     var ph = document.getElementById('pf-vo2max-placeholder');
-    if (ph) { el = ph; } else { el = section; }
+    if (ph) el = ph;
     if (!el) return;
 
     // Bar visualization

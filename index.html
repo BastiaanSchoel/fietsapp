@@ -308,6 +308,13 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
     <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
     <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
   </div>
+  <div id="pf-vo2max-section" style="margin-top:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);font-family:monospace;">VO₂max</div>
+      <button onclick="loadVO2max()" style="font-size:10px;background:var(--surface);border:0.5px solid var(--borderm);border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit;color:var(--text);">&#9654; Berekenen</button>
+    </div>
+    <div style="font-size:11px;color:var(--textmu);" id="pf-vo2max-placeholder">Klik op berekenen voor een schatting op basis van je Strava vermogensdata.</div>
+  </div>
   <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
 </div>
 
@@ -550,6 +557,13 @@ footer{text-align:center;padding:2rem;font-size:11px;color:var(--textmu);font-fa
     <div class="pf-metric"><div class="pf-metric-l">Totaal gewicht</div><div class="pf-metric-v" id="pf-total">--</div></div>
     <div class="pf-metric"><div class="pf-metric-l">W/kg totaal</div><div class="pf-metric-v" id="pf-wkgt">--</div></div>
   </div>
+  <div id="pf-vo2max-section" style="margin-top:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--textmu);font-family:monospace;">VO₂max</div>
+      <button onclick="loadVO2max()" style="font-size:10px;background:var(--surface);border:0.5px solid var(--borderm);border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit;color:var(--text);">&#9654; Berekenen</button>
+    </div>
+    <div style="font-size:11px;color:var(--textmu);" id="pf-vo2max-placeholder">Klik op berekenen voor een schatting op basis van je Strava vermogensdata.</div>
+  </div>
   <div class="pf-advice" id="pf-advice">Vul je gegevens in.</div>
 </div>
 
@@ -765,6 +779,102 @@ document.addEventListener('click',function(e){
   var p=document.getElementById('profiel-panel'),b=document.querySelector('.profiel-btn');
   if(p&&p.classList.contains('open')&&!p.contains(e.target)&&b&&!b.contains(e.target))p.classList.remove('open');
 });
+
+// VO2max from FTP: standard formula
+function calcVO2max(ftpWatts, weightKg) {
+  // VO2max (ml/kg/min) = (FTP * 10.8 / weight) + 7
+  return Math.round(((ftpWatts * 10.8 / weightKg) + 7) * 10) / 10;
+}
+
+function getVO2maxCategory(vo2max, ageYears, sex) {
+  // Age-adjusted categories for cycling (ml/kg/min)
+  // Source: ACSM guidelines
+  var cats;
+  var isMale = sex !== 'F';
+  if (ageYears < 30) {
+    cats = isMale ? [25,35,43,52,60] : [23,32,38,46,54];
+  } else if (ageYears < 40) {
+    cats = isMale ? [23,33,41,50,58] : [21,30,36,44,52];
+  } else if (ageYears < 50) {
+    cats = isMale ? [21,31,39,47,55] : [19,28,34,42,49];
+  } else if (ageYears < 60) {
+    cats = isMale ? [18,28,36,44,52] : [17,25,31,38,46];
+  } else {
+    cats = isMale ? [16,25,32,40,47] : [15,22,28,35,42];
+  }
+  var labels = ['Zeer laag','Laag','Gemiddeld','Goed','Uitstekend','Uitzonderlijk'];
+  var colors = ['#DC2626','#F97316','#EAB308','#22C55E','#10B981','#6366F1'];
+  for (var i=0; i<cats.length; i++) {
+    if (vo2max < cats[i]) return {label: labels[i], color: colors[i], idx: i, cats: cats};
+  }
+  return {label: labels[5], color: colors[5], idx: 5, cats: cats};
+}
+
+async function loadVO2max() {
+  if (!accessToken) return;
+  var el = document.getElementById('pf-vo2max-section');
+  if (el) el.innerHTML = '<div style="font-size:11px;color:var(--textmu);">Laden...</div>';
+  try {
+    var res = await fetch('/api/strava-vo2max?token='+accessToken);
+    var data = await res.json();
+    if (data.error || !data.best20minWatts) {
+      if (el) el.innerHTML = '<div style="font-size:11px;color:var(--textmu);">Geen vermogensdata gevonden (min. 20 min ritten nodig)</div>';
+      return;
+    }
+    // Estimate FTP from best 20-min power (~95%)
+    var estFtp = Math.round(data.best20minWatts * 0.95);
+    var weight = parseFloat(document.getElementById('pf-weight').value) || 75;
+    var age = parseFloat(document.getElementById('pf-age').value) || 45;
+    var sex = athlete && athlete.sex ? athlete.sex : 'M';
+    var vo2 = calcVO2max(estFtp, weight);
+    var cat = getVO2maxCategory(vo2, age, sex);
+    var wpkg = (estFtp/weight).toFixed(2);
+
+    // Update placeholder or insert after header
+    var ph = document.getElementById('pf-vo2max-placeholder');
+    if (ph) { el = ph; } else { el = section; }
+    if (!el) return;
+
+    // Bar visualization
+    var barPct = Math.min(100, Math.max(5, (vo2 - 20) / (80-20) * 100));
+    var catMin = cat.cats[Math.max(0,cat.idx-1)] || 15;
+    var catMax = cat.cats[cat.idx] || 80;
+
+    el.innerHTML =
+      '<div style="background:var(--surface);border-radius:var(--rs);padding:10px 12px;margin-top:8px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">' +
+          '<div style="font-size:11px;font-weight:600;color:var(--text);">VO₂max (schatting)</div>' +
+          '<div style="font-size:22px;font-weight:700;font-family:monospace;color:'+cat.color+';">'+vo2+'</div>' +
+        '</div>' +
+        '<div style="background:var(--bg);border-radius:4px;height:8px;margin-bottom:6px;overflow:hidden;">' +
+          '<div style="height:100%;width:'+barPct+'%;background:'+cat.color+';border-radius:4px;transition:width 0.4s;"></div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--textmu);margin-bottom:8px;">' +
+          '<span>20</span><span>40</span><span>60</span><span>80</span>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px;">' +
+          '<div style="background:var(--bg);border-radius:var(--rs);padding:5px 7px;">' +
+            '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;font-family:monospace;">Categorie</div>' +
+            '<div style="font-size:12px;font-weight:600;color:'+cat.color+';">'+cat.label+'</div>' +
+          '</div>' +
+          '<div style="background:var(--bg);border-radius:var(--rs);padding:5px 7px;">' +
+            '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;font-family:monospace;">W/kg</div>' +
+            '<div style="font-size:12px;font-weight:600;font-family:monospace;">'+wpkg+'</div>' +
+          '</div>' +
+          '<div style="background:var(--bg);border-radius:var(--rs);padding:5px 7px;">' +
+            '<div style="font-size:9px;color:var(--textmu);text-transform:uppercase;font-family:monospace;">Est. FTP</div>' +
+            '<div style="font-size:12px;font-weight:600;font-family:monospace;">'+estFtp+'W</div>' +
+          '</div>' +
+        '</div>' +
+        (data.hrEfficiency ? '<div style="font-size:10px;color:var(--textmu);">Hart-vermogen efficiëntie: <b>'+data.hrEfficiency+' W/bpm</b></div>' : '') +
+        '<div style="font-size:9px;color:var(--textmu);margin-top:4px;">Op basis van beste 20-min rit ('+data.best20minWatts+'W) uit '+data.rideCount+' ritten (90 dagen)</div>' +
+      '</div>';
+  } catch(e) {
+    var el2 = document.getElementById('pf-vo2max-placeholder') || document.getElementById('pf-vo2max-section');
+    if(el2) el2.innerHTML = '<div style="font-size:11px;color:var(--textmu);">VO₂max kon niet geladen worden</div>';
+  }
+}
+
 function updateProfiel(){
   var w=parseFloat(document.getElementById('pf-weight').value)||75;
   var h=parseFloat(document.getElementById('pf-height').value)||175;
@@ -1113,6 +1223,14 @@ function showLoggedIn(){
   var av=document.getElementById('pf-avatar');if(athlete.profile&&av)av.src=athlete.profile;
   var nm=document.getElementById('pf-naam');if(athlete.firstname&&nm)nm.textContent=athlete.firstname+' '+(athlete.lastname||'');
   var sr=document.getElementById('pf-strava-row');if(sr)sr.style.display='block';
+  // Pre-fill weight from Strava if available
+  if (athlete && athlete.weight) {
+    var wEl = document.getElementById('pf-weight');
+    if (wEl && parseFloat(wEl.value) === 75) { // only if still default
+      wEl.value = Math.round(athlete.weight);
+      saveProfiel();
+    }
+  }
   updateProfiel();loadSegments();
   switchTab('segment');
   loadStravaGear();
